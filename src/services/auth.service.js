@@ -5,43 +5,54 @@ const baseUrl = import.meta.env.VITE_API_URL;
 
 const authService = {
   login: async (email, password) => {
-    const response = await fetch(`${baseUrl}/auth/log-in`, {
+    const resp = await fetch(`${baseUrl}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await response.json();
-    if (data?.statusCode && data.statusCode !== 200) {
+    if (!resp.ok) {
+      let errBody;
+      try { errBody = await resp.json(); } catch { errBody = null; }
       throw {
         success: false,
         errorData: {
-          statusCode: data.statusCode,
-          message: data.message,
-          code: data.code,
-          grpc: data.grpc,
-          details: data.details,
-          errors: data.errors,
+          statusCode: resp.status,
+          message: errBody?.message ?? resp.statusText,
+          details: errBody,
         },
       };
     }
 
-    if (data?.accessToken) {
-      setAccessToken(data.accessToken);
+    const data = await resp.json();
+
+    if (!data?.token) {
+      throw {
+        success: false,
+        errorData: {
+          statusCode: 500,
+          message: "Respuesta inválida del servidor: falta 'token'",
+          details: data,
+        },
+      };
     }
 
-    return data;
+    setAccessToken(data.token);
+
+    return {
+      ...data,
+      accessToken: data.token,
+      success: true,
+    };
   },
 
-  // Logout (solo limpia el almacenamiento local)
   logout: async () => {
     clearTokens();
     return { success: true };
   },
 
-  // Obtener perfil del usuario autenticado
   getProfile: async () => {
-    const response = await api.get(`${baseUrl}/auth/me`);
+    const response = await api.get(`${baseUrl}/api/auth/profile`);
     return response.data;
   },
 };

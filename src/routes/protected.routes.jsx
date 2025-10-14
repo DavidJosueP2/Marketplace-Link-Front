@@ -1,11 +1,12 @@
 import AuthLayout from "@/layouts/AuthLayout.jsx";
 import RoleBasedHome from "@/routes/role-based-home.jsx";
+import roleService from "@/services/role.service.js";
 
 export const protectedRoutes = [
   {
     protected: true,
-    allowedRoles: ["ADMIN"],
-    layout: <AuthLayout/>,
+    allowedRoles: [roleService.getRoleAdmin()],
+    layout: <AuthLayout />,
     children: [
       // { path: "/admin/dashboard", element: <DashboardPage /> },
       // Ejemplo: esta ruta puede ser accedida tanto por ADMIN como por MODERATOR
@@ -14,33 +15,33 @@ export const protectedRoutes = [
   },
   {
     protected: true,
-    allowedRoles: ["MODERATOR"],
-    layout: <AuthLayout/>,
+    allowedRoles: [roleService.getRoleModerator()],
+    layout: <AuthLayout />,
     children: [
       // { path: "/moderator/panel", element: <ModeratorPanel /> },
     ],
   },
   {
     protected: true,
-    allowedRoles: ["BUYER"],
-    layout: <AuthLayout/>,
+    allowedRoles: [roleService.getRoleBuyer()],
+    layout: <AuthLayout />,
     children: [
       // { path: "/shop", element: <ShopPage /> },
     ],
   },
   {
     protected: true,
-    allowedRoles: ["SELLER"],
-    layout: <AuthLayout/>,
+    allowedRoles: [roleService.getRoleSeller()],
+    layout: <AuthLayout />,
     children: [
       // { path: "/sales", element: <SalesPage /> },
     ],
   },
   {
     protected: true,
-    layout: <AuthLayout/>,
+    layout: <AuthLayout />,
     children: [
-      {index: true, element: <RoleBasedHome/>},
+      { index: true, element: <RoleBasedHome /> },
       // { path: "/profile", element: <ProfilePage /> },
     ],
   },

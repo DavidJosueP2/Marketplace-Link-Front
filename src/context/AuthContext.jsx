@@ -4,7 +4,7 @@ import {
   setAccessToken,
   clearTokens,
 } from "@/auth/tokenStorage.js";
-import authService from "@/services/authService";
+import authService from "@/services/auth.service.js";
 
 const AuthContext = createContext({});
 

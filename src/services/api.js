@@ -41,7 +41,6 @@ api.interceptors.response.use(
         clearTokens();
         window.location.href = "/login";
       } else {
-      
         return Promise.reject(error);
       }
     }

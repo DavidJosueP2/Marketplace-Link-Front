@@ -4,15 +4,15 @@ import NotFound from "@/pages/NotFound.jsx";
 import PublicExamplePage from "@/pages/PublicExamplePage.jsx";
 
 export const publicRoutes = [
-    {
-        layout: <AuthLayout />,
-        children: [
-            { path: "/public-example", element: <PublicExamplePage /> }
-            /*{ path: "/login", element: <Login /> },
-            { path: "/password-recovery", element: <PasswordRecovery /> },
-            { path: "/reset", element: <ResetPassword /> },*/
-        ],
-    },
-    { path: "/forbidden", element: <Forbidden /> },
-    { path: "*", element: <NotFound /> },
+  {
+    layout: <AuthLayout/>,
+    children: [
+      {path: "/public-example", element: <PublicExamplePage/>}
+      /*{ path: "/login", element: <Login /> },
+      { path: "/password-recovery", element: <PasswordRecovery /> },
+      { path: "/reset", element: <ResetPassword /> },*/
+    ],
+  },
+  {path: "/forbidden", element: <Forbidden/>},
+  {path: "*", element: <NotFound/>},
 ];

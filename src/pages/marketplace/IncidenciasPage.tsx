@@ -10,6 +10,14 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  getCardWithShadowClasses,
+  getTextPrimaryClasses,
+  getTextSecondaryClasses,
+  getBorderClasses,
+  getSkeletonClasses,
+  getInputClasses,
+} from "@/lib/themeHelpers";
 
 const IncidenciasPage = () => {
   // Obtener datos del layout mediante useOutletContext
@@ -24,25 +32,47 @@ const IncidenciasPage = () => {
     getPrioridadColor,
     isLoadingIncidencias: isLoading = false,
     mockUser,
-  } = useOutletContext();
+    theme = "light",
+  } = useOutletContext<{
+    incidencias: any[];
+    filtroEstadoIncidencia: string;
+    setFiltroEstadoIncidencia: (estado: string) => void;
+    filtroPrioridadIncidencia: string;
+    setFiltroPrioridadIncidencia: (prioridad: string) => void;
+    searchIncidencia: string;
+    setSearchIncidencia: (search: string) => void;
+    getPrioridadColor: (prioridad: string) => string;
+    isLoadingIncidencias: boolean;
+    mockUser: any;
+    theme: "light" | "dark";
+  }>();
 
   const canModerate =
     mockUser?.role === "MODERADOR" || mockUser?.role === "ADMINISTRADOR";
 
-  const onViewIncidencia = (incidencia) => {
+  const onViewIncidencia = (incidencia: any) => {
     toast.info(`Ver incidencia #${incidencia.id}`);
   };
 
-  const onAprobar = (incidencia) => {
+  const onAprobar = (incidencia: any) => {
     toast.success(`Incidencia #${incidencia.id} aprobada`);
   };
 
-  const onRechazar = (incidencia) => {
+  const onRechazar = (incidencia: any) => {
     toast.error(`Incidencia #${incidencia.id} rechazada`);
   };
+  
+  // Obtener clases del tema
+  const cardClasses = getCardWithShadowClasses(theme);
+  const textPrimary = getTextPrimaryClasses(theme);
+  const textSecondary = getTextSecondaryClasses(theme);
+  const borderClass = getBorderClasses(theme);
+  const skeletonClass = getSkeletonClasses(theme);
+  const inputClass = getInputClasses(theme);
+
   // Filtrar incidencias
   const incidenciasFiltradas = useMemo(() => {
-    return incidencias.filter((inc) => {
+    return incidencias.filter((inc: any) => {
       const matchEstado =
         filtroEstado === "todos" || inc.estado === filtroEstado;
       const matchPrioridad =
@@ -62,13 +92,13 @@ const IncidenciasPage = () => {
   const stats = useMemo(() => {
     return {
       total: incidencias.length,
-      pendientes: incidencias.filter((i) => i.estado === "pendiente").length,
-      resueltas: incidencias.filter((i) => i.estado === "resuelta").length,
-      rechazadas: incidencias.filter((i) => i.estado === "rechazada").length,
+      pendientes: incidencias.filter((i: any) => i.estado === "pendiente").length,
+      resueltas: incidencias.filter((i: any) => i.estado === "resuelta").length,
+      rechazadas: incidencias.filter((i: any) => i.estado === "rechazada").length,
     };
   }, [incidencias]);
 
-  const getEstadoIcon = (estado) => {
+  const getEstadoIcon = (estado: string) => {
     switch (estado) {
       case "pendiente":
         return <Clock className="w-4 h-4" />;
@@ -81,8 +111,8 @@ const IncidenciasPage = () => {
     }
   };
 
-  const getEstadoBadge = (estado) => {
-    const colors = {
+  const getEstadoBadge = (estado: string) => {
+    const colors: Record<string, string> = {
       pendiente:
         "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
       resuelta:
@@ -95,17 +125,17 @@ const IncidenciasPage = () => {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+        <div className={`${cardClasses} animate-pulse`}>
+          <div className={`h-8 ${skeletonClass} rounded w-1/3 mb-4`}></div>
+          <div className={`h-4 ${skeletonClass} rounded w-2/3`}></div>
         </div>
-        {[...Array(5)].map((_, i) => (
+        {Array.from({ length: 5 }, (_, i) => (
           <div
-            key={i}
-            className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow animate-pulse"
+            key={`skeleton-incidencia-${i}`}
+            className={`${cardClasses} animate-pulse`}
           >
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className={`h-4 ${skeletonClass} rounded w-3/4 mb-2`}></div>
+            <div className={`h-4 ${skeletonClass} rounded w-1/2`}></div>
           </div>
         ))}
       </div>
@@ -115,78 +145,80 @@ const IncidenciasPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+      <div className={cardClasses}>
+        <h1 className={`${textPrimary} text-3xl font-bold mb-2 flex items-center gap-2`}>
           <AlertCircle className="w-8 h-8 text-orange-500" />
           Gestión de Incidencias
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className={textSecondary}>
           Administra las incidencias reportadas por los usuarios
         </p>
       </div>
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
-          <div className="text-2xl font-bold">{stats.total}</div>
+        <div className={cardClasses}>
+          <div className={`text-sm ${textSecondary}`}>Total</div>
+          <div className={`${textPrimary} text-2xl font-bold`}>{stats.total}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className={cardClasses}>
+          <div className={`text-sm ${textSecondary}`}>
             Pendientes
           </div>
-          <div className="text-2xl font-bold text-yellow-600">
+          <div className={`${textPrimary} text-2xl font-bold text-yellow-600`}>
             {stats.pendientes}
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className={cardClasses}>
+          <div className={`text-sm ${textSecondary}`}>
             Resueltas
           </div>
-          <div className="text-2xl font-bold text-green-600">
+          <div className={`${textPrimary} text-2xl font-bold text-green-600`}>
             {stats.resueltas}
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className={cardClasses}>
+          <div className={`text-sm ${textSecondary}`}>
             Rechazadas
           </div>
-          <div className="text-2xl font-bold text-red-600">
+          <div className={`${textPrimary} text-2xl font-bold text-red-600`}>
             {stats.rechazadas}
           </div>
         </div>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+      <div className={cardClasses}>
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-gray-500" />
-          <h2 className="text-lg font-semibold">Filtros</h2>
+          <h2 className={`${textPrimary} text-lg font-semibold`}>Filtros</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Búsqueda */}
           <div>
-            <label className="block text-sm font-medium mb-2">Buscar</label>
+            <label htmlFor="search-incidencia" className={`block text-sm font-medium mb-2 ${textPrimary}`}>Buscar</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
+                id="search-incidencia"
                 type="text"
                 placeholder="Producto, descripción, usuario..."
                 value={searchIncidencia}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
+                className={`w-full pl-10 ${inputClass}`}
               />
             </div>
           </div>
 
           {/* Filtro Estado */}
           <div>
-            <label className="block text-sm font-medium mb-2">Estado</label>
+            <label htmlFor="filtro-estado" className={`block text-sm font-medium mb-2 ${textPrimary}`}>Estado</label>
             <select
+              id="filtro-estado"
               value={filtroEstado}
               onChange={(e) => onFiltroEstadoChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
+              className={inputClass}
             >
               <option value="todos">Todos los estados</option>
               <option value="pendiente">Pendientes</option>
@@ -197,11 +229,12 @@ const IncidenciasPage = () => {
 
           {/* Filtro Prioridad */}
           <div>
-            <label className="block text-sm font-medium mb-2">Prioridad</label>
+            <label htmlFor="filtro-prioridad" className={`block text-sm font-medium mb-2 ${textPrimary}`}>Prioridad</label>
             <select
+              id="filtro-prioridad"
               value={filtroPrioridad}
               onChange={(e) => onFiltroPrioridadChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"
+              className={inputClass}
             >
               <option value="todas">Todas las prioridades</option>
               <option value="crítica">Crítica</option>
@@ -214,10 +247,10 @@ const IncidenciasPage = () => {
       </div>
 
       {/* Tabla de Incidencias */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className={`${cardClasses} overflow-hidden`}>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+            <thead className={theme === "dark" ? "bg-gray-700" : "bg-gray-50"}>
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   ID
@@ -245,22 +278,18 @@ const IncidenciasPage = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className={`divide-y ${borderClass}`}>
               {incidenciasFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-12 text-center">
-                    <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">
-                      {searchIncidencia ||
-                      filtroEstado !== "todos" ||
-                      filtroPrioridad !== "todas"
-                        ? "No se encontraron incidencias con los filtros aplicados"
-                        : "No hay incidencias registradas"}
+                  <td colSpan={8} className="px-6 py-12 text-center">
+                    <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className={textSecondary}>
+                      No se encontraron incidencias
                     </p>
                   </td>
                 </tr>
               ) : (
-                incidenciasFiltradas.map((incidencia) => (
+                incidenciasFiltradas.map((incidencia: any) => (
                   <tr
                     key={incidencia.id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -336,9 +365,9 @@ const IncidenciasPage = () => {
 
         {/* Footer con info */}
         {incidenciasFiltradas.length > 0 && (
-          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Mostrando {incidenciasFiltradas.length} de {incidencias.length}{" "}
+          <div className={`px-6 py-4 border-t ${borderClass} ${theme === "dark" ? "bg-gray-700" : "bg-gray-50"}`}>
+            <p className={`text-sm ${textSecondary}`}>
+              Mostrando {incidenciasFiltradas.length} de {incidencias.length}
               incidencias
             </p>
           </div>

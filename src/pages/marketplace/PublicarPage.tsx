@@ -11,8 +11,40 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
-  const [formData, setFormData] = useState({
+interface ImagePreview {
+  file: File;
+  preview: string;
+}
+
+interface FormData {
+  nombre: string;
+  descripcion: string;
+  precio: string;
+  categoria: string;
+  stock: string;
+  imagenes: File[];
+}
+
+interface FormErrors {
+  [key: string]: string | null;
+}
+
+interface ProductData extends Omit<FormData, "imagenes"> {
+  imagenes: File[];
+}
+
+interface PublicarPageProps {
+  onSubmit: (data: ProductData) => void;
+  isSubmitting?: boolean;
+  categorias?: string[];
+}
+
+const PublicarPage = ({
+  onSubmit,
+  isSubmitting = false,
+  categorias = [],
+}: PublicarPageProps) => {
+  const [formData, setFormData] = useState<FormData>({
     nombre: "",
     descripcion: "",
     precio: "",
@@ -21,10 +53,10 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
     imagenes: [],
   });
 
-  const [errors, setErrors] = useState({});
-  const [imagePreviews, setImagePreviews] = useState([]);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([]);
 
-  const handleChange = (field, value) => {
+  const handleChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Limpiar error del campo cuando el usuario empieza a escribir
     if (errors[field]) {
@@ -32,8 +64,8 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
     }
   };
 
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
 
     // Limitar a 5 imágenes
     if (imagePreviews.length + files.length > 5) {
@@ -45,23 +77,26 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
     }
 
     // Crear previews
-    files.forEach((file) => {
+    for (const file of files) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreviews((prev) => [...prev, { file, preview: reader.result }]);
+        setImagePreviews((prev) => [
+          ...prev,
+          { file, preview: reader.result as string },
+        ]);
       };
       reader.readAsDataURL(file);
-    });
+    }
 
     setErrors((prev) => ({ ...prev, imagenes: null }));
   };
 
-  const removeImage = (index) => {
+  const removeImage = (index: number) => {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const validate = () => {
-    const newErrors = {};
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {};
 
     if (!formData.nombre.trim()) {
       newErrors.nombre = "El nombre es requerido";
@@ -76,7 +111,7 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
         "La descripción debe tener al menos 10 caracteres";
     }
 
-    if (!formData.precio || parseFloat(formData.precio) <= 0) {
+    if (!formData.precio || Number.parseFloat(formData.precio) <= 0) {
       newErrors.precio = "El precio debe ser mayor a 0";
     }
 
@@ -84,7 +119,7 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
       newErrors.categoria = "Selecciona una categoría";
     }
 
-    if (!formData.stock || parseInt(formData.stock) < 0) {
+    if (!formData.stock || Number.parseInt(formData.stock, 10) < 0) {
       newErrors.stock = "El stock debe ser 0 o mayor";
     }
 
@@ -96,11 +131,11 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (validate()) {
-      const productData = {
+      const productData: ProductData = {
         ...formData,
         imagenes: imagePreviews.map((img) => img.file),
       };
@@ -146,10 +181,11 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
           <div className="space-y-4">
             {/* Nombre */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label htmlFor="nombre-producto" className="block text-sm font-medium mb-2">
                 Nombre del Producto *
               </label>
               <input
+                id="nombre-producto"
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => handleChange("nombre", e.target.value)}
@@ -170,14 +206,15 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
 
             {/* Descripción */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label htmlFor="descripcion-producto" className="block text-sm font-medium mb-2">
                 Descripción *
               </label>
               <textarea
+                id="descripcion-producto"
                 value={formData.descripcion}
                 onChange={(e) => handleChange("descripcion", e.target.value)}
                 placeholder="Describe tu producto con el mayor detalle posible..."
-                rows="5"
+                rows={5}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 resize-none ${
                   errors.descripcion
                     ? "border-red-500"
@@ -202,12 +239,13 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Precio */}
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label htmlFor="precio-producto" className="block text-sm font-medium mb-2">
                   Precio (USD) *
                 </label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
+                    id="precio-producto"
                     type="number"
                     step="0.01"
                     min="0"
@@ -231,10 +269,11 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
 
               {/* Stock */}
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label htmlFor="stock-producto" className="block text-sm font-medium mb-2">
                   Stock Disponible *
                 </label>
                 <input
+                  id="stock-producto"
                   type="number"
                   min="0"
                   value={formData.stock}
@@ -257,12 +296,13 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
 
             {/* Categoría */}
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label htmlFor="categoria-producto" className="block text-sm font-medium mb-2">
                 Categoría *
               </label>
               <div className="relative">
                 <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <select
+                  id="categoria-producto"
                   value={formData.categoria}
                   onChange={(e) => handleChange("categoria", e.target.value)}
                   className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 ${
@@ -337,7 +377,7 @@ const PublicarPage = ({ onSubmit, isSubmitting = false, categorias = [] }) => {
             {imagePreviews.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 {imagePreviews.map((img, index) => (
-                  <div key={index} className="relative group">
+                  <div key={`preview-${img.file.name}-${index}`} className="relative group">
                     <img
                       src={img.preview}
                       alt={`Preview ${index + 1}`}

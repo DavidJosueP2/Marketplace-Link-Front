@@ -4,9 +4,30 @@ import {
   Trash2,
   Eye,
   Heart,
-  MoreVertical,
   MapPin,
 } from "lucide-react";
+
+interface Producto {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  imagen: string;
+  estado: string;
+  disponibilidad: boolean;
+  ubicacion: string;
+}
+
+interface MisProductosPageProps {
+  productos?: Producto[];
+  favoritos?: number[];
+  onViewProduct: (producto: Producto) => void;
+  onEditProduct: (producto: Producto) => void;
+  onDeleteProduct: (producto: Producto) => void;
+  onNavigateToPublicar: () => void;
+  getEstadoColor: (estado: string) => string;
+  isLoading?: boolean;
+}
 
 /**
  * MisProductosPage - Página de gestión de productos del vendedor
@@ -20,7 +41,7 @@ const MisProductosPage = ({
   onNavigateToPublicar,
   getEstadoColor,
   isLoading = false,
-}) => {
+}: MisProductosPageProps) => {
   return (
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-6">
@@ -41,9 +62,9 @@ const MisProductosPage = ({
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
+          {Array.from({ length: 6 }, (_, i) => (
             <div
-              key={i}
+              key={`skeleton-producto-${i}`}
               className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden animate-pulse"
             >
               <div className="h-48 bg-gray-300 dark:bg-gray-700"></div>
@@ -55,26 +76,28 @@ const MisProductosPage = ({
             </div>
           ))}
         </div>
-      ) : productos.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-          <Store className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">
-            No tienes productos publicados
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
-            Comienza a vender publicando tu primer producto
-          </p>
-          <button
-            onClick={onNavigateToPublicar}
-            className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white px-6 py-3 rounded-lg inline-flex items-center gap-2 transition-all"
-          >
-            <Store size={20} />
-            Publicar Producto
-          </button>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {productos.map((producto) => (
+        <>
+          {productos.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
+              <Store className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">
+                No tienes productos publicados
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
+                Comienza a vender publicando tu primer producto
+              </p>
+              <button
+                onClick={onNavigateToPublicar}
+                className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white px-6 py-3 rounded-lg inline-flex items-center gap-2 transition-all"
+              >
+                <Store size={20} />
+                Publicar Producto
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {productos.map((producto) => (
             <div
               key={producto.id}
               className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-xl transition-all duration-300 overflow-hidden group"
@@ -152,7 +175,9 @@ const MisProductosPage = ({
               </div>
             </div>
           ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

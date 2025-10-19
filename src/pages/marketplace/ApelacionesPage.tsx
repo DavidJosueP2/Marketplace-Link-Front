@@ -10,6 +10,27 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+interface Apelacion {
+  id: number;
+  incidencia: string;
+  motivo: string;
+  estado: "pendiente" | "aprobada" | "rechazada";
+  fecha: string;
+  resolucion?: string;
+}
+
+interface ApelacionesPageProps {
+  apelaciones?: Apelacion[];
+  filtroEstado: string;
+  searchApelacion: string;
+  onSearchChange: (value: string) => void;
+  onFiltroEstadoChange: (value: string) => void;
+  onViewApelacion: (apelacion: Apelacion) => void;
+  onCreateApelacion: () => void;
+  isLoading?: boolean;
+  userRole?: string;
+}
+
 const ApelacionesPage = ({
   apelaciones = [],
   filtroEstado,
@@ -20,7 +41,7 @@ const ApelacionesPage = ({
   onCreateApelacion,
   isLoading = false,
   userRole = "VENDEDOR",
-}) => {
+}: ApelacionesPageProps) => {
   // Filtrar apelaciones
   const apelacionesFiltradas = useMemo(() => {
     return apelaciones.filter((apelacion) => {
@@ -46,7 +67,7 @@ const ApelacionesPage = ({
     };
   }, [apelaciones]);
 
-  const getEstadoIcon = (estado) => {
+  const getEstadoIcon = (estado: Apelacion["estado"]) => {
     switch (estado) {
       case "pendiente":
         return <Clock className="w-4 h-4" />;
@@ -59,8 +80,8 @@ const ApelacionesPage = ({
     }
   };
 
-  const getEstadoBadge = (estado) => {
-    const colors = {
+  const getEstadoBadge = (estado: Apelacion["estado"]) => {
+    const colors: Record<Apelacion["estado"], string> = {
       pendiente:
         "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
       aprobada:
@@ -77,9 +98,9 @@ const ApelacionesPage = ({
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
         </div>
-        {[...Array(5)].map((_, i) => (
+        {Array.from({ length: 5 }, (_, i) => (
           <div
-            key={i}
+            key={`skeleton-apelacion-${i}`}
             className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow animate-pulse"
           >
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
@@ -162,10 +183,13 @@ const ApelacionesPage = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Búsqueda */}
           <div>
-            <label className="block text-sm font-medium mb-2">Buscar</label>
+            <label htmlFor="buscar-apelacion" className="block text-sm font-medium mb-2">
+              Buscar
+            </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
+                id="buscar-apelacion"
                 type="text"
                 placeholder="Incidencia, motivo..."
                 value={searchApelacion}
@@ -177,8 +201,11 @@ const ApelacionesPage = ({
 
           {/* Filtro Estado */}
           <div>
-            <label className="block text-sm font-medium mb-2">Estado</label>
+            <label htmlFor="filtro-estado" className="block text-sm font-medium mb-2">
+              Estado
+            </label>
             <select
+              id="filtro-estado"
               value={filtroEstado}
               onChange={(e) => onFiltroEstadoChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700"

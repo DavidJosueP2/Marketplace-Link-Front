@@ -20,12 +20,19 @@ import {
 // Navigation configuration
 import { navigationByRole } from "../lib/navigationConfig";
 
+// Role utilities
+import { shouldShowSidebar as checkShouldShowSidebar } from "../lib/roleUtils";
+
 /**
  * MarketplaceLayout - Layout wrapper para las páginas del marketplace
  * Solo contiene la estructura (header, sidebar) y el Outlet para las rutas hijas
  */
 const MarketplaceLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Determinar si se debe mostrar el sidebar basado en el rol
+  const shouldShowSidebar = checkShouldShowSidebar(mockUser.role);
+  
+  // En desktop, el sidebar debe estar abierto por defecto si el usuario tiene acceso
+  const [sidebarOpen, setSidebarOpen] = useState(shouldShowSidebar);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -155,6 +162,7 @@ const MarketplaceLayout = () => {
     getEstadoColor,
     toggleFavorite,
     mockUser,
+    theme, // Agregar tema al contexto
     // Incidencias filters
     filtroEstadoIncidencia,
     setFiltroEstadoIncidencia,
@@ -180,7 +188,7 @@ const MarketplaceLayout = () => {
 
   return (
     <div
-      className={`min-h-screen ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}
+      className={`min-h-screen ${theme === "dark" ? "bg-[#0F151C] text-white" : "bg-gray-50 text-gray-900"}`}
     >
       <Toaster position="top-right" theme={theme} richColors />
 
@@ -202,6 +210,7 @@ const MarketplaceLayout = () => {
         showUserMenu={showUserMenu}
         setShowUserMenu={setShowUserMenu}
         handleLogout={handleLogout}
+        shouldShowSidebar={shouldShowSidebar}
       />
 
       <Sidebar
@@ -211,16 +220,24 @@ const MarketplaceLayout = () => {
         }
         collapsedSections={collapsedSections}
         toggleSection={toggleSection}
+        userRole={mockUser.role}
+        theme={theme}
       />
 
-      <main className="pt-16 lg:ml-64 transition-all duration-200 ease-in-out">
+      <main 
+        className={`pt-16 transition-all duration-300 ease-in-out ${
+          shouldShowSidebar && sidebarOpen
+            ? "lg:ml-64" 
+            : ""
+        }`}
+      >
         <div className="px-4 md:px-6 lg:px-8 py-6">
           {/* Aquí se renderizan las páginas hijas mediante React Router con datos compartidos */}
           <Outlet context={outletContext} />
         </div>
       </main>
 
-      {sidebarOpen && (
+      {shouldShowSidebar && sidebarOpen && (
         <button
           type="button"
           className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden border-none p-0 m-0 cursor-pointer"

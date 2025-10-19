@@ -4,18 +4,22 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
+import {
+  getCardWithShadowClasses,
+  getTextSecondaryClasses,
+  getBorderClasses,
+} from "@/lib/themeHelpers";
 
-/**
- * Pagination - Componente reutilizable para paginación
- *
- * @param {Object} props
- * @param {number} props.currentPage - Página actual
- * @param {number} props.totalPages - Total de páginas
- * @param {Function} props.onPageChange - Callback al cambiar de página
- * @param {number} props.itemsPerPage - Items por página
- * @param {Function} props.onItemsPerPageChange - Callback al cambiar items por página
- * @param {number} props.totalItems - Total de items
- */
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  itemsPerPage: number;
+  onItemsPerPageChange: (value: number) => void;
+  totalItems: number;
+  theme?: "light" | "dark";
+}
+
 const Pagination = ({
   currentPage,
   totalPages,
@@ -23,71 +27,72 @@ const Pagination = ({
   itemsPerPage,
   onItemsPerPageChange,
   totalItems,
-}) => {
-  const getPageNumbers = () => {
-    const pages = [];
+  theme = "light",
+}: PaginationProps) => {
+  const cardClasses = getCardWithShadowClasses(theme);
+  const textSecondary = getTextSecondaryClasses(theme);
+  const borderClass = getBorderClasses(theme);
+  const getPageNumbers = (): (number | string)[] => {
     const maxVisible = 5;
 
     if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push("...");
-        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages);
-      }
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
 
-    return pages;
+    if (currentPage <= 3) {
+      return [1, 2, 3, 4, "...", totalPages];
+    }
+    
+    if (currentPage >= totalPages - 2) {
+      return [
+        1,
+        "...",
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    }
+    
+    return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
   };
 
   return (
-    <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+    <div className={`mt-8 flex flex-col lg:flex-row items-center justify-between gap-4 ${cardClasses} p-4 rounded-lg`}>
       {/* Items per page selector */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="flex items-center gap-2 w-full lg:w-auto justify-center lg:justify-start">
+        <span className={`text-sm ${textSecondary} whitespace-nowrap`}>
           Mostrar
         </span>
         <select
           value={itemsPerPage}
           onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-          className="px-3 py-1 border rounded dark:bg-gray-700 dark:border-gray-600 text-sm focus:ring-2 focus:ring-[hsl(var(--primary))] focus:outline-none"
+          className={`px-3 py-1 border ${borderClass} rounded ${theme === "dark" ? "bg-gray-700" : "bg-white"} text-sm focus:ring-2 focus:ring-[#FF9900] focus:outline-none`}
         >
           <option value={6}>6</option>
           <option value={12}>12</option>
           <option value={24}>24</option>
           <option value={48}>48</option>
         </select>
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className={`text-sm ${textSecondary} whitespace-nowrap`}>
           por página
         </span>
       </div>
 
       {/* Page info */}
-      <div className="text-sm text-gray-600 dark:text-gray-400">
+      <div className={`text-sm ${textSecondary} text-center lg:text-left`}>
         Mostrando {(currentPage - 1) * itemsPerPage + 1} -{" "}
         {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems}
       </div>
 
       {/* Pagination controls */}
-      <div className="flex items-center gap-1">
-        {/* First page */}
+      <div className="flex items-center gap-1 flex-wrap justify-center">
+        {/* First page - Hidden on mobile */}
         <button
+          type="button"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className={`p-2 rounded ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} disabled:opacity-50 disabled:cursor-not-allowed transition-colors hidden sm:block`}
           title="Primera página"
         >
           <ChevronsLeft size={18} />
@@ -95,9 +100,10 @@ const Pagination = ({
 
         {/* Previous page */}
         <button
+          type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className={`p-2 rounded ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
           title="Página anterior"
         >
           <ChevronLeft size={18} />
@@ -105,45 +111,55 @@ const Pagination = ({
 
         {/* Page numbers */}
         <div className="flex gap-1">
-          {getPageNumbers().map((page, index) =>
-            page === "..." ? (
-              <span
-                key={`ellipsis-${index}`}
-                className="px-3 py-1 text-gray-500"
-              >
-                ...
-              </span>
-            ) : (
+          {getPageNumbers().map((page) => {
+            if (page === "...") {
+              return (
+                <span
+                  key={`ellipsis-${currentPage}-${totalPages}`}
+                  className={`px-2 sm:px-3 py-1 ${textSecondary}`}
+                >
+                  ...
+                </span>
+              );
+            }
+
+            const hoverClass =
+              theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100";
+
+            return (
               <button
-                key={page}
-                onClick={() => onPageChange(page)}
-                className={`min-w-[2.5rem] px-3 py-1 rounded transition-colors ${
+                type="button"
+                key={`page-${page}`}
+                onClick={() => onPageChange(page as number)}
+                className={`min-w-[2rem] sm:min-w-[2.5rem] px-2 sm:px-3 py-1 rounded transition-colors text-sm sm:text-base ${
                   currentPage === page
-                    ? "bg-[hsl(var(--primary))] text-white font-semibold"
-                    : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                    ? "bg-[#FF9900] hover:bg-[#FFB84D] text-white font-semibold"
+                    : hoverClass
                 }`}
               >
                 {page}
               </button>
-            ),
-          )}
+            );
+          })}
         </div>
 
         {/* Next page */}
         <button
+          type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className={`p-2 rounded ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
           title="Página siguiente"
         >
           <ChevronRight size={18} />
         </button>
 
-        {/* Last page */}
+        {/* Last page - Hidden on mobile */}
         <button
+          type="button"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className={`p-2 rounded ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} disabled:opacity-50 disabled:cursor-not-allowed transition-colors hidden sm:block`}
           title="Última página"
         >
           <ChevronsRight size={18} />

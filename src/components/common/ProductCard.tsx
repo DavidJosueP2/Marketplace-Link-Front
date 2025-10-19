@@ -1,24 +1,43 @@
 import { Heart } from "lucide-react";
+import {
+  getCardWithShadowClasses,
+  getTextPrimaryClasses,
+  getTextSecondaryClasses,
+} from "@/lib/themeHelpers";
 
-/**
- * ProductCard - Tarjeta reutilizable para mostrar un producto
- *
- * @param {Object} props
- * @param {Object} props.producto - Datos del producto
- * @param {boolean} props.isFavorite - Indica si está en favoritos
- * @param {Function} props.onView - Callback al hacer click en "Ver Detalles"
- * @param {Function} props.onToggleFavorite - Callback al agregar/quitar de favoritos
- * @param {Function} props.getEstadoColor - Función para obtener color según estado
- */
+interface ProductCardProps {
+  producto: {
+    id: number;
+    nombre: string;
+    descripcion: string;
+    precio: number;
+    ubicacion: string;
+    estado: string;
+    imagen: string;
+  };
+  isFavorite?: boolean;
+  onView: (producto: ProductCardProps["producto"]) => void;
+  onToggleFavorite: (producto: ProductCardProps["producto"]) => void;
+  getEstadoColor: (estado: string) => string;
+  theme: "light" | "dark";
+}
+
 const ProductCard = ({
   producto,
   isFavorite = false,
   onView,
   onToggleFavorite,
   getEstadoColor,
-}) => {
+  theme,
+}: ProductCardProps) => {
+  const cardClasses = getCardWithShadowClasses(theme);
+  const textPrimary = getTextPrimaryClasses(theme);
+  const textSecondary = getTextSecondaryClasses(theme);
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden group">
+    <div
+      className={`${cardClasses} rounded-lg hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden group`}
+    >
       {/* Imagen del producto */}
       <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-6xl relative overflow-hidden">
         {producto.imagen}
@@ -30,7 +49,7 @@ const ProductCard = ({
         {/* Header con título y estado */}
         <div className="flex items-start justify-between mb-2">
           <h3
-            className="font-semibold text-lg line-clamp-1"
+            className={`font-semibold text-lg line-clamp-1 ${textPrimary}`}
             title={producto.nombre}
           >
             {producto.nombre}
@@ -43,27 +62,31 @@ const ProductCard = ({
         </div>
 
         {/* Descripción */}
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">
+        <p className={`text-sm ${textSecondary} mb-3 line-clamp-2`}>
           {producto.descripcion}
         </p>
 
         {/* Precio y ubicación */}
         <div className="flex items-center justify-between mb-3">
-          <span className="text-2xl font-bold text-brand">
+          <span className="text-2xl font-bold text-[#FF9900]">
             ${producto.precio}
           </span>
-          <span className="text-sm text-gray-500">{producto.ubicacion}</span>
+          <span className={`text-sm ${textSecondary}`}>
+            {producto.ubicacion}
+          </span>
         </div>
 
         {/* Botones de acción */}
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => onView(producto)}
-            className="flex-1 bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white py-2 rounded-lg text-sm transition-colors"
+            className="flex-1 bg-[#FF9900] hover:bg-[#FFB84D] active:bg-[#CC7A00] text-white font-medium py-2 rounded-lg text-sm transition-all duration-200"
           >
             Ver Detalles
           </button>
           <button
+            type="button"
             onClick={() => onToggleFavorite(producto)}
             className={`px-3 py-2 border-2 rounded-lg transition-all duration-300 ${
               isFavorite

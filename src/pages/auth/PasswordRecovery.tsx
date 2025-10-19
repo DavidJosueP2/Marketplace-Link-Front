@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ChangeEvent } from "react";
+import { Button } from "@/components/ui/shadcn/button";
 import { toast } from "sonner";
 import authService from "@/services/auth.service";
 import { ApiError } from "@/services/api";
@@ -93,14 +94,9 @@ export default function PasswordRecovery() {
                 </p>
               )}
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="mt-2 w-full py-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
-                aria-busy={submitting}
-              >
+              <Button type="submit" disabled={submitting} className="mt-2 w-full">
                 {submitting ? "Enviando…" : "Enviar enlace"}
-              </button>
+              </Button>
 
               <p className="text-xs text-muted-foreground text-center">
                 ¿Recordaste tu contraseña?{" "}

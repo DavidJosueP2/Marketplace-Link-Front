@@ -95,10 +95,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       clearTokens();
       setUser(null);
       setIsAuthenticated(false);
-      const err = error as { errorData?: any };
+
+      // Capturar el error correctamente desde ApiError
+      const apiError = error as any;
+      const errorData = apiError?.payload?.data || apiError?.response?.data || null;
+
       return {
         success: false,
-        errorData: err?.errorData ?? null,
+        errorData,
       };
     }
   };

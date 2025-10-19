@@ -47,7 +47,7 @@ export default function Login() {
     if (success) {
       navigate(from, { replace: true });
     } else {
-      const msg = errorData?.message || errorData?.error || "Credenciales inválidas. Intenta nuevamente.";
+      const msg = errorData?.message || errorData?.details || "Credenciales inválidas. Intenta nuevamente.";
       setErrorMsg(String(msg));
     }
   }

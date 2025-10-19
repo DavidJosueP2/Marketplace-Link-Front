@@ -18,6 +18,7 @@ import {
   ApelacionesPage,
   ModeradoresPage,
 } from "@/pages/marketplace";
+import ProductDetailPage from "@/pages/marketplace/ProductDetailPage";
 
 export const protectedRoutes = [
   {
@@ -72,6 +73,7 @@ export const protectedRoutes = [
       { index: true, element: <DashboardPage /> },
       { path: "dashboard", element: <DashboardPage /> },
       { path: "productos", element: <ProductsPage /> },
+      { path: "producto/:id", element: <ProductDetailPage /> },
       { path: "favoritos", element: <FavoritosPage /> },
       { path: "mis-productos", element: <MisProductosPage /> },
       { path: "publicar", element: <PublicarPage /> },

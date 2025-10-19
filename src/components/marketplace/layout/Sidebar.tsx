@@ -1,12 +1,41 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import type React from "react";
+import { shouldShowSidebar as checkShouldShowSidebar } from "@/lib/roleUtils";
+
+interface NavigationItem {
+  id: string;
+  name: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  badge?: number | string | null;
+}
+
+interface NavigationSection {
+  title: string;
+  items: NavigationItem[];
+}
+
+interface Navigation {
+  sections: NavigationSection[];
+}
+
+interface SidebarProps {
+  sidebarOpen: boolean;
+  navigation: Navigation;
+  collapsedSections: Record<string, boolean>;
+  toggleSection: (section: string) => void;
+  userRole?: string;
+  theme?: "light" | "dark"; // Añadir tema
+}
 
 const Sidebar = ({
   sidebarOpen,
   navigation,
   collapsedSections,
   toggleSection,
-}) => {
+  userRole = "COMPRADOR",
+  theme = "light",
+}: Readonly<SidebarProps>) => {
   const location = useLocation();
 
   // Extraer la página actual de la URL
@@ -23,7 +52,7 @@ const Sidebar = ({
 
     // Extraer el último segmento (productos, favoritos, etc.)
     const segments = path.split("/").filter(Boolean);
-    const lastSegment = segments[segments.length - 1];
+    const lastSegment = segments.at(-1);
 
     // Si el último segmento es 'marketplace-refactored', es la ruta índice
     return lastSegment === "marketplace-refactored" ? "dashboard" : lastSegment;
@@ -31,31 +60,51 @@ const Sidebar = ({
 
   const currentPage = getCurrentPage();
 
+  // Solo mostrar sidebar para ADMIN y VENDEDOR/SELLER
+  // COMPRADOR no tiene acceso al sidebar
+  // Usando el sistema de roles centralizado para mayor robustez
+  if (!checkShouldShowSidebar(userRole)) {
+    return null;
+  }
+
   return (
     <aside
       className={`
       fixed inset-y-0 left-0 z-40 top-16
-      ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-      transition-transform duration-300 ease-in-out
-      w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
+      w-64 shadow-xl
       flex flex-col
-      ${sidebarOpen ? "h-[calc(100vh-4rem)]" : "lg:h-[calc(100vh-4rem)]"}
+      h-[calc(100vh-4rem)]
+      transition-transform duration-300 ease-in-out
+      ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+      ${
+        theme === "dark"
+          ? "bg-[#131A22] border-r border-gray-800"
+          : "bg-white border-r border-gray-200"
+      }
     `}
     >
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+      <nav className={`flex-1 overflow-y-auto p-4 space-y-1 ${
+        theme === "dark" 
+          ? "scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-800"
+          : "scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+      }`}>
         {navigation.sections.map((section) => (
           <div key={section.title} className="mb-4">
             {/* Section Header */}
             <button
               onClick={() => toggleSection(section.title)}
-              className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className={`flex items-center justify-between w-full px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors duration-200 ${
+                theme === "dark"
+                  ? "text-gray-400 hover:bg-gray-800"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
             >
               <span>{section.title}</span>
               {collapsedSections[section.title] ? (
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 text-[#FF9900]" />
               ) : (
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-4 h-4 text-[#FF9900]" />
               )}
             </button>
 
@@ -65,32 +114,43 @@ const Sidebar = ({
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = currentPage === item.id;
+                  
+                  // Determinar clases del link
+                  let linkClasses = "";
+                  if (isActive) {
+                    linkClasses = "bg-[#FF9900] text-white font-bold shadow-lg";
+                  } else if (theme === "dark") {
+                    linkClasses = "text-gray-300 hover:bg-gray-800 hover:text-white";
+                  } else {
+                    linkClasses = "text-gray-700 hover:bg-gray-100 hover:text-gray-900";
+                  }
+
+                  // Determinar clases del icono
+                  let iconClasses = "w-5 h-5 flex-shrink-0 ";
+                  if (isActive) {
+                    iconClasses += "text-white";
+                  } else if (theme === "dark") {
+                    iconClasses += "text-[#FF9900] group-hover:text-white";
+                  } else {
+                    iconClasses += "text-[#FF9900] group-hover:text-gray-900";
+                  }
 
                   return (
                     <Link
                       key={item.id}
                       to={`/marketplace-refactored/${item.id === "dashboard" ? "" : item.id}`}
-                      className={`
-                        w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
-                        ${
-                          isActive
-                            ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium"
-                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }
-                      `}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${linkClasses}`}
                     >
-                      <Icon
-                        className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-blue-600 dark:text-blue-400" : ""}`}
-                      />
-                      <span className="flex-1 text-left">{item.name}</span>
+                      <Icon className={iconClasses} />
+                      <span className="flex-1 text-left font-medium">{item.name}</span>
                       {item.badge !== null && item.badge !== undefined && (
                         <span
                           className={`
-                          px-2 py-0.5 text-xs font-medium rounded-full
+                          px-2 py-0.5 text-xs font-bold rounded-full shadow-sm
                           ${
                             isActive
-                              ? "bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200"
-                              : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                              ? "bg-white text-[#FF9900]"
+                              : "bg-[#FF9900] text-white"
                           }
                         `}
                         >
@@ -107,9 +167,15 @@ const Sidebar = ({
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          <p>Marketplace v1.0</p>
+      <div className={`p-4 border-t ${
+        theme === "dark"
+          ? "border-gray-800 bg-[#0A0E14]"
+          : "border-gray-200 bg-gray-50"
+      }`}>
+        <div className={`text-xs text-center ${
+          theme === "dark" ? "text-gray-400" : "text-gray-600"
+        }`}>
+          <p className="font-bold text-[#FF9900]">Marketplace v1.0</p>
           <p className="mt-1">© 2025 Todos los derechos reservados</p>
         </div>
       </div>

@@ -1,0 +1,60 @@
+export const ProductoSkeleton = () => (
+  <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+    <div className="h-48 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]"></div>
+    <div className="p-4 space-y-3">
+      <div className="h-6 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-3/4"></div>
+      <div className="flex gap-1">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="w-3 h-3 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%]"
+          ></div>
+        ))}
+      </div>
+      <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-full"></div>
+      <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-2/3"></div>
+      <div className="flex justify-between items-center pt-2">
+        <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-24"></div>
+        <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-16"></div>
+      </div>
+      <div className="flex gap-2 pt-2">
+        <div className="h-10 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] flex-1"></div>
+        <div className="h-10 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-10"></div>
+      </div>
+    </div>
+  </div>
+);
+
+export const IncidenciaSkeleton = () => (
+  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-3">
+    <div className="flex items-start justify-between">
+      <div className="flex-1 space-y-2">
+        <div className="h-5 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-3/4"></div>
+        <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-1/2"></div>
+      </div>
+      <div className="h-6 w-20 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%]"></div>
+    </div>
+    <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-full"></div>
+    <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-5/6"></div>
+    <div className="flex justify-between items-center pt-3 border-t dark:border-gray-700">
+      <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-24"></div>
+      <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%] w-32"></div>
+    </div>
+  </div>
+);
+
+export const TableSkeleton = ({ rows = 5, columns = 6 }) => (
+  <div className="space-y-3">
+    {[...Array(rows)].map((_, rowIndex) => (
+      <div key={rowIndex} className="flex gap-4 items-center">
+        {[...Array(columns)].map((_, colIndex) => (
+          <div
+            key={colIndex}
+            className="h-12 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded animate-shimmer bg-[length:200%_100%]"
+            style={{ width: `${100 / columns}%` }}
+          ></div>
+        ))}
+      </div>
+    ))}
+  </div>
+);

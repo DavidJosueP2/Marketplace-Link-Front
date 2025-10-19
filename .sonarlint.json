@@ -1,0 +1,7 @@
+{
+  "sonarlint.ls.javaScriptEnabled": true,
+  "sonarlint.ls.reactEnabled": true,
+  "rules": {
+    "javascript:S2392": "off"
+  }
+}

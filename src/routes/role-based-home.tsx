@@ -1,6 +1,5 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import roleService from "@/services/role.service.js";
 
 export default function RoleBasedHome() {
   const { user } = useAuth();
@@ -12,8 +11,11 @@ export default function RoleBasedHome() {
       })
     : [];
 
-  if (roles.includes(roleService.getRoleAdmin()))
-    return <Navigate to="/admin/playground" replace />;
+  // Redirect to publications page for all authenticated users
+  if (roles.length > 0) {
+    return <Navigate to="/marketplace-refactored/publications" replace />;
+  }
 
+  // If no roles, redirect to 404
   return <Navigate to="/404" replace />;
 }

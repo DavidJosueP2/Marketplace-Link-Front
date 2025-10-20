@@ -2,7 +2,7 @@
 export const mockUser = {
   name: "Juan Pérez",
   email: "juan.perez@example.com",
-  role: "ADMINISTRADOR",
+  role: "USER",
   avatar: null,
 };
 

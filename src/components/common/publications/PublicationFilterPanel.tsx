@@ -218,17 +218,7 @@ const FilterPanel = ({
             </div>
           </div>
 
-          {/* Clear All Filters Button */}
-          <div className={`pt-4 border-t ${borderClass}`}>
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className={`w-full px-4 py-2 text-sm border ${borderClass} rounded-lg ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors flex items-center justify-center gap-2`}
-            >
-              <X size={16} />
-              Limpiar todos los filtros
-            </button>
-          </div>
+        
         </div>
       </div>
     </div>

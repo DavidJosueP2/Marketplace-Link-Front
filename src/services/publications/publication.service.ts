@@ -2,6 +2,7 @@ import api from "../api";
 import type { PageResponse } from "./interfaces/PageResponse";
 import type { PublicationFilters } from "./interfaces/PublicationFiters";
 import type { PublicationSummary } from "./interfaces/PublicationSummary";
+import type { PublicationResponse } from "./interfaces/PublicationResponse";
 
 const publicationService = {
 
@@ -21,6 +22,11 @@ getAll: async (filters: PublicationFilters = {}): Promise<PageResponse<Publicati
   }
 
   const response = await api.get<PageResponse<PublicationSummary>>("/api/publications", { params });
+  return response.data;
+},
+
+getById: async (id: number): Promise<PublicationResponse> => {
+  const response = await api.get<PublicationResponse>(`/api/publications/${id}`);
   return response.data;
 }
 

@@ -159,3 +159,12 @@ export const navigationByRole = {
     ],
   },
 };
+
+// Agregar alias con formato del backend (ROLE_*)
+export const navigationByRoleExtended = {
+  ...navigationByRole,
+  ROLE_BUYER: navigationByRole.COMPRADOR,
+  ROLE_SELLER: navigationByRole.VENDEDOR,
+  ROLE_MODERATOR: navigationByRole.MODERADOR,
+  ROLE_ADMIN: navigationByRole.ADMINISTRADOR,
+};

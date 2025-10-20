@@ -17,7 +17,7 @@ import type { PublicationSummary } from "@/services/publications/interfaces/Publ
 
 const PublicationsPage = () => {
   const navigate = useNavigate();
-  
+
   // Get theme from layout context
   const context = useOutletContext<{ theme?: "light" | "dark" }>();
   const theme = context?.theme || "light";
@@ -28,7 +28,7 @@ const PublicationsPage = () => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(10000);
-  const [selectedDistance, setSelectedDistance] = useState(10); // Default 10km
+  const [selectedDistance, setSelectedDistance] = useState<number | null>(null); // null = sin filtro de distancia
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
   const [favorites, setFavorites] = useState<number[]>([]);
 
@@ -44,7 +44,7 @@ const PublicationsPage = () => {
     maxPrice: maxPrice < 10000 ? maxPrice : undefined,
     lat: userLocation.latitude,
     lon: userLocation.longitude,
-    distanceKm: selectedDistance,
+    distanceKm: selectedDistance ?? undefined, // null o undefined = sin filtro
   });
 
   // Theme classes
@@ -83,7 +83,7 @@ const PublicationsPage = () => {
     setSelectedCategoryIds([]);
     setMinPrice(0);
     setMaxPrice(10000);
-    setSelectedDistance(10);
+    setSelectedDistance(null); // Resetear a null para quitar el filtro
     setCurrentPage(0);
   };
 

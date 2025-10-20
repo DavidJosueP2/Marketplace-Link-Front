@@ -1,7 +1,7 @@
 import api from "./api";
 import { clearTokens, setAccessToken } from "@/auth/tokenStorage";
-
-const baseUrl = (import.meta.env.VITE_API_URL as string) || "";
+import { setUserData, clearUserData } from "@/auth/userStorage";
+import type { UserResponse } from "@/services/auth/interfaces/UserResponse";
 
 export interface LoginResponse {
   token?: string;
@@ -64,6 +64,21 @@ const authService = {
 
     setAccessToken(data.token);
 
+    // Fetch user profile and store location data
+    try {
+      const profile = await authService.getProfile();
+      if (profile) {
+        setUserData({
+          id: profile.id,
+          roles: profile.roles?.map((role: { name: string }) => role.name) || [],
+          latitude: profile.latitude,
+          longitude: profile.longitude,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+
     return {
       ...data,
       accessToken: data.token,
@@ -73,11 +88,12 @@ const authService = {
 
   logout: async (): Promise<{ success: boolean }> => {
     clearTokens();
+    clearUserData();
     return { success: true };
   },
 
-  getProfile: async (): Promise<any> => {
-    const response = await api.get(`${baseUrl}/api/auth/profile`);
+  getProfile: async (): Promise<UserResponse> => {
+    const response = await api.get<UserResponse>("/api/auth/profile");
     return response.data;
   },
 

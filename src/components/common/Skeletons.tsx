@@ -1,7 +1,7 @@
 /**
- * ProductoSkeleton - Skeleton para tarjetas de productos con animación mejorada
+ * PublicationSkeleton - Skeleton for publication cards with improved animation
  */
-export const ProductoSkeleton = () => (
+export const PublicationSkeleton = () => (
   <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
     <div className="h-48 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]"></div>
     <div className="p-4 space-y-3">
@@ -29,9 +29,15 @@ export const ProductoSkeleton = () => (
 );
 
 /**
- * IncidenciaSkeleton - Skeleton para incidencias con animación mejorada
+ * ProductoSkeleton - Skeleton para tarjetas de productos con animación mejorada
+ * @deprecated Use PublicationSkeleton instead
  */
-export const IncidenciaSkeleton = () => (
+export const ProductoSkeleton = PublicationSkeleton;
+
+/**
+ * IncidenceSkeleton - Skeleton for incidents with improved animation
+ */
+export const IncidenceSkeleton = () => (
   <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-3">
     <div className="flex items-start justify-between">
       <div className="flex-1 space-y-2">
@@ -48,6 +54,12 @@ export const IncidenciaSkeleton = () => (
     </div>
   </div>
 );
+
+/**
+ * IncidenciaSkeleton - Skeleton para incidencias con animación mejorada
+ * @deprecated Use IncidenceSkeleton instead
+ */
+export const IncidenciaSkeleton = IncidenceSkeleton;
 
 /**
  * StatCardSkeleton - Skeleton para tarjetas de estadísticas

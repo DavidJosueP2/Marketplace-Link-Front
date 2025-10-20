@@ -7,6 +7,7 @@
 
 export { default as DashboardPage } from "./DashboardPage";
 export { default as ProductsPage } from "./ProductsPage";
+export { default as PublicationsPage } from "./PublicationsPage";
 export { default as FavoritosPage } from "./FavoritosPage";
 export { default as MisProductosPage } from "./MisProductosPage";
 export { default as UsuariosPage } from "./UsuariosPage";

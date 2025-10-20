@@ -33,6 +33,7 @@ const ProductsPage = () => {
     theme: "light" | "dark";
   }>();
 
+
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
 
   // Obtener clases del tema

@@ -64,7 +64,6 @@ const authService = {
 
     setAccessToken(data.token);
 
-    // Fetch user profile and store location data
     try {
       const profile = await authService.getProfile();
       if (profile) {

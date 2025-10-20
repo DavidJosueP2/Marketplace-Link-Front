@@ -65,10 +65,6 @@ const PublicationCard = ({
   const cleanFileName = imageFileName.startsWith('/') ? imageFileName.substring(1) : imageFileName;
   const imageUrl = `${baseUrl}/${cleanFileName}`;
 
-  console.log('Publication:', publication.name);
-  console.log('Image filename from backend:', imageFileName);
-  console.log('Constructed Image URL:', imageUrl);
-
   return (
     <div
       className={`${cardClasses} rounded-lg hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden group`}

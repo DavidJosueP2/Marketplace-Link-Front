@@ -3,9 +3,12 @@ import { Search, Menu, User, LogOut, Sun, Moon, X } from "lucide-react";
 import type React from "react";
 
 interface User {
-  name: string;
-  email: string;
-  role: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
 }
 
 interface SearchResult {
@@ -22,7 +25,7 @@ interface HeaderProps {
   setSidebarOpen: (open: boolean) => void;
   theme: "light" | "dark";
   toggleTheme: () => void;
-  mockUser: User;
+  user: User | null;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   searchFocused: boolean;
@@ -43,7 +46,7 @@ const Header = ({
   setSidebarOpen,
   theme,
   toggleTheme,
-  mockUser,
+  user,
   searchQuery,
   setSearchQuery,
   searchFocused,
@@ -244,7 +247,7 @@ const Header = ({
             >
               <div className="w-8 h-8 bg-gradient-to-br from-[#FF9900] to-[#CC7A00] rounded-full flex items-center justify-center shadow-md">
                 <span className="text-white text-sm font-bold">
-                  {mockUser.name.charAt(0)}
+                  {user?.name?.charAt(0) || user?.firstName?.charAt(0) || user?.fullName?.charAt(0) || "U"}
                 </span>
               </div>
             </button>
@@ -255,13 +258,13 @@ const Header = ({
                   theme === "dark" ? "border-gray-700" : "border-gray-200"
                 }`}>
                   <p className={`font-semibold ${getTextClasses()}`}>
-                    {mockUser.name}
+                    {user?.fullName || user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Usuario"}
                   </p>
                   <p className={`text-sm ${getSecondaryTextClasses()}`}>
-                    {mockUser.email}
+                    {user?.email || ""}
                   </p>
                   <span className="inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full bg-[#FF9900] text-white shadow-sm">
-                    {mockUser.role}
+                    {user?.role || "Usuario"}
                   </span>
                 </div>
 

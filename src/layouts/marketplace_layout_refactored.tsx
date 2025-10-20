@@ -8,28 +8,34 @@ import Sidebar from "../components/marketplace/layout/Sidebar";
 
 // Custom Hooks
 import { useProductFilters } from "../hooks/useProductFilters";
+import { useAuth } from "../hooks/use-auth";
 
 // Mock Data
 import {
-  mockUser,
   mockProductos,
   mockUsuarios,
   mockIncidencias,
 } from "@/data/mockData";
 
 // Navigation configuration
-import { navigationByRole } from "../lib/navigationConfig";
+import { navigationByRoleExtended } from "../lib/navigationConfig";
 
 // Role utilities
-import { shouldShowSidebar as checkShouldShowSidebar } from "../lib/roleUtils";
+import { shouldShowSidebar as checkShouldShowSidebar, getUserRole } from "../lib/roleUtils";
 
 /**
  * MarketplaceLayout - Layout wrapper para las páginas del marketplace
  * Solo contiene la estructura (header, sidebar) y el Outlet para las rutas hijas
  */
 const MarketplaceLayout = () => {
+  // Obtener el usuario real del backend
+  const { user, logout } = useAuth();
+  
+  // Extraer el rol del usuario
+  const userRole = getUserRole(user);
+  
   // Determinar si se debe mostrar el sidebar basado en el rol
-  const shouldShowSidebar = checkShouldShowSidebar(mockUser.role);
+  const shouldShowSidebar = checkShouldShowSidebar(userRole);
   
   // En desktop, el sidebar debe estar abierto por defecto si el usuario tiene acceso
   const [sidebarOpen, setSidebarOpen] = useState(shouldShowSidebar);
@@ -74,9 +80,16 @@ const MarketplaceLayout = () => {
     setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const handleLogout = () => {
-    console.log("Logout");
-    globalThis.location.href = "/login";
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Redirigir después de cerrar sesión
+      globalThis.location.href = "/login";
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      // Redirigir de todas formas
+      globalThis.location.href = "/login";
+    }
   };
 
   // Simulate data loading
@@ -161,7 +174,7 @@ const MarketplaceLayout = () => {
     getPrioridadColor,
     getEstadoColor,
     toggleFavorite,
-    mockUser,
+    user, // Usuario real del backend
     theme, // Agregar tema al contexto
     // Incidencias filters
     filtroEstadoIncidencia,
@@ -197,7 +210,7 @@ const MarketplaceLayout = () => {
         setSidebarOpen={setSidebarOpen}
         theme={theme}
         toggleTheme={toggleTheme}
-        mockUser={mockUser}
+        user={user}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         searchFocused={searchFocused}
@@ -216,11 +229,11 @@ const MarketplaceLayout = () => {
       <Sidebar
         sidebarOpen={sidebarOpen}
         navigation={
-          navigationByRole[mockUser.role as keyof typeof navigationByRole] || navigationByRole.COMPRADOR
+          navigationByRoleExtended[userRole as keyof typeof navigationByRoleExtended] || navigationByRoleExtended.ROLE_BUYER
         }
         collapsedSections={collapsedSections}
         toggleSection={toggleSection}
-        userRole={mockUser.role}
+        userRole={userRole}
         theme={theme}
       />
 

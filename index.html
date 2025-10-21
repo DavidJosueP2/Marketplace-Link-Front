@@ -1,18 +1,54 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Marketplace Link</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
 
-    <!-- Main entry point -->
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- 🔹 Critical inline CSS: base layout + theme-aware colors (avoid flash on first paint) -->
+  <style>
+    html,body,#root{height:100%}
+    body{
+      margin:0;
+      font-family:Onest,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial;
+      background-color:hsl(var(--background));
+      color:hsl(var(--foreground));
+      transition:background-color .2s ease,color .2s ease;
+    }
+    .min-h-dvh{min-height:100dvh}
+    .container,[data-app-root]{contain-intrinsic-size:1px 600px;content-visibility:auto}
+  </style>
+
+  <!-- 🔹 Early theme boot: aplica .dark antes de montar React para evitar “flash” -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem("theme") || "system";
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const useDark = theme === "dark" || (theme === "system" && prefersDark);
+      const root = document.documentElement;
+      if (useDark) root.classList.add("dark"); else root.classList.remove("dark");
+    })();
+  </script>
+
+  <!-- 🔹 Preload most-used font for faster first text paint -->
+  <link rel="preload" href="/assets/fonts/onest/Onest-Regular.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- 🔹 Load base CSS (non-blocking, swap onload) -->
+  <link rel="preload" href="/src/index.css" as="style">
+  <link rel="stylesheet" href="/src/index.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
+
+  <!-- 🔹 Defer decorative CSS (backdrops, blurs, shapes, gradients) -->
+  <link rel="preload" href="/src/styles/decor.css" as="style">
+  <link rel="stylesheet" href="/src/styles/decor.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="/src/styles/decor.css"></noscript>
+</head>
+
+<body>
+<div id="root"></div>
+
+<!-- 🔹 App entry -->
+<script type="module" src="/src/main.tsx"></script>
+</body>
 </html>

@@ -1,12 +1,14 @@
+import { lazy } from "react";
 import AuthLayout from "@/layouts/AuthLayout";
 import Forbidden from "@/pages/Forbidden";
 import NotFound from "@/pages/NotFound";
 import PublicExamplePage from "@/pages/PublicExamplePage";
-import Login from "@/pages/auth/Login";
-import Register from "@/pages/auth/Register";
-import PasswordRecovery from "@/pages/auth/PasswordRecovery";
-import ResetPassword from "@/pages/auth/ResetPassword";
-import VerifyEmail from "@/pages/auth/VerifyEmail";
+
+const Login = lazy(() => import("@/pages/auth/Login"));
+const Register = lazy(() => import("@/pages/auth/Register"));
+const PasswordRecovery = lazy(() => import("@/pages/auth/PasswordRecovery"));
+const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
+const VerifyEmail = lazy(() => import("@/pages/auth/VerifyEmail"));
 
 export const publicRoutes = [
   {

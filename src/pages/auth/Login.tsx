@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import React, { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth.js";
 import { Button } from "@/components/ui/shadcn/button";
@@ -56,10 +56,10 @@ export default function Login() {
     <div className="relative min-h-[100dvh] w-full overflow-hidden">
       <div className="relative flex items-center justify-center min-h-[100dvh] px-4 sm:px-8 py-6 sm:py-8">
         <div className="relative h-[70vh] sm:h-[72vh] w-full sm:w-[92%] lg:w-[70%] xl:w-[60%] max-w-4xl rounded-2xl overflow-hidden">
-          <div className="liquid-pill" style={{ "--glass-blur": "8px", "--glass-alpha": 0.3 } as React.CSSProperties} />
+          <div className="liquid-pill" style={{ "--glass-blur": "16px", "--glass-alpha": 0.3 } as React.CSSProperties} />
           <div className="relative h-full flex flex-col items-center justify-center gap-10 px-6 sm:px-12 md:px-16 text-center">
             <div className="max-w-2xl">
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">Bienvenido de vuelta.</h1>
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">Bienvenido de vuelta.</h1>
               <p className="mt-4 sm:mt-5 text-sm sm:text-base text-muted-foreground">
                 Cuidamos la calidad de atención y la selección de productos para una experiencia de marketplace confiable.
               </p>
@@ -105,7 +105,7 @@ export default function Login() {
                     onClick={() => setReveal((v) => !v)}
                     className="absolute inset-y-0 right-2 flex items-center justify-center w-8 h-8 rounded-md hover:bg-foreground/5"
                   >
-                    {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {reveal ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                   </button>
                 </div>
               </div>

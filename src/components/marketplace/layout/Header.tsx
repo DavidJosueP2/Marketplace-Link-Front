@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Search, Menu, User, LogOut, Sun, Moon, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type React from "react";
 
 interface User {
@@ -60,6 +61,7 @@ const Header = ({
 }: Readonly<HeaderProps>) => {
   const searchRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -266,9 +268,15 @@ const Header = ({
                 </div>
 
                 <div className="py-2">
-                  <button className={`w-full px-4 py-2 text-left flex items-center gap-2 font-medium transition-colors duration-200 ${getItemHoverClasses()} ${
-                    theme === "dark" ? "text-gray-300" : "text-gray-700"
-                  }`}>
+                  <button
+                    onClick={() => {
+                      navigate("/marketplace-refactored/profile");
+                      setShowUserMenu(false);
+                    }}
+                    className={`w-full px-4 py-2 text-left flex items-center gap-2 font-medium transition-colors duration-200 ${getItemHoverClasses()} ${
+                      theme === "dark" ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
                     <User className="w-4 h-4 text-[#FF9900]" />
                     Perfil
                   </button>

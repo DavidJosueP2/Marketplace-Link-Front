@@ -126,10 +126,10 @@ export default function VerifyEmail() {
             rounded-2xl overflow-hidden
           "
         >
-          <div className="liquid-pill" style={{ "--glass-blur": "8px", "--glass-alpha": 0.3 } as React.CSSProperties} />
+          <div className="liquid-pill" style={{ "--glass-blur": "16px", "--glass-alpha": 0.3 } as React.CSSProperties} />
           <div className="relative h-full flex flex-col items-center justify-center gap-6 px-6 sm:px-12 md:px-16 text-center">
             <div className="max-w-2xl">
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
                 {titleByStatus[status]}
               </h1>
               <p className="mt-2 text-sm sm:text-base text-muted-foreground">

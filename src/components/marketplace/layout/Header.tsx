@@ -1,13 +1,15 @@
 import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Menu, User, LogOut, Sun, Moon, X, Heart } from "lucide-react";
-import { useUserFavorites } from "@/hooks/use-favorites";
+import { Search, Menu, User, LogOut, Sun, Moon, X, Heart, Package } from "lucide-react";
+import { useFavoritesContext } from "@/context/FavoritesContext";
+import { getUserRole } from "@/lib/roleUtils";
 import type React from "react";
 
 interface User {
   name?: string;
   email?: string;
   role?: string;
+  roles?: (string | { name?: string })[];
   firstName?: string;
   lastName?: string;
   fullName?: string;
@@ -67,9 +69,11 @@ const Header = ({
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Obtener favoritos del usuario
-  const { favorites } = useUserFavorites();
-  const favoritesCount = favorites.length;
+  // Obtener favoritos del usuario desde el context
+  const { favoritesCount } = useFavoritesContext();
+  
+  // Obtener el rol del usuario usando la función centralizada que maneja arrays
+  const userRole = getUserRole(user);
 
   // Helper para color del icono de favoritos
   const getFavoriteIconColor = () => {
@@ -149,14 +153,18 @@ const Header = ({
             </button>
           )}
 
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/marketplace-refactored/publications")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200"
+            aria-label="Ir al catálogo"
+          >
             <div className="w-8 h-8 bg-gradient-to-br from-[#FF9900] to-[#CC7A00] rounded-lg flex items-center justify-center shadow-md">
               <span className="text-white font-bold text-sm">M</span>
             </div>
             <span className={`font-bold hidden sm:block text-lg tracking-tight ${getTextClasses()}`}>
               Marketplace
             </span>
-          </div>
+          </button>
         </div>
 
     
@@ -176,6 +184,18 @@ const Header = ({
               </span>
             )}
           </button>
+
+          {/* Botón Mis Productos - Para vendedores */}
+          {(userRole === "ROLE_SELLER") && (
+            <button
+              onClick={() => navigate("/marketplace-refactored/mis-productos")}
+              className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${getButtonHoverClasses()} ${getTextClasses()}`}
+              aria-label="Mis Productos"
+            >
+              <Package className="w-5 h-5 text-[#FF9900]" />
+              <span className="font-medium">Mis Productos</span>
+            </button>
+          )}
 
           <button
             onClick={toggleTheme}
@@ -212,9 +232,6 @@ const Header = ({
                   <p className={`text-sm ${getSecondaryTextClasses()}`}>
                     {user?.email || ""}
                   </p>
-                  <span className="inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full bg-[#FF9900] text-white shadow-sm">
-                    {user?.role || "Usuario"}
-                  </span>
                 </div>
 
                 <div className="py-2">
@@ -224,6 +241,23 @@ const Header = ({
                     <User className="w-4 h-4 text-[#FF9900]" />
                     Perfil
                   </button>
+                  
+                  {/* Opción Mis Productos en menú móvil para vendedores */}
+                  {userRole === "ROLE_SELLER" && (
+                    <button
+                      onClick={() => {
+                        navigate("/marketplace-refactored/mis-productos");
+                        setShowUserMenu(false);
+                      }}
+                      className={`sm:hidden w-full px-4 py-2 text-left flex items-center gap-2 font-medium transition-colors duration-200 ${getItemHoverClasses()} ${
+                        theme === "dark" ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      <Package className="w-4 h-4 text-[#FF9900]" />
+                      Mis Productos
+                    </button>
+                  )}
+                  
                   <button
                     onClick={handleLogout}
                     className={`w-full px-4 py-2 text-left flex items-center gap-2 text-red-600 font-medium transition-colors duration-200 ${

@@ -104,6 +104,17 @@ api.interceptors.response.use(
 
     const data = error.response.data as Record<string, any> | undefined;
 
+    // Manejar 403 Forbidden (contenido peligroso detectado)
+    if (error.response.status === 403) {
+      const payload: ApiErrorPayload = {
+        message: data?.detail || data?.message || "Acceso prohibido",
+        status: error.response.status,
+        data,
+        type: "forbidden",
+      };
+      return Promise.reject(new ApiError(payload));
+    }
+
     if (error.response.status === 400 && data?.errors) {
       const payload: ApiErrorPayload = {
         message: data?.message || data?.detail || "Errores de validación",

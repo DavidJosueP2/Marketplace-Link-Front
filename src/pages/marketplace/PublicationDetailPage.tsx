@@ -75,6 +75,19 @@ const PublicationDetailPage = () => {
   // Get publication ID from URL
   const publicationId = id ? parseInt(id, 10) : 0;
 
+  // Detectar de dónde viene el usuario (guardamos en sessionStorage cuando navega)
+  const fromMyProducts = sessionStorage.getItem('fromMyProducts') === 'true';
+  
+  // Función para volver atrás
+  const handleGoBack = () => {
+    if (fromMyProducts) {
+      sessionStorage.removeItem('fromMyProducts');
+      navigate("/marketplace-refactored/mis-productos");
+    } else {
+      navigate("/marketplace-refactored/publications");
+    }
+  };
+
   const { data: publication, isLoading, error } = usePublicationDetail(publicationId);
 
   // Get related publications (same category)
@@ -149,11 +162,11 @@ const PublicationDetailPage = () => {
           La publicación que buscas no existe o ha sido eliminada.
         </p>
         <button
-          onClick={() => navigate("/marketplace-refactored/publications")}
+          onClick={handleGoBack}
           className="bg-[#FF9900] hover:bg-[#FFB84D] text-white font-medium px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
         >
           <ArrowLeft size={20} />
-          Volver al catálogo
+          {fromMyProducts ? "Volver a mis publicaciones" : "Volver al catálogo"}
         </button>
       </div>
     );
@@ -167,11 +180,11 @@ const PublicationDetailPage = () => {
       {/* Breadcrumb y navegación */}
       <div className="flex items-center gap-2 text-sm flex-wrap">
         <button
-          onClick={() => navigate("/marketplace-refactored/publications")}
-          className={`${textSecondary} hover:text-[#FF9900] transition-colors flex items-center gap-1`}
+          onClick={handleGoBack}
+          className={`${textSecondary} hover:text-[#FF9900] transition-colors flex items-center gap-1 font-medium`}
         >
           <ArrowLeft size={16} />
-          Volver al catálogo
+          {fromMyProducts ? "Volver a mis publicaciones" : "Volver al catálogo"}
         </button>
         <span className={textSecondary}>/</span>
         <span className={textSecondary}>{publication.category.name}</span>

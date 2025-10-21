@@ -71,7 +71,7 @@ const Header = ({
 
   // Obtener favoritos del usuario desde el context
   const { favoritesCount } = useFavoritesContext();
-  
+
   // Obtener el rol del usuario usando la función centralizada que maneja arrays
   const userRole = getUserRole(user);
 
@@ -167,7 +167,7 @@ const Header = ({
           </button>
         </div>
 
-    
+
 
         {/* Right side - Theme toggle & User menu */}
         <div className="flex items-center gap-2">
@@ -235,13 +235,19 @@ const Header = ({
                 </div>
 
                 <div className="py-2">
-                  <button className={`w-full px-4 py-2 text-left flex items-center gap-2 font-medium transition-colors duration-200 ${getItemHoverClasses()} ${
-                    theme === "dark" ? "text-gray-300" : "text-gray-700"
-                  }`}>
+                  <button
+                    onClick={() => {
+                      navigate("/marketplace-refactored/profile");
+                      setShowUserMenu(false);
+                    }}
+                    className={`w-full px-4 py-2 text-left flex items-center gap-2 font-medium transition-colors duration-200 ${getItemHoverClasses()} ${
+                      theme === "dark" ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
                     <User className="w-4 h-4 text-[#FF9900]" />
                     Perfil
                   </button>
-                  
+
                   {/* Opción Mis Productos en menú móvil para vendedores */}
                   {userRole === "ROLE_SELLER" && (
                     <button
@@ -257,7 +263,7 @@ const Header = ({
                       Mis Productos
                     </button>
                   )}
-                  
+
                   <button
                     onClick={handleLogout}
                     className={`w-full px-4 py-2 text-left flex items-center gap-2 text-red-600 font-medium transition-colors duration-200 ${

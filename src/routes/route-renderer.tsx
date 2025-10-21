@@ -1,6 +1,7 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Route, Navigate } from "react-router-dom";
 import { GuardRoute } from "@/auth/GuardRoute";
+import CenteredSpinner from "@/components/ui/CenteredSpinner.tsx";
 
 interface RouteGuard {
   protected?: boolean;
@@ -70,7 +71,12 @@ function renderNode(node: RouteNode, keyPrefix = "", parentGuard: RouteGuard = {
     );
   }
 
-  const base = node.element ?? null;
+  const base = node.element ? (
+    <Suspense fallback={<CenteredSpinner />}>
+      {node.element}
+    </Suspense>
+  ) : null;
+
   const guard = mergeGuard(parentGuard, node);
   const guarded = withGuards(base, guard);
   const wrapped = withLayout(guarded, node.layout);

@@ -2,6 +2,7 @@
   "sonarlint.ls.javaScriptEnabled": true,
   "sonarlint.ls.reactEnabled": true,
   "rules": {
-    "javascript:S2392": "off"
+    "javascript:S2392": "off",
+    "css:S4662": "off"
   }
 }

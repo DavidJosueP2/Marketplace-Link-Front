@@ -1,7 +1,7 @@
-import React from "react";
 import { Outlet } from "react-router-dom";
 import { useTheme } from "next-themes";
-import ThemeToggle from "@/inc/theme/ThemeToggle"; // 👈 importa tu botón
+import ThemeToggle from "@/inc/theme/ThemeToggle";
+import logoIcon from "@/assets/favicon.ico";
 
 const AuthLayout = () => {
   const { resolvedTheme } = useTheme();
@@ -21,6 +21,20 @@ const AuthLayout = () => {
           backgroundPosition: "center bottom",
         }}
       />
+
+      {/* Logo con marca (esquina superior izquierda) */}
+      <div className="absolute top-4 left-4 z-20 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-card flex items-center justify-center overflow-hidden shadow-sm border border-border/50">
+          <img
+            src={logoIcon}
+            alt="Logo"
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <span className="text-lg font-semibold text-foreground tracking-tight">
+          Marketplace Link
+        </span>
+      </div>
 
       {/* Botón de cambio de tema (esquina superior derecha) */}
       <div className="absolute top-4 right-4 z-20">

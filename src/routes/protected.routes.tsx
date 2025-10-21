@@ -2,6 +2,7 @@ import AuthLayout from "@/layouts/AuthLayout";
 import MarketplaceLayout from "@/layouts/marketplace_layout_refactored";
 import RoleBasedHome from "@/routes/role-based-home";
 import roleService from "@/services/role.service";
+import Profile from "@/pages/Profile";
 
 // Marketplace Pages
 import {
@@ -62,7 +63,7 @@ export const protectedRoutes = [
     layout: <AuthLayout />,
     children: [
       { index: true, element: <RoleBasedHome /> },
-      // { path: "/profile", element: <ProfilePage /> },
+      { path: "/profile", element: <Profile /> },
     ],
   },
   // Marketplace Refactored Routes - Cada página tiene su propia ruta
@@ -90,6 +91,7 @@ export const protectedRoutes = [
       { path: "apelaciones", element: <ApelacionesPage /> },
       { path: "moderadores", element: <ModeradoresPage /> },
       { path: "configuracion", element: <ConfiguracionPage /> },
+      { path: "profile", element: <Profile /> },
     ],
   },
 ];

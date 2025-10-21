@@ -6,3 +6,4 @@ export {
   useUsuarioFilters,
 } from "./useFilters";
 export { usePagination, usePageNumbers } from "./usePagination";
+export { useVendorPublications } from "./use-vendor-publications";

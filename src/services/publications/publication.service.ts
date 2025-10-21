@@ -1,6 +1,7 @@
 import api from "../api";
 import type { PageResponse } from "./interfaces/PageResponse";
 import type { PublicationFilters } from "./interfaces/PublicationFiters";
+import type { VendorPublicationFilters } from "./interfaces/VendorPublicationFilters";
 import type { PublicationSummary } from "./interfaces/PublicationSummary";
 import type { PublicationResponse } from "./interfaces/PublicationResponse";
 
@@ -22,6 +23,21 @@ getAll: async (filters: PublicationFilters = {}): Promise<PageResponse<Publicati
   }
 
   const response = await api.get<PageResponse<PublicationSummary>>("/api/publications", { params });
+  return response.data;
+},
+
+getAllByVendor: async (filters: VendorPublicationFilters): Promise<PageResponse<PublicationSummary>> => {
+  const params: any = {
+    page: filters.page ?? 0,
+    size: filters.size ?? 10,
+    vendorId: filters.vendorId,
+  };
+
+  if (filters.categoryIds && filters.categoryIds.length > 0) {
+    params.categoryIds = filters.categoryIds.join(',');
+  }
+
+  const response = await api.get<PageResponse<PublicationSummary>>("/api/publications/by-vendor", { params });
   return response.data;
 },
 

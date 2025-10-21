@@ -1,11 +1,14 @@
 import { useRef, useEffect } from "react";
-import { Search, Menu, User, LogOut, Sun, Moon, X } from "lucide-react";
+import { Search, Menu, User, LogOut, Sun, Moon, X, Package } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { getUserRole } from "@/lib/roleUtils";
 import type React from "react";
 
 interface User {
   name?: string;
   email?: string;
   role?: string;
+  roles?: (string | { name?: string })[];
   firstName?: string;
   lastName?: string;
   fullName?: string;
@@ -63,6 +66,10 @@ const Header = ({
 }: Readonly<HeaderProps>) => {
   const searchRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  
+  // Obtener el rol del usuario usando la función centralizada que maneja arrays
+  const userRole = getUserRole(user);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -150,6 +157,18 @@ const Header = ({
 
         {/* Right side - Theme toggle & User menu */}
         <div className="flex items-center gap-2">
+          {/* Botón Mis Productos - Para vendedores y compradores */}
+          {(userRole === "ROLE_SELLER") && (
+            <button
+              onClick={() => navigate("/marketplace-refactored/mis-productos")}
+              className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${getButtonHoverClasses()} ${getTextClasses()}`}
+              aria-label="Mis Productos"
+            >
+              <Package className="w-5 h-5 text-[#FF9900]" />
+              <span className="font-medium">Mis Productos</span>
+            </button>
+          )}
+
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-lg transition-colors duration-200 ${getButtonHoverClasses()}`}
@@ -186,7 +205,7 @@ const Header = ({
                     {user?.email || ""}
                   </p>
                   <span className="inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full bg-[#FF9900] text-white shadow-sm">
-                    {user?.role || "Usuario"}
+                    {userRole || "Usuario"}
                   </span>
                 </div>
 
@@ -197,6 +216,23 @@ const Header = ({
                     <User className="w-4 h-4 text-[#FF9900]" />
                     Perfil
                   </button>
+                  
+                  {/* Opción Mis Productos en menú móvil para vendedores */}
+                  {userRole === "ROLE_SELLER" && (
+                    <button
+                      onClick={() => {
+                        navigate("/marketplace-refactored/mis-productos");
+                        setShowUserMenu(false);
+                      }}
+                      className={`sm:hidden w-full px-4 py-2 text-left flex items-center gap-2 font-medium transition-colors duration-200 ${getItemHoverClasses()} ${
+                        theme === "dark" ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      <Package className="w-4 h-4 text-[#FF9900]" />
+                      Mis Productos
+                    </button>
+                  )}
+                  
                   <button
                     onClick={handleLogout}
                     className={`w-full px-4 py-2 text-left flex items-center gap-2 text-red-600 font-medium transition-colors duration-200 ${

@@ -106,9 +106,21 @@ api.interceptors.response.use(
 
     // Manejar 403 Forbidden (contenido peligroso detectado)
     if (error.response.status === 403) {
+      const type = (data?.type as string | undefined) || "";
+      const shouldRedirect =
+        !isLoginRequest(reqUrl) &&
+        (type.endsWith("account-blocked") ||
+          type.endsWith("account-pending") ||
+          type.endsWith("account-inactive"));
+
+      if (shouldRedirect) {
+        clearTokens();
+        (globalThis as any).location.href = "/login?reason=forbidden";
+      }
+
       const payload: ApiErrorPayload = {
         message: data?.detail || data?.message || "Acceso prohibido",
-        status: error.response.status,
+        status: 403,
         data,
         type: "forbidden",
       };

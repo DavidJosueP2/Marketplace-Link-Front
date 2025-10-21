@@ -62,7 +62,7 @@ const PublicationFormPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [useRegisteredLocation, setUseRegisteredLocation] = useState(false);
+  const [useRegisteredLocation, setUseRegisteredLocation] = useState(!isEditMode);
   const [isService, setIsService] = useState(false);
   
   // Get user data from local storage
@@ -155,6 +155,10 @@ const PublicationFormPage = () => {
   const handleLocationChange = (lat: number, lng: number) => {
     setValue("latitude", lat);
     setValue("longitude", lng);
+    // Si el usuario selecciona manualmente una ubicación, desmarcar el checkbox
+    if (useRegisteredLocation) {
+      setUseRegisteredLocation(false);
+    }
   };
 
   // Manejar uso de ubicación registrada
@@ -555,11 +559,7 @@ const PublicationFormPage = () => {
         <div className={`${cardClasses} rounded-lg p-6 space-y-4`}>
           <h2 className={`text-xl font-semibold ${textPrimary}`}>
             Imágenes <span className="text-red-500">*</span>
-            {isEditMode && existingImages.length > 0 && (
-              <span className={`text-sm font-normal ${textSecondary} ml-2`}>
-                ({existingImages.length} imagen{existingImages.length > 1 ? "es" : ""} actual{existingImages.length > 1 ? "es" : ""})
-              </span>
-            )}
+           
           </h2>
           {isEditMode && existingImages.length > 0 && (
             <div className={`${textSecondary} text-sm space-y-1`}>
@@ -572,7 +572,7 @@ const PublicationFormPage = () => {
                 Nuevas imágenes que subirás
               </p>
               <p className="text-xs mt-2">
-                💡 Puedes mantener las actuales, eliminarlas o agregar nuevas (máximo 5 en total)
+              Puedes mantener las actuales, eliminarlas o agregar nuevas (mínimo 1, máximo 5)
               </p>
             </div>
           )}

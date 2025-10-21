@@ -156,20 +156,9 @@ const PublicationsPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div className="flex-1">
-            <h1 className={`${textPrimary} text-2xl sm:text-3xl font-bold`}>
-              Catálogo de Publicaciones
+            <h1 className="text-[#FF9900] dark:text-[#FFB84D] text-2xl sm:text-3xl lg:text-4xl font-bold italic mb-2">
+              ¡Bienvenido! Explora diferentes servicios y productos en nuestra plataforma.
             </h1>
-            <p className={`${textSecondary} text-xs sm:text-sm mt-1`}>
-              {isLoading ? (
-                "Cargando..."
-              ) : (
-                <>
-                  Mostrando {currentPage * itemsPerPage + 1}-
-                  {Math.min((currentPage + 1) * itemsPerPage, totalElements)} de{" "}
-                  {totalElements} publicaciones
-                </>
-              )}
-            </p>
           </div>
           <div className="flex gap-2">
             <button

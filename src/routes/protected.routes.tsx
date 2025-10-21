@@ -24,9 +24,11 @@ import PublicationFormPage from "@/pages/marketplace/PublicationFormPage";
 export const protectedRoutes = [
   {
     protected: true,
-    allowedRoles: [roleService.getRoleAdmin()],
-    layout: <AuthLayout />,
+    path: "/marketplace-refactored",
+    requiredRoles: [roleService.getRoleAdmin(), roleService.getRoleModerator()],
+    layout: <MarketplaceLayout />,
     children: [
+      { path: "incidencias", element: <IncidenciasPage /> },
       // { path: "/admin/dashboard", element: <DashboardPage /> },
       // Ejemplo: esta ruta puede ser accedida tanto por ADMIN como por MODERATOR
       // { path: "/admin/users", element: <UsersPage />, allowedRoles: ["ADMIN", "MODERATOR"] },
@@ -82,7 +84,7 @@ export const protectedRoutes = [
       { path: "publish", element: <PublicationFormPage /> },
       { path: "mensajes", element: <MensajesPage /> },
       { path: "usuarios", element: <UsuariosPage /> },
-      { path: "incidencias", element: <IncidenciasPage /> },
+
       { path: "reportes", element: <ReportesPage /> },
       { path: "apelaciones", element: <ApelacionesPage /> },
       { path: "moderadores", element: <ModeradoresPage /> },

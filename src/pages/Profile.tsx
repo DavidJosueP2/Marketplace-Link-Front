@@ -16,16 +16,10 @@ export default function Profile() {
   const context = useOutletContext<MarketplaceContext>();
   const theme = context?.theme || "light";
 
-  const getCardClasses = () => {
-    return theme === "dark"
-      ? "bg-[#1A242F] border-gray-700 text-white"
-      : "bg-white border-gray-200 text-gray-900";
-  };
-
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card className={getCardClasses()}>
+        <Card>
           <CardHeader>
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-4 w-64 mt-2" />
@@ -45,9 +39,11 @@ export default function Profile() {
   if (!profile) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card className={getCardClasses()}>
+        <Card>
           <CardContent className="py-8">
-            <p className="text-center text-muted-foreground">No se pudo cargar el perfil</p>
+            <p className="text-center text-muted-foreground">
+              No se pudo cargar el perfil
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -56,7 +52,7 @@ export default function Profile() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <Card className={getCardClasses()}>
+      <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Mi Perfil</CardTitle>
           <p className="text-sm text-muted-foreground">
@@ -64,7 +60,7 @@ export default function Profile() {
           </p>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="account">Cuenta</TabsTrigger>
               <TabsTrigger value="personal">Información Personal</TabsTrigger>

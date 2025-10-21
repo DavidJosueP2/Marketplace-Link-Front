@@ -222,7 +222,6 @@ export default function ProfilePersonalTab({ profile, updating, onUpdate, theme,
             setErrors({});
           }}
           disabled={updating || !hasChanges}
-          className={theme === "dark" ? "border-gray-600 hover:bg-gray-800" : ""}
         >
           Cancelar
         </Button>

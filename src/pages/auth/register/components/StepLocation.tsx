@@ -34,14 +34,13 @@ export default function StepLocation({
             {locStatus === "requesting" ? "Obteniendo…" : "Compartir ubicación"}
           </Button>
         </div>
-        {locMsg && <p className="text-xs text-red-600 mt-2">{locMsg}</p>}
-        {touched.location && errors.location && <p className="text-xs text-red-600 mt-1">{errors.location}</p>}
+        {locMsg && <p className="text-xs text-red-600 mt-2 text-left">{locMsg}</p>}
+        {touched.location && errors.location && <p className="text-xs text-red-600 mt-1 text-left">{errors.location}</p>}
       </div>
 
-      <div className="text-xs text-muted-foreground">
+      <div className="text-xs text-muted-foreground text-left">
         Al continuar aceptas que usaremos tu ubicación para mejorar la seguridad y la experiencia en la plataforma.
       </div>
     </div>
   );
 }
-

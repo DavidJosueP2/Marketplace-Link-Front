@@ -343,11 +343,30 @@ export default function ProfileAccountTab({ profile, updating, onUpdate, theme, 
   const hasChanges = hasFormChanges(formData, profile, coords);
   const allErrors = { ...errors, ...backendErrors };
   const isDark = theme === "dark";
-  const buttonClass = isDark ? "border-gray-600 hover:bg-gray-800" : "";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
+        {/* Correo - Solo lectura */}
+        <div>
+          <Label htmlFor="email" className={isDark ? "text-gray-200" : ""}>
+            Correo Electrónico
+          </Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            value={profile.email}
+            readOnly
+            disabled
+            className={`mt-1.5 ${isDark ? "bg-[#0F151C] border-gray-600 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-500 cursor-not-allowed"}`}
+            title="El correo electrónico no puede ser modificado"
+          />
+          <p className={`text-xs mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+            El correo electrónico no puede ser modificado
+          </p>
+        </div>
+
         <TextField
           id="username"
           name="username"
@@ -357,19 +376,6 @@ export default function ProfileAccountTab({ profile, updating, onUpdate, theme, 
           placeholder="Tu nombre de usuario"
           disabled={updating}
           error={allErrors.username}
-          isDark={isDark}
-        />
-
-        <TextField
-          id="email"
-          name="email"
-          label="Correo Electrónico"
-          type="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="tucorreo@dominio.com"
-          disabled={updating}
-          error={allErrors.email}
           isDark={isDark}
         />
 
@@ -402,7 +408,6 @@ export default function ProfileAccountTab({ profile, updating, onUpdate, theme, 
           variant="outline"
           onClick={handleReset}
           disabled={updating || !hasChanges}
-          className={buttonClass}
         >
           Cancelar
         </Button>

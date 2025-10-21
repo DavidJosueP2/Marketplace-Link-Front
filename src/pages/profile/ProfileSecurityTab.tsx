@@ -330,7 +330,6 @@ export default function ProfileSecurityTab({ updating, onChangePassword, theme, 
           variant="outline"
           onClick={resetForm}
           disabled={updating}
-          className={themeClasses.buttonBorder}
         >
           Limpiar
         </Button>

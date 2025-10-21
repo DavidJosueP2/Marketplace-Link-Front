@@ -57,7 +57,7 @@ export default function StepAccount({
     <div className="grid gap-5">
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <Label className="mb-1 block">Usuario</Label>
+          <Label className="mb-1 justify-start">Usuario</Label>
           <Input
             name="username"
             value={form.username}
@@ -66,11 +66,11 @@ export default function StepAccount({
             placeholder="p.ej. dvalencia_92"
           />
           {touched.username && errors.username && (
-            <p className="text-xs text-red-600 mt-1">{errors.username}</p>
+            <p className="text-xs text-red-600 mt-1 text-left">{errors.username}</p>
           )}
         </div>
         <div>
-          <Label className="mb-1 block">Correo</Label>
+          <Label className="mb-1 justify-start">Correo</Label>
           <Input
             type="email"
             name="email"
@@ -81,14 +81,14 @@ export default function StepAccount({
             autoComplete="email"
           />
           {touched.email && errors.email && (
-            <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+            <p className="text-xs text-red-600 mt-1 text-left">{errors.email}</p>
           )}
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="password" className="mb-1 flex items-center justify-between">
+          <Label htmlFor="password" className="mb-1 justify-between">
             <span>Contraseña</span>
             <button
               type="button"
@@ -111,12 +111,12 @@ export default function StepAccount({
             autoComplete="new-password"
           />
           {touched.password && errors.password && (
-            <p className="text-xs text-red-600 mt-1">{errors.password}</p>
+            <p className="text-xs text-red-600 mt-1 text-left">{errors.password}</p>
           )}
         </div>
 
         <div>
-          <Label htmlFor="confirmPassword" className="mb-1 flex items-center justify-between">
+          <Label htmlFor="confirmPassword" className="mb-1 justify-between">
             <span>Confirmar contraseña</span>
             <button
               type="button"
@@ -139,13 +139,13 @@ export default function StepAccount({
             autoComplete="new-password"
           />
           {touched.confirmPassword && errors.confirmPassword && (
-            <p className="text-xs text-red-600 mt-1">{errors.confirmPassword}</p>
+            <p className="text-xs text-red-600 mt-1 text-left">{errors.confirmPassword}</p>
           )}
         </div>
       </div>
 
       <div>
-        <Label className="mb-1 block">Teléfono</Label>
+        <Label className="mb-1 justify-start">Teléfono</Label>
         <div className="flex">
           <span
             className="select-none inline-flex items-center justify-center rounded-l-md border border-r-0 px-3 text-sm bg-[color-mix(in_oklab,var(--card),white_8%)] text-muted-foreground"
@@ -171,7 +171,7 @@ export default function StepAccount({
           />
         </div>
         {touched.phone && errors.phone && (
-          <p className="text-xs text-red-600 mt-1">{errors.phone}</p>
+          <p className="text-xs text-red-600 mt-1 text-left">{errors.phone}</p>
         )}
       </div>
     </div>

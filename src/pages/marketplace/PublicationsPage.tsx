@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { Store, SlidersHorizontal, Package } from "lucide-react";
+import { SlidersHorizontal, Package } from "lucide-react";
 import { usePublications } from "@/hooks/use-publication";
 import { getUserLocation } from "@/auth/userStorage";
 import PublicationCard from "@/components/common/publications/PublicationCard";
@@ -68,6 +68,8 @@ const PublicationsPage = () => {
   };
 
   const handleViewPublication = (publication: PublicationSummary) => {
+    // Limpiar flag ya que viene desde el catálogo público
+    sessionStorage.removeItem('fromMyProducts');
     navigate(`/marketplace-refactored/publication/${publication.id}`);
   };
 
@@ -145,22 +147,14 @@ const PublicationsPage = () => {
               )}
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setShowFilterSidebar(!showFilterSidebar)}
-              className={`lg:hidden flex items-center gap-2 px-4 py-2 border ${borderClass} rounded-lg ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors flex-1 sm:flex-initial justify-center`}
+              className={`lg:hidden flex items-center gap-2 px-4 py-2 border ${borderClass} rounded-lg ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors`}
             >
               <SlidersHorizontal size={20} />
               <span className="text-sm sm:text-base">Filtros</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/marketplace-refactored/publicar")}
-              className="bg-[#FF9900] hover:bg-[#FFB84D] active:bg-[#CC7A00] text-white font-medium px-4 sm:px-6 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg flex-1 sm:flex-initial justify-center whitespace-nowrap"
-            >
-              <Store size={20} />
-              <span className="text-sm sm:text-base">Publicar</span>
             </button>
           </div>
         </div>

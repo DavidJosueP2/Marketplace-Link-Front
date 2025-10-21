@@ -294,7 +294,7 @@ const PublicationFormPage = () => {
         <button
           type="button"
           onClick={() => navigate("/marketplace-refactored/mis-productos")}
-          className={`flex items-center gap-2 ${textSecondary} hover:text-[#FF9900] mb-4 transition-colors`}
+          className="flex items-center gap-2 mb-4 px-4 py-2 rounded-lg bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 transition-all duration-200 font-medium"
         >
           <ArrowLeft size={20} />
           Volver a mis publicaciones

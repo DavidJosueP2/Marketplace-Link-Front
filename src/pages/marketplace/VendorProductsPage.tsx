@@ -82,6 +82,8 @@ const VendorProductsPage = () => {
   };
 
   const handleViewPublication = (publication: PublicationSummary) => {
+    // Marcar que viene desde "Mis Productos" para la navegación correcta
+    sessionStorage.setItem('fromMyProducts', 'true');
     navigate(`/marketplace-refactored/publication/${publication.id}`);
   };
 
@@ -219,13 +221,22 @@ const VendorProductsPage = () => {
             )}
           </p>
         </div>
-        <button
-          onClick={() => navigate("/marketplace-refactored/publicar")}
-          className="bg-[#FF9900] hover:bg-[#FFB84D] hover:scale-105 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap"
-        >
-          <Plus size={20} />
-          Nueva Publicación
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/marketplace-refactored/publications")}
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap"
+          >
+            <Eye size={20} />
+            Ver Catálogo
+          </button>
+          <button
+            onClick={() => navigate("/marketplace-refactored/publicar")}
+            className="bg-[#FF9900] hover:bg-[#FFB84D] hover:scale-105 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap"
+          >
+            <Plus size={20} />
+            Nueva Publicación
+          </button>
+        </div>
       </div>
 
       {/* Loading State */}
@@ -322,7 +333,7 @@ const VendorProductsPage = () => {
                           <button
                             type="button"
                             onClick={() => handleViewPublication(publication)}
-                            className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center gap-1"
+                            className="flex-1 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-medium py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center gap-1 border border-orange-200 dark:border-orange-800"
                           >
                             <Eye size={16} />
                             Ver
@@ -330,7 +341,7 @@ const VendorProductsPage = () => {
                           <button
                             type="button"
                             onClick={() => handleEditPublication(publication)}
-                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center gap-1"
+                            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center gap-1 shadow-sm hover:shadow-md"
                           >
                             <Edit size={16} />
                             Editar
@@ -338,7 +349,7 @@ const VendorProductsPage = () => {
                           <button
                             type="button"
                             onClick={() => handleDeletePublication(publication)}
-                            className="bg-red-500 hover:bg-red-600 text-white font-medium px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center"
+                            className="bg-red-500 hover:bg-red-600 text-white font-medium px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
                             title="Eliminar"
                           >
                             <Trash2 size={16} />

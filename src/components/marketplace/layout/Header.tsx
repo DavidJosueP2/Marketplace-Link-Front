@@ -143,14 +143,18 @@ const Header = ({
             </button>
           )}
 
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/marketplace-refactored/publications")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200"
+            aria-label="Ir al catálogo"
+          >
             <div className="w-8 h-8 bg-gradient-to-br from-[#FF9900] to-[#CC7A00] rounded-lg flex items-center justify-center shadow-md">
               <span className="text-white font-bold text-sm">M</span>
             </div>
             <span className={`font-bold hidden sm:block text-lg tracking-tight ${getTextClasses()}`}>
               Marketplace
             </span>
-          </div>
+          </button>
         </div>
 
     
@@ -204,9 +208,6 @@ const Header = ({
                   <p className={`text-sm ${getSecondaryTextClasses()}`}>
                     {user?.email || ""}
                   </p>
-                  <span className="inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full bg-[#FF9900] text-white shadow-sm">
-                    {userRole || "Usuario"}
-                  </span>
                 </div>
 
                 <div className="py-2">

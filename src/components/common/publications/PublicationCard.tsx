@@ -1,9 +1,10 @@
-import { Heart } from "lucide-react";
+import { Heart, MoreVertical } from "lucide-react";
 import {
   getCardWithShadowClasses,
   getTextPrimaryClasses,
   getTextSecondaryClasses,
 } from "@/lib/themeHelpers";
+import { useEffect, useRef, useState } from "react";
 
 interface PublicationImage {
   id: number;
@@ -62,12 +63,35 @@ const PublicationCard = ({
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
   const imageFileName = publication.image.url;
   // Remove leading slash if present to avoid double slashes
-  const cleanFileName = imageFileName.startsWith('/') ? imageFileName.substring(1) : imageFileName;
+  const cleanFileName = imageFileName.startsWith("/")
+    ? imageFileName.substring(1)
+    : imageFileName;
   const imageUrl = `${baseUrl}/${cleanFileName}`;
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpen]);
 
   return (
     <div
-      className={`${cardClasses} rounded-lg hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden group`}
+      className={`${cardClasses} rounded-lg hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden group relative`}
     >
       {/* Image Section */}
       <div className="h-48 relative overflow-hidden bg-gray-200 dark:bg-gray-700">
@@ -77,6 +101,39 @@ const PublicationCard = ({
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
           loading="lazy"
         />
+      </div>
+
+      {/* Botón de tres puntos SIEMPRE visible */}
+      <div className="absolute top-2 right-2 z-20">
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          className="
+            p-1 rounded-full transition-colors 
+            text-[#606770] hover:bg-[#F0F2F5] 
+            dark:text-[white] dark:hover:bg-[#4E4F50]
+          "
+        >
+          <MoreVertical size={20} />
+        </button>
+
+        {/* Menú accesible */}
+        {menuOpen && (
+          <div
+            ref={menuRef}
+            className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2"
+            role="menu"
+          >
+            <button
+              onClick={() => console.log("Reportar publicación")}
+              role="menuitem"
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900 cursor-pointer rounded"
+            >
+              Reportar publicación
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Content */}

@@ -78,8 +78,7 @@ const VendorProductsPage = () => {
   };
 
   const handleEditPublication = (publication: PublicationSummary) => {
-    // TODO: Implementar edición
-    console.log("Edit publication:", publication);
+    navigate(`/marketplace-refactored/editar/${publication.id}`);
   };
 
   const handleDeletePublication = (publication: PublicationSummary) => {

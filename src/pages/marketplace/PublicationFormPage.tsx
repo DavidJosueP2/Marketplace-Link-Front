@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserData } from "@/auth/userStorage";
@@ -7,9 +7,10 @@ import publicationService from "@/services/publications/publication.service";
 import categoryService from "@/services/categories/category.service";
 import type { Category } from "@/services/categories/interfaces/Category";
 import type { PublicationCreateRequest } from "@/services/publications/interfaces/PublicationCreateRequest";
+import type { PublicationUpdateRequest } from "@/services/publications/interfaces/PublicationUpdateRequest";
 import LocationPicker from "@/components/common/LocationPicker";
 import ImageUpload from "@/components/common/ImageUpload";
-import { Package, MapPin, DollarSign, Clock, Tag, AlertTriangle } from "lucide-react";
+import { Package, MapPin, DollarSign, Clock, Tag, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   getTextPrimaryClasses,
@@ -26,17 +27,21 @@ interface FormData {
   longitude: number;
   workingHours: string;
   categoryId: number;
+  availability: "AVAILABLE" | "UNAVAILABLE";
   useRegisteredLocation: boolean;
 }
 
 /**
- * CreatePublicationPage - Página para crear nuevas publicaciones
- * Formulario completo con validaciones, mapa interactivo y upload de imágenes
+ * PublicationFormPage - Página para crear o editar publicaciones
+ * Reutilizable para create (sin ID) y update (con ID en params)
  */
-const CreatePublicationPage = () => {
+const PublicationFormPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const isEditMode = !!id;
 
   // Get theme from layout context
   const context = useOutletContext<{ theme?: "light" | "dark" }>();
@@ -50,7 +55,10 @@ const CreatePublicationPage = () => {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [images, setImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [keptExistingImages, setKeptExistingImages] = useState<string[]>([]); // Imágenes existentes que NO se eliminaron
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(isEditMode);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [useRegisteredLocation, setUseRegisteredLocation] = useState(false);
   
@@ -64,11 +72,13 @@ const CreatePublicationPage = () => {
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
       latitude: registeredLat,
       longitude: registeredLng,
+      availability: "AVAILABLE",
       useRegisteredLocation: false,
     },
   });
@@ -93,6 +103,45 @@ const CreatePublicationPage = () => {
     loadCategories();
   }, []);
 
+  // Cargar datos de publicación si estamos en modo edición
+  useEffect(() => {
+    if (isEditMode && id) {
+      const loadPublication = async () => {
+        try {
+          setIsLoading(true);
+          const publication = await publicationService.getById(Number(id));
+
+          // Llenar formulario con datos existentes
+          reset({
+            name: publication.name,
+            description: publication.description,
+            price: publication.price,
+            latitude: publication.latitude,
+            longitude: publication.longitude,
+            workingHours: publication.workingHours || "",
+            categoryId: publication.category.id,
+            availability: publication.availability,
+            useRegisteredLocation: false,
+          });
+
+          // Guardar imágenes existentes para mostrar preview
+          setExistingImages(publication.images.map(img => img.url));
+        } catch (error) {
+          console.error("Error loading publication:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo cargar la publicación",
+            variant: "destructive",
+          });
+          navigate("/marketplace-refactored/mis-productos");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadPublication();
+    }
+  }, [isEditMode, id]);
+
   // Manejar cambio de ubicación del mapa
   const handleLocationChange = (lat: number, lng: number) => {
     setValue("latitude", lat);
@@ -110,13 +159,15 @@ const CreatePublicationPage = () => {
 
   // Manejar envío del formulario
   const onSubmit = async (data: FormData) => {
-    // Validar imágenes
-    if (images.length < 1) {
-      setFieldErrors({ ...fieldErrors, images: "Debes cargar al menos 1 imagen" });
+    // Validar imágenes: en create debe haber al menos 1 nueva, en edit puede usar las existentes
+    const totalImages = isEditMode ? keptExistingImages.length + images.length : images.length;
+    
+    if (totalImages < 1) {
+      setFieldErrors({ ...fieldErrors, images: "Debes tener al menos 1 imagen" });
       return;
     }
-    if (images.length > 5) {
-      setFieldErrors({ ...fieldErrors, images: "No puedes cargar más de 5 imágenes" });
+    if (totalImages > 5) {
+      setFieldErrors({ ...fieldErrors, images: "No puedes tener más de 5 imágenes en total" });
       return;
     }
 
@@ -124,28 +175,53 @@ const CreatePublicationPage = () => {
     setFieldErrors({});
 
     try {
-      const request: PublicationCreateRequest = {
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        workingHours: data.workingHours || undefined,
-        categoryId: data.categoryId,
-        vendorId: user?.id as number,
-        images: images,
-      };
+      if (isEditMode) {
+        // Actualizar publicación existente
+        const request: PublicationUpdateRequest = {
+          name: data.name,
+          description: data.description,
+          price: data.price,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          availability: data.availability,
+          workingHours: data.workingHours || undefined,
+          categoryId: data.categoryId,
+          vendorId: user?.id as number,
+          images: images, // Nuevas imágenes (File[])
+          existingImageUrls: keptExistingImages, // Imágenes antiguas que se mantienen (string[])
+        };
 
-      const response = await publicationService.create(request);
+        await publicationService.update(Number(id), request);
 
-      toast({
-        title: "¡Publicación creada!",
-        description: "Tu publicación ha sido creada exitosamente",
-      });
+        toast({
+          title: "¡Publicación actualizada!",
+          description: "Tu publicación ha sido actualizada exitosamente",
+        });
+      } else {
+        // Crear nueva publicación
+        const request: PublicationCreateRequest = {
+          name: data.name,
+          description: data.description,
+          price: data.price,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          workingHours: data.workingHours || undefined,
+          categoryId: data.categoryId,
+          vendorId: user?.id as number,
+          images: images,
+        };
+
+        await publicationService.create(request);
+
+        toast({
+          title: "¡Publicación creada!",
+          description: "Tu publicación ha sido creada exitosamente",
+        });
+      }
 
       navigate("/marketplace-refactored/mis-productos");
     } catch (error: any) {
-      console.error("Error creating publication:", error);
+      console.error("Error saving publication:", error);
 
       // Manejar ApiError del interceptor
       const status = error.payload?.status || error.response?.status;
@@ -183,7 +259,7 @@ const CreatePublicationPage = () => {
       else if (errorData) {
         toast({
           title: errorData.title || "Error",
-          description: errorData.detail || error.payload?.message || "Ocurrió un error al crear la publicación",
+          description: errorData.detail || error.payload?.message || "Ocurrió un error al guardar la publicación",
           variant: "destructive",
         });
       }
@@ -200,16 +276,37 @@ const CreatePublicationPage = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#FF9900] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className={textPrimary}>Cargando publicación...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6">
+        <button
+          type="button"
+          onClick={() => navigate("/marketplace-refactored/mis-productos")}
+          className={`flex items-center gap-2 ${textSecondary} hover:text-[#FF9900] mb-4 transition-colors`}
+        >
+          <ArrowLeft size={20} />
+          Volver a mis publicaciones
+        </button>
         <h1 className={`${textPrimary} text-3xl font-bold flex items-center gap-2`}>
           <Package className="w-8 h-8 text-[#FF9900]" />
-          Nueva Publicación
+          {isEditMode ? "Editar Publicación" : "Nueva Publicación"}
         </h1>
         <p className={`${textSecondary} text-sm mt-1`}>
-          Completa el formulario para publicar tu producto o servicio
+          {isEditMode
+            ? "Modifica los datos de tu publicación"
+            : "Completa el formulario para publicar tu producto o servicio"}
         </p>
       </div>
 
@@ -266,8 +363,8 @@ const CreatePublicationPage = () => {
             )}
           </div>
 
-          {/* Grid: Precio y Categoría */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Grid: Precio, Categoría y Disponibilidad */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Precio */}
             <div>
               <label htmlFor="price" className={`block text-sm font-medium ${textPrimary} mb-2`}>
@@ -278,6 +375,7 @@ const CreatePublicationPage = () => {
                 {...register("price", {
                   required: "El precio es obligatorio",
                   min: { value: 0.01, message: "El precio debe ser mayor a 0" },
+                  valueAsNumber: true,
                 })}
                 type="number"
                 step="0.01"
@@ -323,6 +421,27 @@ const CreatePublicationPage = () => {
                 </p>
               )}
             </div>
+
+            {/* Disponibilidad (solo en modo edición) */}
+            {isEditMode && (
+              <div>
+                <label htmlFor="availability" className={`block text-sm font-medium ${textPrimary} mb-2`}>
+                  Disponibilidad <span className="text-red-500">*</span>
+                </label>
+                <select
+                  {...register("availability", {
+                    required: "La disponibilidad es obligatoria",
+                  })}
+                  id="availability"
+                  className={`w-full px-4 py-2 border ${borderClass} rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-transparent ${
+                    theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+                  }`}
+                >
+                  <option value="AVAILABLE">Disponible</option>
+                  <option value="UNAVAILABLE">No disponible</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Horario de atención (opcional) */}
@@ -383,13 +502,35 @@ const CreatePublicationPage = () => {
         <div className={`${cardClasses} rounded-lg p-6 space-y-4`}>
           <h2 className={`text-xl font-semibold ${textPrimary}`}>
             Imágenes <span className="text-red-500">*</span>
+            {isEditMode && existingImages.length > 0 && (
+              <span className={`text-sm font-normal ${textSecondary} ml-2`}>
+                ({existingImages.length} imagen{existingImages.length > 1 ? "es" : ""} actual{existingImages.length > 1 ? "es" : ""})
+              </span>
+            )}
           </h2>
+          {isEditMode && existingImages.length > 0 && (
+            <div className={`${textSecondary} text-sm space-y-1`}>
+              <p className="flex items-center gap-2">
+                <span className="inline-block w-12 h-5 bg-blue-500 rounded text-xs text-white text-center leading-5">Actual</span>
+                Imágenes actuales de tu publicación
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="inline-block w-12 h-5 bg-green-500 rounded text-xs text-white text-center leading-5">Nueva</span>
+                Nuevas imágenes que subirás
+              </p>
+              <p className="text-xs mt-2">
+                💡 Puedes mantener las actuales, eliminarlas o agregar nuevas (máximo 5 en total)
+              </p>
+            </div>
+          )}
           <ImageUpload
             onImagesChange={setImages}
+            onExistingImagesChange={setKeptExistingImages}
             maxImages={5}
-            minImages={1}
+            minImages={isEditMode ? 0 : 1}
             error={fieldErrors.images}
             theme={theme}
+            existingImageUrls={existingImages}
           />
         </div>
 
@@ -397,7 +538,7 @@ const CreatePublicationPage = () => {
         <div className="flex gap-4 justify-end">
           <button
             type="button"
-            onClick={() => navigate("/marketplace-refactored/publications")}
+            onClick={() => navigate("/marketplace-refactored/mis-productos")}
             disabled={isSubmitting}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
               theme === "dark"
@@ -415,12 +556,12 @@ const CreatePublicationPage = () => {
             {isSubmitting ? (
               <>
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Publicando...
+                {isEditMode ? "Actualizando..." : "Publicando..."}
               </>
             ) : (
               <>
                 <Package size={20} />
-                Publicar
+                {isEditMode ? "Actualizar" : "Publicar"}
               </>
             )}
           </button>
@@ -430,4 +571,4 @@ const CreatePublicationPage = () => {
   );
 };
 
-export default CreatePublicationPage;
+export default PublicationFormPage;

@@ -23,6 +23,9 @@ export interface PublicationResponse {
   availability: "AVAILABLE" | "UNAVAILABLE";
   status: "VISIBLE" | "HIDDEN";
   publicationDate: string;
+  latitude: number;
+  longitude: number;
+  workingHours?: string;
   images: PublicationImageResponse[];
   category: CategoryResponse;
   vendor: VendorResponse;

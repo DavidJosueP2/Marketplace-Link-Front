@@ -7,7 +7,6 @@ import Profile from "@/pages/Profile";
 // Marketplace Pages
 import {
   DashboardPage,
-  ProductsPage,
   PublicationsPage,
   PublicationDetailPage,
   FavoritosPage,
@@ -19,7 +18,6 @@ import {
   ApelacionesPage,
   ModeradoresPage,
 } from "@/pages/marketplace";
-import ProductDetailPage from "@/pages/marketplace/ProductDetailPage";
 import VendorProductsPage from "@/pages/marketplace/VendorProductsPage";
 import PublicationFormPage from "@/pages/marketplace/PublicationFormPage";
 
@@ -79,8 +77,6 @@ export const protectedRoutes = [
       { path: "dashboard", element: <DashboardPage /> },
       { path: "publications", element: <PublicationsPage /> },
       { path: "publication/:id", element: <PublicationDetailPage /> },
-      { path: "productos", element: <ProductsPage /> },
-      { path: "producto/:id", element: <ProductDetailPage /> },
       { path: "favoritos", element: <FavoritosPage /> },
       { path: "mis-productos", element: <VendorProductsPage /> },
       { path: "publicar", element: <PublicationFormPage /> },

@@ -1,6 +1,7 @@
 import { useRef, useEffect } from "react";
-import { Search, Menu, User, LogOut, Sun, Moon, X, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Search, Menu, User, LogOut, Sun, Moon, X, Heart, Package } from "lucide-react";
+import { useFavoritesContext } from "@/context/FavoritesContext";
 import { getUserRole } from "@/lib/roleUtils";
 import type React from "react";
 
@@ -67,9 +68,18 @@ const Header = ({
   const searchRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Obtener favoritos del usuario desde el context
+  const { favoritesCount } = useFavoritesContext();
   
   // Obtener el rol del usuario usando la función centralizada que maneja arrays
   const userRole = getUserRole(user);
+
+  // Helper para color del icono de favoritos
+  const getFavoriteIconColor = () => {
+    if (favoritesCount > 0) return "fill-red-500 text-red-500";
+    return theme === "dark" ? "text-white" : "text-gray-700";
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -161,7 +171,21 @@ const Header = ({
 
         {/* Right side - Theme toggle & User menu */}
         <div className="flex items-center gap-2">
-          {/* Botón Mis Productos - Para vendedores y compradores */}
+          {/* Favorites Button */}
+          <button
+            onClick={() => navigate("/marketplace-refactored/favoritos")}
+            className={`relative p-2 rounded-lg transition-colors duration-200 ${getButtonHoverClasses()}`}
+            aria-label="Ver favoritos"
+          >
+            <Heart className={`w-5 h-5 ${getFavoriteIconColor()}`} />
+            {favoritesCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-md">
+                {favoritesCount > 99 ? '99+' : favoritesCount}
+              </span>
+            )}
+          </button>
+
+          {/* Botón Mis Productos - Para vendedores */}
           {(userRole === "ROLE_SELLER") && (
             <button
               onClick={() => navigate("/marketplace-refactored/mis-productos")}

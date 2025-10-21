@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { SlidersHorizontal, Package } from "lucide-react";
 import { usePublications } from "@/hooks/use-publication";
+import { useIsFavorite, useFavorites } from "@/hooks/use-favorites";
 import { getUserLocation } from "@/auth/userStorage";
 import PublicationCard from "@/components/common/publications/PublicationCard";
 import PublicationFilterPanel from "@/components/common/publications/PublicationFilterPanel";
@@ -14,6 +15,38 @@ import {
   getBorderClasses,
 } from "@/lib/themeHelpers";
 import type { PublicationSummary } from "@/services/publications/interfaces/PublicationSummary";
+
+/**
+ * Wrapper component que conecta PublicationCard con el sistema de favoritos del backend
+ */
+interface PublicationCardWrapperProps {
+  publication: PublicationSummary;
+  onView: (publication: PublicationSummary) => void;
+  theme: "light" | "dark";
+}
+
+function PublicationCardWrapper({ publication, onView, theme }: Readonly<PublicationCardWrapperProps>) {
+  const { isFavorite } = useIsFavorite(publication.id);
+  const { toggleFavorite } = useFavorites();
+
+  const handleToggleFavorite = async () => {
+    try {
+      await toggleFavorite(publication.id);
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  };
+
+  return (
+    <PublicationCard
+      publication={publication}
+      isFavorite={isFavorite}
+      onView={onView}
+      onToggleFavorite={handleToggleFavorite}
+      theme={theme}
+    />
+  );
+}
 
 const PublicationsPage = () => {
   const navigate = useNavigate();
@@ -30,7 +63,6 @@ const PublicationsPage = () => {
   const [maxPrice, setMaxPrice] = useState(10000);
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null); // null = sin filtro de distancia
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
-  const [favorites, setFavorites] = useState<number[]>([]);
 
   // Get user location
   const userLocation = getUserLocation();
@@ -71,14 +103,6 @@ const PublicationsPage = () => {
     // Limpiar flag ya que viene desde el catálogo público
     sessionStorage.removeItem('fromMyProducts');
     navigate(`/marketplace-refactored/publication/${publication.id}`);
-  };
-
-  const handleToggleFavorite = (publication: PublicationSummary) => {
-    setFavorites((prev) =>
-      prev.includes(publication.id)
-        ? prev.filter((id) => id !== publication.id)
-        : [...prev, publication.id]
-    );
   };
 
   const handleClearFilters = () => {
@@ -172,12 +196,10 @@ const PublicationsPage = () => {
           ) : (
             <>
               {publications.map((publication) => (
-                <PublicationCard
+                <PublicationCardWrapper
                   key={publication.id}
                   publication={publication}
-                  isFavorite={favorites.includes(publication.id)}
                   onView={handleViewPublication}
-                  onToggleFavorite={handleToggleFavorite}
                   theme={theme}
                 />
               ))}

@@ -126,6 +126,10 @@ update: async (id: number, request: PublicationUpdateRequest): Promise<Publicati
   });
   
   return response.data;
+},
+
+delete: async (id: number): Promise<void> => {
+  await api.delete(`/api/publications/${id}`);
 }
 
 }

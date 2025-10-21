@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import { useVendorPublications } from "@/hooks/marketplace/use-vendor-publications";
+import { useVendorPublications, useVendorPublicationsActions } from "@/hooks/marketplace";
 import { ProductoSkeleton } from "@/components/common/Skeletons";
 import Pagination from "@/components/common/Pagination";
+import DeletePublicationModal from "@/components/modals/DeletePublicationModal";
 import { Package, Plus, Edit, Trash2, Eye, AlertTriangle, X } from "lucide-react";
 import type { PublicationSummary } from "@/services/publications/interfaces/PublicationSummary";
 import {
@@ -20,6 +21,9 @@ const VendorProductsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  // Hook personalizado para acciones CRUD (delete con refresh automático)
+  const { deletePublication, isDeleting } = useVendorPublicationsActions();
+  
   // Get theme from layout context
   const context = useOutletContext<{ theme?: "light" | "dark" }>();
   const theme = context?.theme || "light";
@@ -31,6 +35,10 @@ const VendorProductsPage = () => {
     title: string;
     detail: string;
   } | null>(null);
+  
+  // Estados para el modal de eliminación
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [publicationToDelete, setPublicationToDelete] = useState<PublicationSummary | null>(null);
 
   // Theme classes
   const textPrimary = getTextPrimaryClasses(theme);
@@ -82,8 +90,36 @@ const VendorProductsPage = () => {
   };
 
   const handleDeletePublication = (publication: PublicationSummary) => {
-    // TODO: Implementar eliminación
-    console.log("Delete publication:", publication);
+    setPublicationToDelete(publication);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeletePublication = async () => {
+    if (!publicationToDelete) return;
+
+    // Usar el hook personalizado que invalida la cache automáticamente
+    const { success, newPage } = await deletePublication(
+      publicationToDelete.id,
+      currentPage,
+      publications.length
+    );
+
+    if (success) {
+      // Cerrar modal
+      setShowDeleteModal(false);
+      setPublicationToDelete(null);
+
+      // Ajustar página si es necesario (cuando se elimina el último item de la página)
+      if (newPage !== currentPage) {
+        setCurrentPage(newPage);
+      }
+      // No necesita window.location.reload() - React Query invalida y refresca automáticamente
+    }
+  };
+
+  const cancelDeletePublication = () => {
+    setShowDeleteModal(false);
+    setPublicationToDelete(null);
   };
 
   // Obtener el nombre del tipo de publicación
@@ -332,6 +368,16 @@ const VendorProductsPage = () => {
           )}
         </>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeletePublicationModal
+        isOpen={showDeleteModal}
+        onClose={cancelDeletePublication}
+        onConfirm={confirmDeletePublication}
+        publicationName={publicationToDelete?.name || ""}
+        isDeleting={isDeleting}
+        theme={theme}
+      />
     </div>
   );
 };

@@ -12,10 +12,10 @@ interface PublicationFilters {
   selectedCategoryIds: number[];
   minPrice: number;
   maxPrice: number;
-  selectedDistance: number;
+  selectedDistance: number | null;
   setSelectedCategoryIds: (ids: number[]) => void;
   setPriceRange: (min: number, max: number) => void;
-  setSelectedDistance: (distance: number) => void;
+  setSelectedDistance: (distance: number | null) => void;
   clearFilters: () => void;
 }
 
@@ -182,6 +182,22 @@ const FilterPanel = ({
               Distancia a la redonda
             </div>
             <div className="space-y-2">
+              {/* Opción para sin filtro de distancia */}
+              <label
+                className={`flex items-center cursor-pointer ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-50"} p-2 rounded transition-colors`}
+              >
+                <input
+                  type="radio"
+                  name="distance"
+                  checked={filters.selectedDistance === null}
+                  onChange={() => filters.setSelectedDistance(null)}
+                  className="w-4 h-4 text-[#FF9900] bg-gray-100 border-gray-300 focus:ring-[#FF9900] focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <span className={`ml-2 text-sm ${textPrimary} font-medium`}>
+                  Todas las distancias
+                </span>
+              </label>
+              
               {DISTANCE_OPTIONS.map((option) => (
                 <label
                   key={option.value}
@@ -202,17 +218,7 @@ const FilterPanel = ({
             </div>
           </div>
 
-          {/* Clear All Filters Button */}
-          <div className={`pt-4 border-t ${borderClass}`}>
-            <button
-              type="button"
-              onClick={handleClearFilters}
-              className={`w-full px-4 py-2 text-sm border ${borderClass} rounded-lg ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors flex items-center justify-center gap-2`}
-            >
-              <X size={16} />
-              Limpiar todos los filtros
-            </button>
-          </div>
+        
         </div>
       </div>
     </div>

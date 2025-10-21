@@ -1,12 +1,18 @@
 import { useRef, useEffect } from "react";
-import { Search, Menu, User, LogOut, Sun, Moon, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Search, Menu, User, LogOut, Sun, Moon, X, Heart, Package } from "lucide-react";
+import { useFavoritesContext } from "@/context/FavoritesContext";
+import { getUserRole } from "@/lib/roleUtils";
 import type React from "react";
 
 interface User {
-  name: string;
-  email: string;
-  role: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  roles?: (string | { name?: string })[];
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
 }
 
 interface SearchResult {
@@ -23,7 +29,7 @@ interface HeaderProps {
   setSidebarOpen: (open: boolean) => void;
   theme: "light" | "dark";
   toggleTheme: () => void;
-  mockUser: User;
+  user: User | null;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   searchFocused: boolean;
@@ -44,7 +50,7 @@ const Header = ({
   setSidebarOpen,
   theme,
   toggleTheme,
-  mockUser,
+  user,
   searchQuery,
   setSearchQuery,
   searchFocused,
@@ -62,6 +68,18 @@ const Header = ({
   const searchRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Obtener favoritos del usuario desde el context
+  const { favoritesCount } = useFavoritesContext();
+
+  // Obtener el rol del usuario usando la función centralizada que maneja arrays
+  const userRole = getUserRole(user);
+
+  // Helper para color del icono de favoritos
+  const getFavoriteIconColor = () => {
+    if (favoritesCount > 0) return "fill-red-500 text-red-500";
+    return theme === "dark" ? "text-white" : "text-gray-700";
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -135,98 +153,50 @@ const Header = ({
             </button>
           )}
 
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/marketplace-refactored/publications")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200"
+            aria-label="Ir al catálogo"
+          >
             <div className="w-8 h-8 bg-gradient-to-br from-[#FF9900] to-[#CC7A00] rounded-lg flex items-center justify-center shadow-md">
               <span className="text-white font-bold text-sm">M</span>
             </div>
             <span className={`font-bold hidden sm:block text-lg tracking-tight ${getTextClasses()}`}>
               Marketplace
             </span>
-          </div>
+          </button>
         </div>
 
-        {/* Center - Search bar */}
-        <div className="flex-1 max-w-2xl mx-4 relative" ref={searchRef}>
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowSearchResults(true);
-              }}
-              onFocus={() => {
-                setSearchFocused(true);
-                if (searchQuery.trim().length >= 2) {
-                  setShowSearchResults(true);
-                }
-              }}
-              placeholder="Buscar productos..."
-              className={`w-full pl-10 pr-10 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-[#FF9900] transition-all duration-200 font-medium placeholder-gray-400 ${
-                getSearchInputClasses()
-              }`}
-            />
-            <Search className="w-5 h-5 text-[#FF9900] absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
 
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setShowSearchResults(false);
-                }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#FF9900] transition-colors duration-200"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </form>
-
-          {/* Search results dropdown */}
-          {showSearchResults && searchResults.length > 0 && (
-            <div className={`absolute top-full mt-2 w-full rounded-lg shadow-xl border-2 border-[#FF9900] max-h-96 overflow-y-auto z-50 ${getDropdownClasses()}`}>
-              <div className="p-2">
-                <p className={`text-xs px-3 py-2 font-medium ${getSecondaryTextClasses()}`}>
-                  {searchResults.length} resultado{searchResults.length === 1 ? "" : "s"} encontrado{searchResults.length === 1 ? "" : "s"}
-                </p>
-                {searchResults.map((producto) => (
-                  <button
-                    key={producto.id}
-                    onClick={() => handleSearchSelect(producto)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 text-left border-b last:border-b-0 ${
-                      theme === "dark"
-                        ? "hover:bg-[#37475A] border-gray-700"
-                        : "hover:bg-[#FFF3E0] border-gray-100"
-                    }`}
-                  >
-                    <div className="text-3xl">{producto.imagen}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-semibold truncate ${getTextClasses()}`}>
-                        {producto.nombre}
-                      </p>
-                      <p className={`text-sm ${getSecondaryTextClasses()}`}>
-                        {producto.categoria} • <span className="text-[#FF9900] font-bold">${producto.precio}</span>
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {showSearchResults &&
-            searchQuery.trim().length >= 2 &&
-            searchResults.length === 0 && (
-              <div className={`absolute top-full mt-2 w-full rounded-lg shadow-xl border-2 border-[#FF9900] z-50 ${getDropdownClasses()}`}>
-                <div className={`p-4 text-center ${getSecondaryTextClasses()}`}>
-                  No se encontraron productos
-                </div>
-              </div>
-            )}
-        </div>
 
         {/* Right side - Theme toggle & User menu */}
         <div className="flex items-center gap-2">
+          {/* Favorites Button */}
+          <button
+            onClick={() => navigate("/marketplace-refactored/favoritos")}
+            className={`relative p-2 rounded-lg transition-colors duration-200 ${getButtonHoverClasses()}`}
+            aria-label="Ver favoritos"
+          >
+            <Heart className={`w-5 h-5 ${getFavoriteIconColor()}`} />
+            {favoritesCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow-md">
+                {favoritesCount > 99 ? '99+' : favoritesCount}
+              </span>
+            )}
+          </button>
+
+          {/* Botón Mis Productos - Para vendedores */}
+          {(userRole === "ROLE_SELLER") && (
+            <button
+              onClick={() => navigate("/marketplace-refactored/mis-productos")}
+              className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${getButtonHoverClasses()} ${getTextClasses()}`}
+              aria-label="Mis Productos"
+            >
+              <Package className="w-5 h-5 text-[#FF9900]" />
+              <span className="font-medium">Mis Productos</span>
+            </button>
+          )}
+
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-lg transition-colors duration-200 ${getButtonHoverClasses()}`}
@@ -246,7 +216,7 @@ const Header = ({
             >
               <div className="w-8 h-8 bg-gradient-to-br from-[#FF9900] to-[#CC7A00] rounded-full flex items-center justify-center shadow-md">
                 <span className="text-white text-sm font-bold">
-                  {mockUser.name.charAt(0)}
+                  {user?.name?.charAt(0) || user?.firstName?.charAt(0) || user?.fullName?.charAt(0) || "U"}
                 </span>
               </div>
             </button>
@@ -257,14 +227,11 @@ const Header = ({
                   theme === "dark" ? "border-gray-700" : "border-gray-200"
                 }`}>
                   <p className={`font-semibold ${getTextClasses()}`}>
-                    {mockUser.name}
+                    {user?.fullName || user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Usuario"}
                   </p>
                   <p className={`text-sm ${getSecondaryTextClasses()}`}>
-                    {mockUser.email}
+                    {user?.email || ""}
                   </p>
-                  <span className="inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full bg-[#FF9900] text-white shadow-sm">
-                    {mockUser.role}
-                  </span>
                 </div>
 
                 <div className="py-2">
@@ -280,6 +247,23 @@ const Header = ({
                     <User className="w-4 h-4 text-[#FF9900]" />
                     Perfil
                   </button>
+
+                  {/* Opción Mis Productos en menú móvil para vendedores */}
+                  {userRole === "ROLE_SELLER" && (
+                    <button
+                      onClick={() => {
+                        navigate("/marketplace-refactored/mis-productos");
+                        setShowUserMenu(false);
+                      }}
+                      className={`sm:hidden w-full px-4 py-2 text-left flex items-center gap-2 font-medium transition-colors duration-200 ${getItemHoverClasses()} ${
+                        theme === "dark" ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      <Package className="w-4 h-4 text-[#FF9900]" />
+                      Mis Productos
+                    </button>
+                  )}
+
                   <button
                     onClick={handleLogout}
                     className={`w-full px-4 py-2 text-left flex items-center gap-2 text-red-600 font-medium transition-colors duration-200 ${

@@ -60,6 +60,9 @@ const Sidebar = ({
 
   const currentPage = getCurrentPage();
 
+  // Debug: verificar navigation con badges
+  console.log('🔍 Sidebar Navigation:', navigation);
+
   // Solo mostrar sidebar para ADMIN y VENDEDOR/SELLER
   // COMPRADOR no tiene acceso al sidebar
   // Usando el sistema de roles centralizado para mayor robustez

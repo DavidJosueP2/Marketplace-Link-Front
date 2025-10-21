@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { useVendorPublications } from "@/hooks/marketplace/use-vendor-publications";
+import { useVendorPublications, useVendorPublicationsActions } from "@/hooks/marketplace";
 import { ProductoSkeleton } from "@/components/common/Skeletons";
 import Pagination from "@/components/common/Pagination";
-import { Package, Plus, Edit, Trash2, Eye } from "lucide-react";
+import DeletePublicationModal from "@/components/modals/DeletePublicationModal";
+import { Package, Plus, Edit, Trash2, Eye, AlertTriangle, X } from "lucide-react";
 import type { PublicationSummary } from "@/services/publications/interfaces/PublicationSummary";
 import {
   getTextPrimaryClasses,
@@ -13,12 +15,16 @@ import {
 } from "@/lib/themeHelpers";
 
 /**
- * MisProductosPage - Página de gestión de publicaciones del vendedor
+ * VendorProductsPage - Página de gestión de publicaciones del vendedor
  * Muestra las publicaciones del vendedor autenticado con datos reales del backend
  */
-const MisProductosPage = () => {
+const VendorProductsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
+  // Hook personalizado para acciones CRUD (delete con refresh automático)
+  const { deletePublication, isDeleting } = useVendorPublicationsActions();
   
   // Get theme from layout context
   const context = useOutletContext<{ theme?: "light" | "dark" }>();
@@ -26,6 +32,15 @@ const MisProductosPage = () => {
   
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [showPendingReviewAlert, setShowPendingReviewAlert] = useState(false);
+  const [pendingReviewMessage, setPendingReviewMessage] = useState<{
+    title: string;
+    detail: string;
+  } | null>(null);
+  
+  // Estados para el modal de eliminación
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [publicationToDelete, setPublicationToDelete] = useState<PublicationSummary | null>(null);
 
   // Theme classes
   const textPrimary = getTextPrimaryClasses(theme);
@@ -43,6 +58,27 @@ const MisProductosPage = () => {
   const totalPages = data?.totalPages || 0;
   const totalElements = data?.totalElements || 0;
 
+  // Verificar si hay mensaje de revisión pendiente al cargar
+  useEffect(() => {
+    const message = sessionStorage.getItem("pendingReviewMessage");
+    if (message) {
+      try {
+        const parsed = JSON.parse(message);
+        setPendingReviewMessage(parsed);
+        setShowPendingReviewAlert(true);
+        sessionStorage.removeItem("pendingReviewMessage");
+        
+        // Remover completamente la cache para forzar un fetch fresco (usar el queryKey correcto)
+        queryClient.removeQueries({ 
+          queryKey: ['vendor-publications'],
+          exact: false
+        });
+      } catch (error) {
+        console.error("Error parsing pending review message:", error);
+      }
+    }
+  }, [queryClient]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page - 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -54,17 +90,46 @@ const MisProductosPage = () => {
   };
 
   const handleViewPublication = (publication: PublicationSummary) => {
+    // Marcar que viene desde "Mis Productos" para la navegación correcta
+    sessionStorage.setItem('fromMyProducts', 'true');
     navigate(`/marketplace-refactored/publication/${publication.id}`);
   };
 
   const handleEditPublication = (publication: PublicationSummary) => {
-    // TODO: Implementar edición
-    console.log("Edit publication:", publication);
+    navigate(`/marketplace-refactored/editar/${publication.id}`);
   };
 
   const handleDeletePublication = (publication: PublicationSummary) => {
-    // TODO: Implementar eliminación
-    console.log("Delete publication:", publication);
+    setPublicationToDelete(publication);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeletePublication = async () => {
+    if (!publicationToDelete) return;
+
+    // Usar el hook personalizado que invalida la cache automáticamente
+    const { success, newPage } = await deletePublication(
+      publicationToDelete.id,
+      currentPage,
+      publications.length
+    );
+
+    if (success) {
+      // Cerrar modal
+      setShowDeleteModal(false);
+      setPublicationToDelete(null);
+
+      // Ajustar página si es necesario (cuando se elimina el último item de la página)
+      if (newPage !== currentPage) {
+        setCurrentPage(newPage);
+      }
+      // No necesita window.location.reload() - React Query invalida y refresca automáticamente
+    }
+  };
+
+  const cancelDeletePublication = () => {
+    setShowDeleteModal(false);
+    setPublicationToDelete(null);
   };
 
   // Obtener el nombre del tipo de publicación
@@ -106,6 +171,48 @@ const MisProductosPage = () => {
 
   return (
     <div className="animate-fade-in">
+      {/* Alerta de Contenido en Revisión (403) */}
+      {showPendingReviewAlert && pendingReviewMessage && (
+        <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-6 relative">
+          <button
+            onClick={() => setShowPendingReviewAlert(false)}
+            className="absolute top-4 right-4 text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-200"
+          >
+            <X size={20} />
+          </button>
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <AlertTriangle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-yellow-900 dark:text-yellow-200 mb-2">
+                {pendingReviewMessage.title}
+              </h3>
+              <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-4">
+                {pendingReviewMessage.detail}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    // Por el momento no redirige a ningún lado
+                    console.log("Realizar apelación - funcionalidad pendiente");
+                  }}
+                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Realizar apelación
+                </button>
+                <button
+                  onClick={() => setShowPendingReviewAlert(false)}
+                  className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-yellow-800 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div>
@@ -125,13 +232,22 @@ const MisProductosPage = () => {
             )}
           </p>
         </div>
-        <button
-          onClick={() => navigate("/marketplace-refactored/publicar")}
-          className="bg-[#FF9900] hover:bg-[#FFB84D] hover:scale-105 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap"
-        >
-          <Plus size={20} />
-          Nueva Publicación
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/marketplace-refactored/publications")}
+            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap"
+          >
+            <Eye size={20} />
+            Ver Catálogo
+          </button>
+          <button
+            onClick={() => navigate("/marketplace-refactored/publicar")}
+            className="bg-[#FF9900] hover:bg-[#FFB84D] hover:scale-105 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap"
+          >
+            <Plus size={20} />
+            Nueva Publicación
+          </button>
+        </div>
       </div>
 
       {/* Loading State */}
@@ -228,7 +344,7 @@ const MisProductosPage = () => {
                           <button
                             type="button"
                             onClick={() => handleViewPublication(publication)}
-                            className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center gap-1"
+                            className="flex-1 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-medium py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center gap-1 border border-orange-200 dark:border-orange-800"
                           >
                             <Eye size={16} />
                             Ver
@@ -236,7 +352,7 @@ const MisProductosPage = () => {
                           <button
                             type="button"
                             onClick={() => handleEditPublication(publication)}
-                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center gap-1"
+                            className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center gap-1 shadow-sm hover:shadow-md"
                           >
                             <Edit size={16} />
                             Editar
@@ -244,7 +360,7 @@ const MisProductosPage = () => {
                           <button
                             type="button"
                             onClick={() => handleDeletePublication(publication)}
-                            className="bg-red-500 hover:bg-red-600 text-white font-medium px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center"
+                            className="bg-red-500 hover:bg-red-600 text-white font-medium px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
                             title="Eliminar"
                           >
                             <Trash2 size={16} />
@@ -274,7 +390,18 @@ const MisProductosPage = () => {
           )}
         </>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeletePublicationModal
+        isOpen={showDeleteModal}
+        onClose={cancelDeletePublication}
+        onConfirm={confirmDeletePublication}
+        publicationName={publicationToDelete?.name || ""}
+        isDeleting={isDeleting}
+        theme={theme}
+      />
     </div>
   );
 };
-export default MisProductosPage;
+
+export default VendorProductsPage;

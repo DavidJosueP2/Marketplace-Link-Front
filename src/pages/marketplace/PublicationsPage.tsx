@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { Store, SlidersHorizontal, Package } from "lucide-react";
+import { SlidersHorizontal, Package } from "lucide-react";
 import { usePublications } from "@/hooks/use-publication";
+import { useIsFavorite, useFavorites } from "@/hooks/use-favorites";
 import { getUserLocation } from "@/auth/userStorage";
 import PublicationCard from "@/components/common/publications/PublicationCard";
 import PublicationFilterPanel from "@/components/common/publications/PublicationFilterPanel";
@@ -15,9 +16,41 @@ import {
 } from "@/lib/themeHelpers";
 import type { PublicationSummary } from "@/services/publications/interfaces/PublicationSummary";
 
+/**
+ * Wrapper component que conecta PublicationCard con el sistema de favoritos del backend
+ */
+interface PublicationCardWrapperProps {
+  publication: PublicationSummary;
+  onView: (publication: PublicationSummary) => void;
+  theme: "light" | "dark";
+}
+
+function PublicationCardWrapper({ publication, onView, theme }: Readonly<PublicationCardWrapperProps>) {
+  const { isFavorite } = useIsFavorite(publication.id);
+  const { toggleFavorite } = useFavorites();
+
+  const handleToggleFavorite = async () => {
+    try {
+      await toggleFavorite(publication.id);
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    }
+  };
+
+  return (
+    <PublicationCard
+      publication={publication}
+      isFavorite={isFavorite}
+      onView={onView}
+      onToggleFavorite={handleToggleFavorite}
+      theme={theme}
+    />
+  );
+}
+
 const PublicationsPage = () => {
   const navigate = useNavigate();
-  
+
   // Get theme from layout context
   const context = useOutletContext<{ theme?: "light" | "dark" }>();
   const theme = context?.theme || "light";
@@ -28,9 +61,8 @@ const PublicationsPage = () => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(10000);
-  const [selectedDistance, setSelectedDistance] = useState(10); // Default 10km
+  const [selectedDistance, setSelectedDistance] = useState<number | null>(null); // null = sin filtro de distancia
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
-  const [favorites, setFavorites] = useState<number[]>([]);
 
   // Get user location
   const userLocation = getUserLocation();
@@ -44,7 +76,7 @@ const PublicationsPage = () => {
     maxPrice: maxPrice < 10000 ? maxPrice : undefined,
     lat: userLocation.latitude,
     lon: userLocation.longitude,
-    distanceKm: selectedDistance,
+    distanceKm: selectedDistance ?? undefined, // null o undefined = sin filtro
   });
 
   // Theme classes
@@ -68,22 +100,16 @@ const PublicationsPage = () => {
   };
 
   const handleViewPublication = (publication: PublicationSummary) => {
+    // Limpiar flag ya que viene desde el catálogo público
+    sessionStorage.removeItem('fromMyProducts');
     navigate(`/marketplace-refactored/publication/${publication.id}`);
-  };
-
-  const handleToggleFavorite = (publication: PublicationSummary) => {
-    setFavorites((prev) =>
-      prev.includes(publication.id)
-        ? prev.filter((id) => id !== publication.id)
-        : [...prev, publication.id]
-    );
   };
 
   const handleClearFilters = () => {
     setSelectedCategoryIds([]);
     setMinPrice(0);
     setMaxPrice(10000);
-    setSelectedDistance(10);
+    setSelectedDistance(null); // Resetear a null para quitar el filtro
     setCurrentPage(0);
   };
 
@@ -145,22 +171,14 @@ const PublicationsPage = () => {
               )}
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setShowFilterSidebar(!showFilterSidebar)}
-              className={`lg:hidden flex items-center gap-2 px-4 py-2 border ${borderClass} rounded-lg ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors flex-1 sm:flex-initial justify-center`}
+              className={`lg:hidden flex items-center gap-2 px-4 py-2 border ${borderClass} rounded-lg ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors`}
             >
               <SlidersHorizontal size={20} />
               <span className="text-sm sm:text-base">Filtros</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/marketplace-refactored/publicar")}
-              className="bg-[#FF9900] hover:bg-[#FFB84D] active:bg-[#CC7A00] text-white font-medium px-4 sm:px-6 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg flex-1 sm:flex-initial justify-center whitespace-nowrap"
-            >
-              <Store size={20} />
-              <span className="text-sm sm:text-base">Publicar</span>
             </button>
           </div>
         </div>
@@ -178,12 +196,10 @@ const PublicationsPage = () => {
           ) : (
             <>
               {publications.map((publication) => (
-                <PublicationCard
+                <PublicationCardWrapper
                   key={publication.id}
                   publication={publication}
-                  isFavorite={favorites.includes(publication.id)}
                   onView={handleViewPublication}
-                  onToggleFavorite={handleToggleFavorite}
                   theme={theme}
                 />
               ))}

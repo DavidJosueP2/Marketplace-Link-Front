@@ -9,18 +9,19 @@ import {
   DashboardPage,
   ProductsPage,
   PublicationsPage,
+  PublicationDetailPage,
   FavoritosPage,
-  MisProductosPage,
   UsuariosPage,
   ConfiguracionPage,
   IncidenciasPage,
-  PublicarPage,
   ReportesPage,
   MensajesPage,
   ApelacionesPage,
   ModeradoresPage,
 } from "@/pages/marketplace";
 import ProductDetailPage from "@/pages/marketplace/ProductDetailPage";
+import VendorProductsPage from "@/pages/marketplace/VendorProductsPage";
+import PublicationFormPage from "@/pages/marketplace/PublicationFormPage";
 
 export const protectedRoutes = [
   {
@@ -75,13 +76,14 @@ export const protectedRoutes = [
       { index: true, element: <PublicationsPage /> },
       { path: "dashboard", element: <DashboardPage /> },
       { path: "publications", element: <PublicationsPage /> },
+      { path: "publication/:id", element: <PublicationDetailPage /> },
       { path: "productos", element: <ProductsPage /> },
       { path: "producto/:id", element: <ProductDetailPage /> },
-      { path: "publication/:id", element: <ProductDetailPage /> },
       { path: "favoritos", element: <FavoritosPage /> },
-      { path: "mis-productos", element: <MisProductosPage /> },
-      { path: "publicar", element: <PublicarPage /> },
-      { path: "publish", element: <PublicarPage /> },
+      { path: "mis-productos", element: <VendorProductsPage /> },
+      { path: "publicar", element: <PublicationFormPage /> },
+      { path: "editar/:id", element: <PublicationFormPage /> },
+      { path: "publish", element: <PublicationFormPage /> },
       { path: "mensajes", element: <MensajesPage /> },
       { path: "usuarios", element: <UsuariosPage /> },
       { path: "incidencias", element: <IncidenciasPage /> },

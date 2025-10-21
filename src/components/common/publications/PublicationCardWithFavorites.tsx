@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { usePublicationFavorite } from "@/hooks/use-favorites";
 import {
   getCardWithShadowClasses,
   getTextPrimaryClasses,
@@ -20,12 +21,10 @@ interface Publication {
   image: PublicationImage;
 }
 
-interface PublicationCardProps {
+interface PublicationCardWithFavoritesProps {
   publication: Publication;
-  isFavorite?: boolean;
   onView: (publication: Publication) => void;
-  onToggleFavorite: (publication: Publication) => void;
-  theme: "light" | "dark";
+  theme?: "light" | "dark";
 }
 
 const getAvailabilityColor = (availability: string): string => {
@@ -47,13 +46,26 @@ const getAvailabilityDisplayName = (availability: string): string => {
   return availability === "AVAILABLE" ? "Disponible" : "No disponible";
 };
 
-const PublicationCard = ({
+/**
+ * PublicationCardWithFavorites
+ * 
+ * Versión mejorada de PublicationCard que se conecta automáticamente
+ * al servicio de favoritos del backend usando el hook usePublicationFavorite
+ * 
+ * Características:
+ * - Detecta automáticamente si la publicación es favorita
+ * - Gestiona el toggle de favoritos sin props adicionales
+ * - Muestra estado de carga mientras se procesa
+ * - Sincroniza automáticamente con el backend
+ */
+const PublicationCardWithFavorites = ({
   publication,
-  isFavorite = false,
   onView,
-  onToggleFavorite,
-  theme,
-}: PublicationCardProps) => {
+  theme = "light",
+}: PublicationCardWithFavoritesProps) => {
+  // Hook que gestiona automáticamente el estado de favorito
+  const { isFavorite, isLoading, toggleFavorite } = usePublicationFavorite(publication.id);
+
   const cardClasses = getCardWithShadowClasses(theme);
   const textPrimary = getTextPrimaryClasses(theme);
   const textSecondary = getTextSecondaryClasses(theme);
@@ -61,7 +73,6 @@ const PublicationCard = ({
   // Construct image URL from backend
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
   const imageFileName = publication.image.url;
-  // Remove leading slash if present to avoid double slashes
   const cleanFileName = imageFileName.startsWith('/') ? imageFileName.substring(1) : imageFileName;
   const imageUrl = `${baseUrl}/${cleanFileName}`;
 
@@ -130,17 +141,20 @@ const PublicationCard = ({
           </button>
           <button
             type="button"
-            onClick={() => onToggleFavorite(publication)}
+            onClick={toggleFavorite}
+            disabled={isLoading}
             className={`px-3 py-2 border-2 rounded-lg transition-all duration-300 ${
               isFavorite
                 ? "border-red-500 bg-red-50 dark:bg-red-950 hover:bg-red-100 dark:hover:bg-red-900"
                 : "border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
+            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             title={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
           >
             <Heart
               size={18}
-              className={isFavorite ? "fill-red-500 text-red-500" : ""}
+              className={`transition-all ${
+                isFavorite ? "fill-red-500 text-red-500" : ""
+              } ${isLoading ? 'animate-pulse' : ''}`}
             />
           </button>
         </div>
@@ -149,4 +163,4 @@ const PublicationCard = ({
   );
 };
 
-export default PublicationCard;
+export default PublicationCardWithFavorites;

@@ -1,6 +1,6 @@
 import { Toaster } from "sonner";
 import { Outlet } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 // Layout Components
 import Header from "../components/marketplace/layout/Header";
@@ -8,28 +8,88 @@ import Sidebar from "../components/marketplace/layout/Sidebar";
 
 // Custom Hooks
 import { useProductFilters } from "../hooks/useProductFilters";
+import { useAuth } from "../hooks/use-auth";
+
+// Contexts
+import { useFavoritesContext, FavoritesProvider } from "@/context/FavoritesContext";
+import { usePublicationsContext, PublicationsProvider } from "@/context/PublicationsContext";
 
 // Mock Data
 import {
-  mockUser,
   mockProductos,
   mockUsuarios,
   mockIncidencias,
 } from "@/data/mockData";
 
 // Navigation configuration
-import { navigationByRole } from "../lib/navigationConfig";
+import { navigationByRoleExtended } from "../lib/navigationConfig";
 
 // Role utilities
-import { shouldShowSidebar as checkShouldShowSidebar } from "../lib/roleUtils";
+import { shouldShowSidebar as checkShouldShowSidebar, getUserRole } from "../lib/roleUtils";
 
 /**
- * MarketplaceLayout - Layout wrapper para las páginas del marketplace
- * Solo contiene la estructura (header, sidebar) y el Outlet para las rutas hijas
+ * MarketplaceLayoutContent - Componente interno que consume los contexts
  */
-const MarketplaceLayout = () => {
+const MarketplaceLayoutContent = () => {
+  // Obtener el usuario real del backend
+  const { user, logout } = useAuth();
+  
+  // Extraer el rol del usuario
+  const userRole = getUserRole(user);
+  
   // Determinar si se debe mostrar el sidebar basado en el rol
-  const shouldShowSidebar = checkShouldShowSidebar(mockUser.role);
+  const shouldShowSidebar = checkShouldShowSidebar(userRole);
+
+  // Obtener contadores dinámicos desde los contexts (solo datos reales del backend)
+  const { favoritesCount } = useFavoritesContext();
+  const { totalPublications } = usePublicationsContext();
+
+  // Debug: verificar que los datos lleguen correctamente
+  console.log('📊 Badges Debug:', { favoritesCount, totalPublications, userRole });
+
+  // Crear configuración de navegación con badges dinámicos (solo del backend)
+  const navigationWithBadges = useMemo(() => {
+    const baseNavigation = navigationByRoleExtended[userRole as keyof typeof navigationByRoleExtended] || navigationByRoleExtended.ROLE_BUYER;
+    
+    console.log('🔧 Creando navigationWithBadges...', { favoritesCount, totalPublications });
+    
+    // Clonar la navegación y actualizar los badges con datos reales del backend
+    return {
+      sections: baseNavigation.sections.map(section => ({
+        ...section,
+        items: section.items.map(item => {
+          let badge: number | string | null = null;
+          
+          // Solo asignar badges que tengan datos reales del backend
+          if (item.id === 'favoritos') {
+            // Mostrar badge siempre (incluso si es 0)
+            badge = favoritesCount;
+            console.log(`✅ Badge para favoritos: ${badge}`);
+          }
+          
+          if (item.id === 'publications') {
+            // Mostrar total de publicaciones
+            badge = totalPublications;
+            console.log(`✅ Badge para publications: ${badge}`);
+          }
+          
+          // Para el vendedor, mostrar sus publicaciones
+          if (item.id === 'mis-productos') {
+            // TODO: Implementar hook useMyPublications() para obtener solo las del vendedor
+            badge = null; // Por ahora null hasta que se implemente el hook específico
+          }
+          
+          // Los demás badges permanecen null hasta que se implementen sus respectivos hooks/contexts
+          // TODO: Implementar contexto de Mensajes
+          // TODO: Implementar contexto de Incidencias
+          // TODO: Implementar contexto de Reportes
+          // TODO: Implementar contexto de Apelaciones
+          
+          return { ...item, badge };
+        }),
+      })),
+    };
+  }, [userRole, favoritesCount, totalPublications]);
   
   // En desktop, el sidebar debe estar abierto por defecto si el usuario tiene acceso
   const [sidebarOpen, setSidebarOpen] = useState(shouldShowSidebar);
@@ -74,9 +134,16 @@ const MarketplaceLayout = () => {
     setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const handleLogout = () => {
-    console.log("Logout");
-    globalThis.location.href = "/login";
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Redirigir después de cerrar sesión
+      globalThis.location.href = "/login";
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      // Redirigir de todas formas
+      globalThis.location.href = "/login";
+    }
   };
 
   // Simulate data loading
@@ -161,7 +228,7 @@ const MarketplaceLayout = () => {
     getPrioridadColor,
     getEstadoColor,
     toggleFavorite,
-    mockUser,
+    user, // Usuario real del backend
     theme, // Agregar tema al contexto
     // Incidencias filters
     filtroEstadoIncidencia,
@@ -197,7 +264,7 @@ const MarketplaceLayout = () => {
         setSidebarOpen={setSidebarOpen}
         theme={theme}
         toggleTheme={toggleTheme}
-        mockUser={mockUser}
+        user={user}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         searchFocused={searchFocused}
@@ -215,12 +282,10 @@ const MarketplaceLayout = () => {
 
       <Sidebar
         sidebarOpen={sidebarOpen}
-        navigation={
-          navigationByRole[mockUser.role as keyof typeof navigationByRole] || navigationByRole.COMPRADOR
-        }
+        navigation={navigationWithBadges}
         collapsedSections={collapsedSections}
         toggleSection={toggleSection}
-        userRole={mockUser.role}
+        userRole={userRole}
         theme={theme}
       />
 
@@ -246,6 +311,19 @@ const MarketplaceLayout = () => {
         />
       )}
     </div>
+  );
+};
+
+/**
+ * MarketplaceLayout - Wrapper con providers
+ */
+const MarketplaceLayout = () => {
+  return (
+    <PublicationsProvider>
+      <FavoritesProvider>
+        <MarketplaceLayoutContent />
+      </FavoritesProvider>
+    </PublicationsProvider>
   );
 };
 

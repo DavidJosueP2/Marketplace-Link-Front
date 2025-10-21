@@ -52,6 +52,26 @@ export const normalizeRole = (role: string | undefined | null): UserRole => {
 };
 
 /**
+ * Extrae el rol principal del usuario desde el array de roles o campo role
+ * @param user - El usuario con roles o role
+ * @returns El nombre del rol principal
+ */
+export const getUserRole = (user: { role?: string; roles?: Array<{ name?: string } | string> } | null | undefined): string | undefined => {
+  if (!user) return undefined;
+  
+  // Si tiene campo role, usarlo directamente
+  if (user.role) return user.role;
+  
+  // Si tiene array de roles, extraer el primer rol
+  if (user.roles && user.roles.length > 0) {
+    const firstRole = user.roles[0];
+    return typeof firstRole === 'string' ? firstRole : firstRole.name;
+  }
+  
+  return undefined;
+};
+
+/**
  * Verifica si el usuario tiene permisos de administrador
  * @param role - El rol del usuario
  * @returns true si el usuario es admin

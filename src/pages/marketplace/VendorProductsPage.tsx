@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useVendorPublications, useVendorPublicationsActions } from "@/hooks/marketplace";
 import { ProductoSkeleton } from "@/components/common/Skeletons";
@@ -20,6 +21,7 @@ import {
 const VendorProductsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   // Hook personalizado para acciones CRUD (delete con refresh automático)
   const { deletePublication, isDeleting } = useVendorPublicationsActions();
@@ -65,11 +67,17 @@ const VendorProductsPage = () => {
         setPendingReviewMessage(parsed);
         setShowPendingReviewAlert(true);
         sessionStorage.removeItem("pendingReviewMessage");
+        
+        // Remover completamente la cache para forzar un fetch fresco (usar el queryKey correcto)
+        queryClient.removeQueries({ 
+          queryKey: ['vendor-publications'],
+          exact: false
+        });
       } catch (error) {
         console.error("Error parsing pending review message:", error);
       }
     }
-  }, []);
+  }, [queryClient]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page - 1);
@@ -185,10 +193,13 @@ const VendorProductsPage = () => {
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={() => navigate("/marketplace-refactored/apelaciones")}
+                  onClick={() => {
+                    // Por el momento no redirige a ningún lado
+                    console.log("Realizar apelación - funcionalidad pendiente");
+                  }}
                   className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
-                  Ver mis apelaciones
+                  Realizar apelación
                 </button>
                 <button
                   onClick={() => setShowPendingReviewAlert(false)}

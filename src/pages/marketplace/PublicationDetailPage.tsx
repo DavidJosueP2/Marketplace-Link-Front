@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
-import { ArrowLeft, Heart, Package, User, Tag } from "lucide-react";
+import { ArrowLeft, Heart, Package, User, Tag, Clock } from "lucide-react";
 import { usePublicationDetail } from "@/hooks/use-publication-detail";
 import { usePublications } from "@/hooks/use-publication";
 import { getUserLocation } from "@/auth/userStorage";
@@ -305,6 +305,23 @@ const PublicationDetailPage = () => {
                   {publication.category.name}
                 </span>
               </div>
+
+              {/* Horario de atención (solo para servicios) */}
+              {publication.type === "SERVICE" && publication.workingHours && (
+                <div className={`mt-4 p-4 rounded-lg border ${borderClass} bg-amber-50 dark:bg-amber-900/20`}>
+                  <div className="flex items-start gap-3">
+                    <Clock className="text-[#FF9900] flex-shrink-0 mt-0.5" size={20} />
+                    <div>
+                      <p className={`${textPrimary} font-semibold text-sm mb-1`}>
+                        Horario de atención
+                      </p>
+                      <p className={`${textSecondary} text-sm`}>
+                        {publication.workingHours}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Información del vendedor */}

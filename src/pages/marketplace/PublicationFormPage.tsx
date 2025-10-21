@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserData } from "@/auth/userStorage";
 import publicationService from "@/services/publications/publication.service";
@@ -40,6 +41,7 @@ const PublicationFormPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const isEditMode = !!id;
 
@@ -61,6 +63,7 @@ const PublicationFormPage = () => {
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [useRegisteredLocation, setUseRegisteredLocation] = useState(false);
+  const [isService, setIsService] = useState(false);
   
   // Get user data from local storage
   const userData = getUserData();
@@ -124,8 +127,14 @@ const PublicationFormPage = () => {
             useRegisteredLocation: false,
           });
 
+          // Determinar si es servicio basado en si tiene horario
+          if (publication.workingHours) {
+            setIsService(true);
+          }
+
           // Guardar imágenes existentes para mostrar preview
           setExistingImages(publication.images.map(img => img.url));
+          setKeptExistingImages(publication.images.map(img => img.url));
         } catch (error) {
           console.error("Error loading publication:", error);
           toast({
@@ -197,6 +206,12 @@ const PublicationFormPage = () => {
           title: "¡Publicación actualizada!",
           description: "Tu publicación ha sido actualizada exitosamente",
         });
+        
+        // Invalidar caché para mostrar los cambios (usar el queryKey correcto)
+        await queryClient.invalidateQueries({ 
+          queryKey: ['vendor-publications'],
+          exact: false
+        });
       } else {
         // Crear nueva publicación
         const request: PublicationCreateRequest = {
@@ -217,6 +232,12 @@ const PublicationFormPage = () => {
           title: "¡Publicación creada!",
           description: "Tu publicación ha sido creada exitosamente",
         });
+        
+        // Invalidar caché para mostrar la nueva publicación (usar el queryKey correcto)
+        await queryClient.invalidateQueries({ 
+          queryKey: ['vendor-publications'],
+          exact: false
+        });
       }
 
       navigate("/marketplace-refactored/mis-productos");
@@ -231,14 +252,22 @@ const PublicationFormPage = () => {
       if (status === 403) {
         console.log("403 Forbidden detected, data:", errorData);
         
+        // Remover completamente la cache de publicaciones del vendedor (usar el queryKey correcto)
+        queryClient.removeQueries({ 
+          queryKey: ['vendor-publications'],
+          exact: false
+        });
+        
         // Guardar mensaje en sessionStorage para mostrarlo en la página de destino
         sessionStorage.setItem("pendingReviewMessage", JSON.stringify({
           title: errorData?.title || "Contenido peligroso detectado",
           detail: errorData?.detail || "Tu publicación ha sido enviada a revisión",
         }));
 
-        // Redirigir a mis productos
-        navigate("/marketplace-refactored/mis-productos");
+        // Esperar un momento antes de redirigir para que se limpie la caché
+        setTimeout(() => {
+          navigate("/marketplace-refactored/mis-productos");
+        }, 1000);
         return;
       }
 
@@ -444,21 +473,45 @@ const PublicationFormPage = () => {
             )}
           </div>
 
-          {/* Horario de atención (opcional) */}
+          {/* Horario de atención (solo si es servicio) */}
           <div>
-            <label htmlFor="workingHours" className={`block text-sm font-medium ${textPrimary} mb-2`}>
-              <Clock size={16} className="inline mr-1" />
-              Horario de atención (opcional)
+            <label className="flex items-center gap-2 cursor-pointer mb-3">
+              <input
+                type="checkbox"
+                checked={isService}
+                onChange={(e) => {
+                  setIsService(e.target.checked);
+                  if (!e.target.checked) {
+                    setValue("workingHours", "");
+                  }
+                }}
+                className="w-4 h-4 text-[#FF9900] focus:ring-[#FF9900] rounded"
+              />
+              <span className={`text-sm font-medium ${textPrimary}`}>
+                ¿Es un servicio?
+              </span>
             </label>
-            <input
-              {...register("workingHours")}
-              type="text"
-              id="workingHours"
-              className={`w-full px-4 py-2 border ${borderClass} rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-transparent ${
-                theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-              }`}
-              placeholder="Ej: Lun-Vie 9:00-18:00"
-            />
+
+            {isService && (
+              <div className="animate-fade-in">
+                <label htmlFor="workingHours" className={`block text-sm font-medium ${textPrimary} mb-2`}>
+                  <Clock size={16} className="inline mr-1" />
+                  Horario de atención
+                </label>
+                <input
+                  {...register("workingHours")}
+                  type="text"
+                  id="workingHours"
+                  className={`w-full px-4 py-2 border ${borderClass} rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-transparent ${
+                    theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+                  }`}
+                  placeholder="Ej: Lun-Vie 9:00-18:00"
+                />
+                <p className={`${textSecondary} text-xs mt-1`}>
+                  Especifica los días y horarios en que ofreces tu servicio
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -527,7 +580,7 @@ const PublicationFormPage = () => {
             onImagesChange={setImages}
             onExistingImagesChange={setKeptExistingImages}
             maxImages={5}
-            minImages={isEditMode ? 0 : 1}
+            minImages={1}
             error={fieldErrors.images}
             theme={theme}
             existingImageUrls={existingImages}

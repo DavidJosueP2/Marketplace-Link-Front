@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useVendorPublications } from "@/hooks/marketplace/use-vendor-publications";
 import { ProductoSkeleton } from "@/components/common/Skeletons";
 import Pagination from "@/components/common/Pagination";
-import { Package, Plus, Edit, Trash2, Eye, AlertTriangle, X } from "lucide-react";
+import { Package, Plus, Edit, Trash2, Eye } from "lucide-react";
 import type { PublicationSummary } from "@/services/publications/interfaces/PublicationSummary";
 import {
   getTextPrimaryClasses,
@@ -13,10 +13,10 @@ import {
 } from "@/lib/themeHelpers";
 
 /**
- * VendorProductsPage - Página de gestión de publicaciones del vendedor
+ * MisProductosPage - Página de gestión de publicaciones del vendedor
  * Muestra las publicaciones del vendedor autenticado con datos reales del backend
  */
-const VendorProductsPage = () => {
+const MisProductosPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -26,11 +26,6 @@ const VendorProductsPage = () => {
   
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [showPendingReviewAlert, setShowPendingReviewAlert] = useState(false);
-  const [pendingReviewMessage, setPendingReviewMessage] = useState<{
-    title: string;
-    detail: string;
-  } | null>(null);
 
   // Theme classes
   const textPrimary = getTextPrimaryClasses(theme);
@@ -47,21 +42,6 @@ const VendorProductsPage = () => {
   const publications = data?.content || [];
   const totalPages = data?.totalPages || 0;
   const totalElements = data?.totalElements || 0;
-
-  // Verificar si hay mensaje de revisión pendiente al cargar
-  useEffect(() => {
-    const message = sessionStorage.getItem("pendingReviewMessage");
-    if (message) {
-      try {
-        const parsed = JSON.parse(message);
-        setPendingReviewMessage(parsed);
-        setShowPendingReviewAlert(true);
-        sessionStorage.removeItem("pendingReviewMessage");
-      } catch (error) {
-        console.error("Error parsing pending review message:", error);
-      }
-    }
-  }, []);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page - 1);
@@ -126,45 +106,6 @@ const VendorProductsPage = () => {
 
   return (
     <div className="animate-fade-in">
-      {/* Alerta de Contenido en Revisión (403) */}
-      {showPendingReviewAlert && pendingReviewMessage && (
-        <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-6 relative">
-          <button
-            onClick={() => setShowPendingReviewAlert(false)}
-            className="absolute top-4 right-4 text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-200"
-          >
-            <X size={20} />
-          </button>
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0">
-              <AlertTriangle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-yellow-900 dark:text-yellow-200 mb-2">
-                {pendingReviewMessage.title}
-              </h3>
-              <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-4">
-                {pendingReviewMessage.detail}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => navigate("/marketplace-refactored/apelaciones")}
-                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  Ver mis apelaciones
-                </button>
-                <button
-                  onClick={() => setShowPendingReviewAlert(false)}
-                  className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-yellow-800 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Entendido
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div>
@@ -336,5 +277,4 @@ const VendorProductsPage = () => {
     </div>
   );
 };
-
-export default VendorProductsPage;
+export default MisProductosPage;

@@ -4,6 +4,7 @@ import type { PublicationFilters } from "./interfaces/PublicationFiters";
 import type { VendorPublicationFilters } from "./interfaces/VendorPublicationFilters";
 import type { PublicationSummary } from "./interfaces/PublicationSummary";
 import type { PublicationResponse } from "./interfaces/PublicationResponse";
+import type { PublicationCreateRequest } from "./interfaces/PublicationCreateRequest";
 
 const publicationService = {
 
@@ -43,6 +44,36 @@ getAllByVendor: async (filters: VendorPublicationFilters): Promise<PageResponse<
 
 getById: async (id: number): Promise<PublicationResponse> => {
   const response = await api.get<PublicationResponse>(`/api/publications/${id}`);
+  return response.data;
+},
+
+create: async (request: PublicationCreateRequest): Promise<PublicationResponse> => {
+  const formData = new FormData();
+  
+  // Agregar campos de texto
+  formData.append('name', request.name);
+  formData.append('description', request.description);
+  formData.append('price', request.price.toString());
+  formData.append('latitude', request.latitude.toString());
+  formData.append('longitude', request.longitude.toString());
+  formData.append('categoryId', request.categoryId.toString());
+  formData.append('vendorId', request.vendorId.toString());
+  
+  if (request.workingHours) {
+    formData.append('workingHours', request.workingHours);
+  }
+  
+  // Agregar imágenes
+  request.images.forEach((image) => {
+    formData.append('images', image);
+  });
+
+  const response = await api.post<PublicationResponse>('/api/publications', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  
   return response.data;
 }
 

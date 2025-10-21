@@ -147,7 +147,7 @@ const LocationPicker = ({
           className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
         >
           <Crosshair size={16} />
-          Usar mi ubicación
+          Usar ubicación actual
         </button>
       </div>
 

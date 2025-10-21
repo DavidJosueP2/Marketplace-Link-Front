@@ -187,8 +187,6 @@ const PublicationDetailPage = () => {
           {fromMyProducts ? "Volver a mis publicaciones" : "Volver al catálogo"}
         </button>
         <span className={textSecondary}>/</span>
-        <span className={textSecondary}>{publication.category.name}</span>
-        <span className={textSecondary}>/</span>
         <span className={textPrimary}>{publication.name}</span>
       </div>
 

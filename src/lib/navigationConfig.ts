@@ -11,12 +11,11 @@ import {
   Shield,
   MessageSquare,
   Heart,
-  Search,
 } from "lucide-react";
-import { mockIncidencias, mockProductos } from "@/data/mockData";
 
 /**
  * Configuración de navegación por rol de usuario
+ * Los badges se calculan dinámicamente en el layout usando hooks
  */
 export const navigationByRole = {
   COMPRADOR: {
@@ -26,13 +25,13 @@ export const navigationByRole = {
         items: [
           { name: "Inicio", id: "inicio", icon: Home, badge: null },
           {
-            name: "Productos",
-            id: "productos",
+            name: "Publicaciones",
+            id: "publications",
             icon: ShoppingBag,
-            badge: mockProductos.length,
+            badge: null, // Se calcula dinámicamente en el layout
           },
-          { name: "Favoritos", id: "favoritos", icon: Heart, badge: 0 },
-          { name: "Mensajes", id: "mensajes", icon: MessageSquare, badge: 3 },
+          { name: "Favoritos", id: "favoritos", icon: Heart, badge: null }, // Se calcula dinámicamente
+          { name: "Mensajes", id: "mensajes", icon: MessageSquare, badge: null }, // Se calcula dinámicamente
         ],
       },
     ],
@@ -49,10 +48,10 @@ export const navigationByRole = {
             badge: null,
           },
           {
-            name: "Mis Productos",
+            name: "Mis Publicaciones",
             id: "mis-productos",
             icon: Package,
-            badge: mockProductos.length,
+            badge: null, // Se calcula dinámicamente en el layout
           },
         ],
       },
@@ -60,8 +59,8 @@ export const navigationByRole = {
         title: "Gestión",
         items: [
           { name: "Publicar", id: "publicar", icon: Store, badge: null },
-          { name: "Apelaciones", id: "apelaciones", icon: FileText, badge: 2 },
-          { name: "Mensajes", id: "mensajes", icon: MessageSquare, badge: 5 },
+          { name: "Apelaciones", id: "apelaciones", icon: FileText, badge: null }, // Se calcula dinámicamente
+          { name: "Mensajes", id: "mensajes", icon: MessageSquare, badge: null }, // Se calcula dinámicamente
         ],
       },
     ],
@@ -86,10 +85,9 @@ export const navigationByRole = {
             name: "Incidencias",
             id: "incidencias",
             icon: AlertTriangle,
-            badge: mockIncidencias.filter((i) => i.estado === "pendiente")
-              .length,
+            badge: null, // Se calcula dinámicamente en el layout
           },
-          { name: "Reportes", id: "reportes", icon: Shield, badge: 8 },
+          { name: "Reportes", id: "reportes", icon: Shield, badge: null }, // Se calcula dinámicamente en el layout
         ],
       },
       {
@@ -97,10 +95,10 @@ export const navigationByRole = {
         items: [
           { name: "Usuarios", id: "usuarios", icon: Users, badge: null },
           {
-            name: "Productos",
-            id: "productos",
+            name: "Publicaciones",
+            id: "publications",
             icon: Package,
-            badge: mockProductos.length,
+            badge: null, // Se calcula dinámicamente en el layout
           },
         ],
       },
@@ -126,20 +124,19 @@ export const navigationByRole = {
             name: "Incidencias",
             id: "incidencias",
             icon: AlertTriangle,
-            badge: mockIncidencias.filter((i) => i.estado === "pendiente")
-              .length,
+            badge: null, // Se calcula dinámicamente en el layout
           },
-          { name: "Reportes", id: "reportes", icon: Shield, badge: 8 },
+          { name: "Reportes", id: "reportes", icon: Shield, badge: null }, // Se calcula dinámicamente en el layout
         ],
       },
       {
         title: "Gestión",
         items: [
           {
-            name: "Productos",
-            id: "productos",
+            name: "Publicaciones",
+            id: "publications",
             icon: Package,
-            badge: mockProductos.length,
+            badge: null, // Se calcula dinámicamente en el layout
           },
           { name: "Usuarios", id: "usuarios", icon: Users, badge: null },
           { name: "Moderadores", id: "moderadores", icon: Shield, badge: null },

@@ -4,11 +4,10 @@ import roleService from "@/services/role.service";
 import Profile from "@/pages/Profile";
 
 import {
-  DashboardPage, ProductsPage, PublicationsPage, PublicationDetailPage,
+  DashboardPage, PublicationsPage, PublicationDetailPage,
   FavoritosPage, UsuariosPage, ConfiguracionPage, IncidenciasPage,
   ReportesPage, MensajesPage, ApelacionesPage, ModeradoresPage
 } from "@/pages/marketplace";
-import ProductDetailPage from "@/pages/marketplace/ProductDetailPage";
 import VendorProductsPage from "@/pages/marketplace/VendorProductsPage";
 import PublicationFormPage from "@/pages/marketplace/PublicationFormPage";
 
@@ -26,8 +25,6 @@ export const protectedRoutes = [{
     { index: true, element: <RoleBasedHome /> },
 
     // General access (any authenticated user)
-    { path: "productos", element: <ProductsPage /> },
-    { path: "producto/:id", element: <ProductDetailPage /> },
     { path: "publications", element: <PublicationsPage /> },
     { path: "publication/:id", element: <PublicationDetailPage /> },
     { path: "profile", element: <Profile /> },

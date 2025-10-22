@@ -144,7 +144,7 @@ const ImageUpload = ({
               : "text-gray-500 dark:text-gray-400"
           }`}
         >
-          Mínimo {minImages}, máximo {maxImages} imágenes • PNG, JPG, JPEG
+          Formatos permitidos: PNG, JPG, JPEG
         </p>
       </div>
 

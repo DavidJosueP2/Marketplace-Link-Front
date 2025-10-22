@@ -162,7 +162,7 @@ const Header = ({
               <span className="text-white font-bold text-sm">M</span>
             </div>
             <span className={`font-bold hidden sm:block text-lg tracking-tight ${getTextClasses()}`}>
-              Marketplace
+            Marketplace Link
             </span>
           </button>
         </div>

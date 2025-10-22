@@ -60,9 +60,6 @@ const ReportPublicationModal = ({
       if (response.publication_status === "UNDER_REVIEW") {
         toast.info(
           "Tu reporte fue enviado. La publicación está ahora bajo revisión por el equipo de moderación.",
-          {
-            description: "Te notificaremos si se toma una decisión sobre ella.",
-          },
         );
         onReported?.();
       } else {
@@ -83,16 +80,6 @@ const ReportPublicationModal = ({
           setError(validationMessages + ".");
           return;
         }
-        if (payload.type === "forbidden" && payload.data?.blocked_until) {
-          const until = formatBackendDate(payload.data.blocked_until);
-          const message =
-            payload.data?.detail ||
-            payload.message ||
-            "Has sido bloqueado temporalmente.";
-          setError(`${message} No podrás volver a reportarla hasta ${until}.`);
-          return;
-        }
-
         setError(payload.message || "Error enviando el reporte");
       } else {
         setError("Error desconocido al enviar el reporte");

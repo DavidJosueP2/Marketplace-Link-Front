@@ -20,16 +20,22 @@ import {
 } from "@/pages/marketplace";
 import VendorProductsPage from "@/pages/marketplace/VendorProductsPage";
 import PublicationFormPage from "@/pages/marketplace/PublicationFormPage";
+import IncidencesPage from "@/pages/marketplace/incidences/IncidencesPage";
+import { Path } from "leaflet";
+import IncidenceDetailPage from "@/pages/marketplace/incidences/IncidenceDetailPage";
 
 export const protectedRoutes = [
   {
     protected: true,
     path: "/marketplace-refactored",
-    requiredRoles: [roleService.getRoleAdmin(), roleService.getRoleModerator()],
-    layout: <MarketplaceLayout />,
+    allowedRoles: [roleService.getRoleAdmin(), roleService.getRoleModerator()],
+    element: <MarketplaceLayout />,
+    layout: null,
     children: [
-      { path: "incidencias", element: <IncidenciasPage /> },
-      // { path: "/admin/dashboard", element: <DashboardPage /> },
+      { path: "incidencias", element: <IncidencesPage /> },
+      { path: "incidencias/:publicUi", element: <IncidenceDetailPage /> },
+      //{ path: "apelaciones", element: <ApelacionesPage /> },
+      //  { path: "/admin/dashboard", element: <DashboardPage /> },
       // Ejemplo: esta ruta puede ser accedida tanto por ADMIN como por MODERATOR
       // { path: "/admin/users", element: <UsersPage />, allowedRoles: ["ADMIN", "MODERATOR"] },
     ],
@@ -84,10 +90,6 @@ export const protectedRoutes = [
       { path: "publish", element: <PublicationFormPage /> },
       { path: "mensajes", element: <MensajesPage /> },
       { path: "usuarios", element: <UsuariosPage /> },
-
-      { path: "reportes", element: <ReportesPage /> },
-      { path: "apelaciones", element: <ApelacionesPage /> },
-      { path: "moderadores", element: <ModeradoresPage /> },
       { path: "configuracion", element: <ConfiguracionPage /> },
       { path: "profile", element: <Profile /> },
     ],

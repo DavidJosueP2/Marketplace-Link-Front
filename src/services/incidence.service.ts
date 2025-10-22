@@ -1,20 +1,6 @@
+import type { ApiResponseIncidence, ClaimIncidenceResponse, DecisionResponse, IncidenceDetailResponse, ReportResponse, RequestMakeDecision, RequestMakeDecision, RequestPagination, RequestUserReport } from "@/pages/marketplace/incidences/types/d.types";
 import api from "./api";
 
-/** Payload para reportar una publicación desde frontend */
-export interface RequestUserReport {
-  publicationId: number;
-  reason: string; // SPAM | INAPPROPRIATE | SCAM | OTHER
-  comment: string;
-}
-
-/** Respuesta genérica del endpoint de reportes */
-export interface ReportResponse {
-  incidence_id: string;
-  publication_id: number;
-  message: string;
-  created_at: Date;
-  publication_status: string;
-}
 
 const incidenceService = {
 
@@ -28,6 +14,45 @@ const incidenceService = {
     const response = await api.post<ReportResponse>(`/api/incidences/report`, body);
     return response.data;
   },
+
+  fetchAllUnreviewed: async (pagination?: RequestPagination) => {
+    const response = await api.get<ApiResponseIncidence>(`/api/incidences/all`, {
+      params: {
+        page: pagination?.page ?? 0,
+        size: pagination?.size ?? 10,
+      },
+    });
+    return response.data;
+  },
+
+  fetchAllReviewed: async (pagination?: RequestPagination) => {
+    const response = await api.get<ApiResponseIncidence>(`/api/incidences/my`, {
+      params: {
+        page: pagination?.page ?? 0,
+        size: pagination?.size ?? 10,
+      },
+    });
+    return response.data;
+  },
+
+  fetchIncidenceById: async (publicUi: string) => {
+    const response = await api.get<IncidenceDetailResponse>(`/api/incidences/${publicUi}`);
+    return response.data;
+  },
+
+  claim: async (publicUi: string) => {
+    const response = await api.post<ClaimIncidenceResponse>(`/api/incidences/claim`, {
+      incidence_id: publicUi,
+    });
+
+    return response.data;
+  },
+
+  makeDecision: async (payload: RequestMakeDecision) => {
+    const response = await api.post<DecisionResponse>(`/api/incidences/decision`, payload);
+    return response.data;
+  },
+
 };
 
 export default incidenceService;

@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import ReactDOM from "react-dom";
 
 const Modal = ({
   isOpen,
@@ -27,9 +28,9 @@ const Modal = ({
     }
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 overflow-y-auto"
       onClick={handleBackdropClick}
     >
       <div
@@ -76,6 +77,7 @@ const Modal = ({
       </div>
     </div>
   );
+  return ReactDOM.createPortal(modalContent, document.body);
 };
 
 export default Modal;

@@ -5,6 +5,7 @@ import {
   getTextSecondaryClasses,
 } from "@/lib/themeHelpers";
 import { useEffect, useRef, useState } from "react";
+import ReportPublicationModal from "@/components/modals/ReportPublicationModal";
 
 interface PublicationImage {
   id: number;
@@ -26,6 +27,7 @@ interface PublicationCardProps {
   isFavorite?: boolean;
   onView: (publication: Publication) => void;
   onToggleFavorite: (publication: Publication) => void;
+  onReported?: () => void;
   theme: "light" | "dark";
 }
 
@@ -53,6 +55,7 @@ const PublicationCard = ({
   isFavorite = false,
   onView,
   onToggleFavorite,
+  onReported,
   theme,
 }: PublicationCardProps) => {
   const cardClasses = getCardWithShadowClasses(theme);
@@ -69,6 +72,7 @@ const PublicationCard = ({
   const imageUrl = `${baseUrl}/${cleanFileName}`;
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -126,7 +130,10 @@ const PublicationCard = ({
             role="menu"
           >
             <button
-              onClick={() => console.log("Reportar publicación")}
+              onClick={() => {
+                setMenuOpen(false);
+                setIsReportModalOpen(true);
+              }}
               role="menuitem"
               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900 cursor-pointer rounded"
             >
@@ -201,6 +208,20 @@ const PublicationCard = ({
             />
           </button>
         </div>
+
+        {/* === MODAL DE REPORTE === */}
+        {isReportModalOpen && (
+          <ReportPublicationModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            publicationId={publication.id}
+            onReported={() => {
+              setIsReportModalOpen(false);
+              onReported?.();
+            }}
+            theme={theme}
+          />
+        )}
       </div>
     </div>
   );

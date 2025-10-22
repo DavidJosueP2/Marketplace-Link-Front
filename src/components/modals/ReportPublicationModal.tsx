@@ -117,7 +117,11 @@ const ReportPublicationModal = ({
     <div className="space-y-6">
       {/* Descripción superior */}
       <div className="text-center">
-        <p className={`${textSecondary} text-sm`}>
+        <p
+          className={`text-sm ${
+            theme === "dark" ? "text-gray-300" : "text-gray-600"
+          }`}
+        >
           Selecciona el motivo del reporte y añade un comentario opcional.
         </p>
       </div>
@@ -126,7 +130,9 @@ const ReportPublicationModal = ({
       <div className="space-y-2">
         <label
           htmlFor="report-reason"
-          className="block text-sm font-semibold text-gray-800 dark:text-gray-200"
+          className={`block text-sm font-semibold ${
+            theme === "dark" ? "text-gray-200" : "text-gray-800"
+          }`}
         >
           Motivo del reporte
         </label>
@@ -138,14 +144,24 @@ const ReportPublicationModal = ({
             value={customReason}
             onChange={(e) => setCustomReason(e.target.value)}
             placeholder="Escribe el motivo..."
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-[#FF9900] focus:outline-none transition-all"
+            className={`w-full rounded-lg border px-3 py-2 text-sm transition-all
+            ${
+              theme === "dark"
+                ? "bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-[#FF9900]"
+                : "bg-white border-gray-300 text-gray-900 focus:ring-[#FF9900]"
+            } focus:ring-2 focus:outline-none`}
           />
         ) : (
           <select
             id="report-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-[#FF9900] focus:outline-none transition-all"
+            className={`w-full rounded-lg border px-3 py-2 text-sm transition-all
+            ${
+              theme === "dark"
+                ? "bg-gray-700 border-gray-600 text-gray-100 focus:ring-[#FF9900]"
+                : "bg-white border-gray-300 text-gray-900 focus:ring-[#FF9900]"
+            } focus:ring-2 focus:outline-none`}
           >
             <option value="">Seleccionar motivo</option>
             {reasons.map((r) => (
@@ -174,7 +190,9 @@ const ReportPublicationModal = ({
       <div className="space-y-2">
         <label
           htmlFor="report-comment"
-          className="block text-sm font-semibold text-gray-800 dark:text-gray-200"
+          className={`block text-sm font-semibold ${
+            theme === "dark" ? "text-gray-200" : "text-gray-800"
+          }`}
         >
           Comentario (opcional)
         </label>
@@ -184,22 +202,36 @@ const ReportPublicationModal = ({
           onChange={(e) => setComment(e.target.value)}
           rows={4}
           placeholder="Describe brevemente por qué reportas esta publicación..."
-          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-[#FF9900] focus:outline-none transition-all"
+          className={`w-full rounded-lg border px-3 py-2 text-sm transition-all
+          ${
+            theme === "dark"
+              ? "bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-[#FF9900]"
+              : "bg-white border-gray-300 text-gray-900 focus:ring-[#FF9900]"
+          } focus:ring-2 focus:outline-none`}
         />
-        <div className="text-xs text-gray-500 flex justify-end">
+        <div
+          className={`text-xs flex justify-end ${
+            theme === "dark" ? "text-gray-400" : "text-gray-500"
+          }`}
+        >
           {comment.length}/255
         </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-3 py-2 rounded-lg">
+        <div
+          className={`text-sm px-3 py-2 rounded-lg border ${
+            theme === "dark"
+              ? "text-red-100 bg-[#3F1E1E] border border-[#5C1F1F]"
+              : "text-red-700 bg-red-100 border border-red-300"
+          }`}
+        >
           {error}
         </div>
       )}
     </div>
   );
-
   const footer = (
     <>
       <button
@@ -239,7 +271,7 @@ const ReportPublicationModal = ({
       size="md"
       showCloseButton={true}
       closeOnBackdrop={true}
-      icon={<></>}
+      theme={theme}
     >
       <div className="px-6 py-2">{body}</div>
     </Modal>

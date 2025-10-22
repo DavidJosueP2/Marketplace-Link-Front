@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/shadcn/badge";
 import { Card } from "@/components/ui/shadcn/card";
 import { Button } from "@/components/ui/shadcn/button";
@@ -6,20 +6,19 @@ import { ArrowLeft, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import incidenceService from "@/services/incidence.service";
+import DecisionModal from "@/components/modals/DecisionModal";
+
 import type {
   IncidenceDetailResponse,
   RequestMakeDecision,
 } from "./types/d.types";
-import Modal from "@/components/marketplace/common/Modal";
+import { ApiError } from "@/services/api";
 
 export default function IncidenceDetailPage() {
   const navigate = useNavigate();
 
   // para la decision (en caso de estar en el estado de en revision y pendiente)
   const [showDecisionModal, setShowDecisionModal] = useState(false);
-  const [decision, setDecision] = useState<"APPROVED" | "REJECTED" | "">("");
-  const [comment, setComment] = useState("");
-  const [loadingDecision, setLoadingDecision] = useState(false);
 
   // paginación local
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,15 +35,25 @@ export default function IncidenceDetailPage() {
     const fetchIncidence = async () => {
       try {
         if (!publicUi) {
-          toast.error("Invalid incidence ID");
+          toast.error("No se ha encontrado el id de la incidencia.");
           return;
         }
 
         const data = await incidenceService.fetchIncidenceById(publicUi);
         setIncidenceDetailResponse(data);
-      } catch (error) {
-        console.error(error);
-        toast.error("Error loading incidence details");
+      } catch (err: any) {
+        if (err instanceof ApiError) {
+          const payload = err.payload;
+
+          const message =
+            payload?.message ||
+            payload?.data?.detail ||
+            "No se pudo reclamar la incidencia.";
+
+          toast.error(message);
+        } else {
+          toast.error("Error inesperado al reclamar la incidencia.");
+        }
       }
     };
 
@@ -62,49 +71,19 @@ export default function IncidenceDetailPage() {
           "Incidencia reclamada correctamente",
       );
       navigate("/marketplace-refactored/incidencias");
-    } catch (error: any) {
-      console.error(error);
-      const msg =
-        error.response?.data?.message || "No se pudo reclamar la incidencia.";
-      toast.error(msg);
-    }
-  };
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        const payload = err.payload;
 
-  // para hacer la decision
-  const handleDecision = async () => {
-    if (!publicUi) return;
+        const message =
+          payload?.message ||
+          payload?.data?.detail ||
+          "No se pudo reclamar la incidencia.";
 
-    if (!decision || comment.trim().length < 10) {
-      toast.error(
-        "Debes seleccionar una decisión y escribir un comentario (mínimo 10 caracteres).",
-      );
-      return;
-    }
-
-    const payload: RequestMakeDecision = {
-      incidence_id: publicUi,
-      comment: comment.trim(),
-      decision,
-    };
-
-    try {
-      setLoadingDecision(true);
-      const res = await incidenceService.makeDecision(payload);
-      toast.success(res.message || "Decisión registrada correctamente");
-
-      // refresca la incidencia para ver el nuevo estado/decisión
-      const updatedData = await incidenceService.fetchIncidenceById(publicUi);
-      setIncidenceDetailResponse(updatedData);
-
-      // Cierra el modal
-      setShowDecisionModal(false);
-    } catch (error: any) {
-      console.error(error);
-      toast.error(
-        error.response?.data?.message || "Error al registrar la decisión.",
-      );
-    } finally {
-      setLoadingDecision(false);
+        toast.error(message);
+      } else {
+        toast.error("Error inesperado al reclamar la incidencia.");
+      }
     }
   };
 
@@ -150,58 +129,6 @@ export default function IncidenceDetailPage() {
       REJECTED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
     }[incidence_decision] ||
     "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
-
-  const bodyModalDecision = (
-    <div className="space-y-4">
-      {/* Selector de decisión */}
-      <div>
-        <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
-          Decisión
-        </label>
-        <select
-          className="w-full border rounded-md px-3 py-2 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200"
-          value={decision}
-          onChange={(e) =>
-            setDecision(e.target.value as "APPROVED" | "REJECTED")
-          }
-        >
-          <option value="">Selecciona una opción</option>
-          <option value="APPROVED">Aprobar publicación</option>
-          <option value="REJECTED">Rechazar publicación</option>
-        </select>
-      </div>
-
-      {/* Comentario */}
-      <div>
-        <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">
-          Comentario
-        </label>
-        <textarea
-          className="w-full border rounded-md px-3 py-2 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 resize-none"
-          rows={4}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Explica brevemente la razón de tu decisión..."
-        />
-        <p className="text-xs text-gray-400 mt-1">Mínimo 10 caracteres.</p>
-      </div>
-    </div>
-  );
-
-  const footerModalDecision = (
-    <>
-      <Button variant="outline" onClick={() => setShowDecisionModal(false)}>
-        Cancelar
-      </Button>
-      <Button
-        className="bg-green-600 hover:bg-green-700 text-white"
-        onClick={handleDecision}
-        disabled={loadingDecision}
-      >
-        {loadingDecision ? "Guardando..." : "Confirmar decisión"}
-      </Button>
-    </>
-  );
 
   return (
     <div className="space-y-6">
@@ -257,28 +184,39 @@ export default function IncidenceDetailPage() {
               </Badge>
             </div>
 
-            {/* Botones de acción según estado */}
-            {status === "PENDING_REVIEW" &&
-              incidence_decision === "PENDING" && (
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleClaim}
+            >
+              Atender incidencia
+            </Button>
+
+            {status === "UNDER_REVIEW" && incidence_decision === "PENDING" && (
+              <>
                 <Button
                   variant="default"
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={handleClaim}
+                  className="bg-[#FF9900] hover:bg-[#FFB84D] text-white"
+                  onClick={() => setShowDecisionModal(true)}
                 >
-                  Atender incidencia
+                  Hacer decisión
                 </Button>
-              )}
 
-            {status === "UNDER_REVIEW" && incidence_decision === "PENDING" && (
-              <Button
-                variant="default"
-                size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => setShowDecisionModal(true)}
-              >
-                Hacer decisión
-              </Button>
+                <DecisionModal
+                  isOpen={showDecisionModal}
+                  onClose={() => setShowDecisionModal(false)}
+                  incidenceId={publicUi!}
+                  onDecided={async () => {
+                    const updated = await incidenceService.fetchIncidenceById(
+                      publicUi!,
+                    );
+                    setIncidenceDetailResponse(updated);
+                  }}
+                  theme="light"
+                />
+              </>
             )}
           </div>
         </div>
@@ -368,19 +306,6 @@ export default function IncidenceDetailPage() {
           </div>
         )}
       </Card>
-
-      {/* Para el modal de decisiones. SSolo disponible en el estado de UNDER_REVIEW y PENDING
-       */}
-      <Modal
-        isOpen={showDecisionModal}
-        onClose={() => setShowDecisionModal(false)}
-        title="Registrar decisión"
-        size="md"
-        theme="light"
-        footer={footerModalDecision}
-      >
-        {bodyModalDecision}
-      </Modal>
     </div>
   );
 }

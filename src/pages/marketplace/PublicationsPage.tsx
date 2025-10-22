@@ -15,6 +15,7 @@ import {
   getBorderClasses,
 } from "@/lib/themeHelpers";
 import type { PublicationSummary } from "@/services/publications/interfaces/PublicationSummary";
+import { toast } from "sonner";
 
 /**
  * Wrapper component que conecta PublicationCard con el sistema de favoritos del backend
@@ -22,10 +23,16 @@ import type { PublicationSummary } from "@/services/publications/interfaces/Publ
 interface PublicationCardWrapperProps {
   publication: PublicationSummary;
   onView: (publication: PublicationSummary) => void;
+  onReported?: () => void;
   theme: "light" | "dark";
 }
 
-function PublicationCardWrapper({ publication, onView, theme }: Readonly<PublicationCardWrapperProps>) {
+function PublicationCardWrapper({
+  publication,
+  onView,
+  onReported,
+  theme,
+}: Readonly<PublicationCardWrapperProps>) {
   const { isFavorite } = useIsFavorite(publication.id);
   const { toggleFavorite } = useFavorites();
 
@@ -43,6 +50,7 @@ function PublicationCardWrapper({ publication, onView, theme }: Readonly<Publica
       isFavorite={isFavorite}
       onView={onView}
       onToggleFavorite={handleToggleFavorite}
+      onReported={onReported}
       theme={theme}
     />
   );
@@ -54,7 +62,7 @@ const PublicationsPage = () => {
   // Get theme from layout context
   const context = useOutletContext<{ theme?: "light" | "dark" }>();
   const theme = context?.theme || "light";
-  
+
   // Filter states
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(12);
@@ -68,10 +76,11 @@ const PublicationsPage = () => {
   const userLocation = getUserLocation();
 
   // Fetch publications with filters
-  const { data, isLoading, error } = usePublications({
+  const { data, refetch, isLoading, error } = usePublications({
     page: currentPage,
     size: itemsPerPage,
-    categoryIds: selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined,
+    categoryIds:
+      selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined,
     minPrice: minPrice > 0 ? minPrice : undefined,
     maxPrice: maxPrice < 10000 ? maxPrice : undefined,
     lat: userLocation.latitude,
@@ -101,7 +110,7 @@ const PublicationsPage = () => {
 
   const handleViewPublication = (publication: PublicationSummary) => {
     // Limpiar flag ya que viene desde el catálogo público
-    sessionStorage.removeItem('fromMyProducts');
+    sessionStorage.removeItem("fromMyProducts");
     navigate(`/marketplace-refactored/publication/${publication.id}`);
   };
 
@@ -157,7 +166,8 @@ const PublicationsPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div className="flex-1">
             <h1 className="text-[#FF9900] dark:text-[#FFB84D] text-2xl sm:text-3xl lg:text-4xl font-bold italic mb-2">
-              ¡Bienvenido! Explora diferentes servicios y productos en nuestra plataforma.
+              ¡Bienvenido! Explora diferentes servicios y productos en nuestra
+              plataforma.
             </h1>
           </div>
           <div className="flex gap-2">
@@ -189,6 +199,9 @@ const PublicationsPage = () => {
                   key={publication.id}
                   publication={publication}
                   onView={handleViewPublication}
+                  onReported={() => {
+                    refetch();
+                  }}
                   theme={theme}
                 />
               ))}

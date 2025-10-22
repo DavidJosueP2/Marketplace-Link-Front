@@ -32,7 +32,6 @@ export const protectedRoutes = [
     children: [
       { path: "incidencias", element: <IncidencesPage /> },
       { path: "incidencias/:publicUi", element: <IncidenceDetailPage /> },
-      { path: "incidencias/:publicUi/apelacion", element: <AppealPage /> },
       //{ path: "apelaciones", element: <ApelacionesPage /> },
       //  { path: "/admin/dashboard", element: <DashboardPage /> },
       // Ejemplo: esta ruta puede ser accedida tanto por ADMIN como por MODERATOR
@@ -60,6 +59,7 @@ export const protectedRoutes = [
     allowedRoles: [roleService.getRoleSeller()],
     layout: <AuthLayout />,
     children: [
+      { path: "incidencias/:publicUi/apelacion", element: <AppealPage /> },
       // { path: "/sales", element: <SalesPage /> },
     ],
   },

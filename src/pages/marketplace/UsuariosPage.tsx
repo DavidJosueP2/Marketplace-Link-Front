@@ -1,313 +1,565 @@
+import { useState, useMemo, useEffect } from "react";
+import { Edit, Unlock, RotateCcw, Ban, UserX, Users } from "lucide-react";
+import { Button } from "@/components/ui/shadcn/button";
 import {
-  UserPlus,
-  Edit,
-  Trash2,
-  Search,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-} from "lucide-react";
-import { useOutletContext } from "react-router-dom";
-import { toast } from "sonner";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/shadcn/tooltip";
+import {
+  UserEditModal,
+  UserKPIs,
+  ConfirmActionModal,
+  UserFilters,
+} from "@/components/users";
+import {
+  useUsersPaginated,
+  useBlockUser,
+  useUnblockUser,
+  useActivateUser,
+  useDeactivateUser,
+} from "@/hooks/users";
+import DataTable from "@/components/ui/table/data-table-pb";
+import CenteredSpinner from "@/components/ui/CenteredSpinner";
+import { useAuth } from "@/hooks/use-auth";
+import type { UserResponse } from "@/services/users/types";
 
 /**
- * UsuariosPage - Página de gestión de usuarios (Moderador/Administrador)
+ * UsuariosPage - Gestión de usuarios (Compradores y Vendedores)
+ * 
+ * Solo muestra BUYERS y SELLERS (no moderadores ni admins)
+ * Incluye usuarios eliminados para poder reactivarlos
  */
-const UsuariosPage = () => {
-  // Obtener datos del layout mediante useOutletContext
-  const {
-    usuarios = [],
-    filtroRolUsuario = "todos",
-    setFiltroRolUsuario: onFiltroRolChange,
-    filtroEstadoUsuario = "todos",
-    setFiltroEstadoUsuario: onFiltroEstadoChange,
-    searchUsuario = "",
-    setSearchUsuario: onSearchChange,
-  } = useOutletContext();
+export default function UsuariosPage() {
+  const { user: currentUser } = useAuth();
+  
+  // Modales
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"block" | "unblock" | "activate" | "deactivate" | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
 
-  const isLoading = false;
+  // Filtros locales
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery2, setSearchQuery2] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+
+  // Paginación
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+
+  // Permisos
+  const isAdmin = currentUser?.roles?.some(r => typeof r !== 'string' && r.name === "ROLE_ADMIN") || false;
+  const isModerator = currentUser?.roles?.some(r => typeof r !== 'string' && r.name === "ROLE_MODERATOR") || false;
+
+  // Debug: Mostrar permisos del usuario actual
+  console.log('🔐 Permisos del usuario actual:', {
+    username: currentUser?.username,
+    roles: currentUser?.roles,
+    isAdmin,
+    isModerator,
+  });
+
+  // Combinar las 2 búsquedas para enviar al servidor
+  const combinedSearch = [searchQuery, searchQuery2].filter(Boolean).join(" ");
+
+  // Query paginada - solo BUYER y SELLER, incluye eliminados
+  const { data: paginatedData, isLoading, error } = useUsersPaginated({
+    page,
+    size,
+    search: combinedSearch || undefined,
+    roles: ["ROLE_BUYER", "ROLE_SELLER"],
+    includeDeleted: true, // Importante: incluir eliminados para reactivarlos
+    sortBy: "id",
+    sortDir: "desc",
+  });
+
+  // Mutaciones
+  const blockUserMutation = useBlockUser();
+  const unblockUserMutation = useUnblockUser();
+  const activateUserMutation = useActivateUser();
+  const deactivateUserMutation = useDeactivateUser();
+
+  const users = paginatedData?.content || [];
+
+  // Debug: Verificar qué usuarios trae el backend
+  console.log('📊 Usuarios del backend:', {
+    total: users.length,
+    estados: users.reduce((acc, u) => {
+      acc[u.accountStatus] = (acc[u.accountStatus] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+    tieneInactivos: users.some(u => u.accountStatus === "INACTIVE"),
+  });
+
+  // Filtrado adicional en cliente (rol y estado)
+  const filteredUsers = useMemo(() => {
+    let filtered = [...users];
+
+    // Filtrar por rol
+    if (roleFilter !== "ALL") {
+      filtered = filtered.filter(u => u.roles.some(r => r.name === roleFilter));
+    }
+
+    // Filtrar por estado
+    if (statusFilter !== "ALL") {
+      filtered = filtered.filter(u => u.accountStatus === statusFilter);
+    }
+
+    return filtered;
+  }, [users, roleFilter, statusFilter]);
+
+  // Reset a página 1 cuando cambian los filtros
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, searchQuery2, roleFilter, statusFilter]);
+
+  // Helpers
+  const getRoleName = (roles: any[]) => {
+    if (roles.some(r => r.name === "ROLE_SELLER")) return "Vendedor";
+    if (roles.some(r => r.name === "ROLE_BUYER")) return "Comprador";
+    return "Usuario";
+  };
+
+  const getRoleBadgeClass = (roles: any[]) => {
+    if (roles.some(r => r.name === "ROLE_SELLER")) {
+      return "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border border-orange-200 dark:border-orange-800";
+    }
+    return "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400 border border-purple-200 dark:border-purple-800";
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    const baseClasses = "px-2.5 py-1 rounded-full text-xs font-semibold border";
+    switch (status) {
+      case "ACTIVE":
+        return `${baseClasses} bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400 border-green-200 dark:border-green-800`;
+      case "INACTIVE":
+        return `${baseClasses} bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700`;
+      case "BLOCKED":
+        return `${baseClasses} bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400 border-red-200 dark:border-red-800`;
+      case "PENDING_VERIFICATION":
+        return `${baseClasses} bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800`;
+      default:
+        return baseClasses;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      ACTIVE: "Activo",
+      INACTIVE: "Inactivo",
+      BLOCKED: "Bloqueado",
+      PENDING_VERIFICATION: "Pendiente",
+    };
+    return labels[status] || status;
+  };
+
+  // Verificar si se puede interactuar con el usuario
+  const canInteract = (user: UserResponse): boolean => {
+    // No puede modificarse a sí mismo
+    if (Number(user.id) === Number(currentUser?.id)) return false;
+    return true;
+  };
+
+  // Verificar si se puede bloquear (deshabilitado para no verificados)
+  const canBlock = (user: UserResponse): boolean => {
+    if (!canInteract(user)) return false;
+    if (!(isAdmin || isModerator)) return false;
+    // No se puede bloquear si está pendiente, desactivado o ya bloqueado
+    if (user.accountStatus === "PENDING_VERIFICATION") return false;
+    if (user.accountStatus === "INACTIVE") return false;
+    if (user.accountStatus === "BLOCKED") return false;
+    return true;
+  };
+
+  const canUnblock = (user: UserResponse): boolean => {
+    if (!canInteract(user)) return false;
+    return user.accountStatus === "BLOCKED" && (isAdmin || isModerator);
+  };
+
+  const canDeactivate = (user: UserResponse): boolean => {
+    if (!canInteract(user)) return false;
+    if (!isAdmin) return false;
+    // Solo se puede desactivar si está activo (no pendientes)
+    return user.accountStatus === "ACTIVE";
+  };
+
+  const canActivate = (user: UserResponse): boolean => {
+    if (!canInteract(user)) return false;
+    if (!isAdmin) return false;
+    // Solo si está inactivo (desactivado)
+    return user.accountStatus === "INACTIVE";
+  };
+
+  const canEdit = (user: UserResponse): boolean => {
+    if (!canInteract(user)) return false;
+    // No se puede editar si está pendiente de verificación
+    if (user.accountStatus === "PENDING_VERIFICATION") return false;
+    // Puede editar si está activo
+    return user.accountStatus === "ACTIVE";
+  };
 
   // Handlers
-  const onOpenCreateUser = () => {
-    toast.info("Crear nuevo usuario");
+  const handleEdit = (user: UserResponse) => {
+    setSelectedUser(user);
+    setShowEditModal(true);
   };
 
-  const onEditUser = (usuario) => {
-    toast.info(`Editar usuario: ${usuario.nombre} ${usuario.apellido}`);
+  const handleBlock = (user: UserResponse) => {
+    setSelectedUser(user);
+    setConfirmAction("block");
+    setShowConfirmModal(true);
   };
 
-  const onDeleteUser = (usuario) => {
-    toast.error(`Eliminar usuario: ${usuario.nombre} ${usuario.apellido}`);
+  const handleUnblock = (user: UserResponse) => {
+    setSelectedUser(user);
+    setConfirmAction("unblock");
+    setShowConfirmModal(true);
   };
 
-  const onToggleUserStatus = (usuario) => {
-    const newStatus = usuario.estado === "activo" ? "inactivo" : "activo";
-    toast.success(
-      `Usuario ${usuario.nombre} ${newStatus === "activo" ? "activado" : "desactivado"}`,
+  const handleDeactivate = (user: UserResponse) => {
+    setSelectedUser(user);
+    setConfirmAction("deactivate");
+    setShowConfirmModal(true);
+  };
+
+  const handleActivate = (user: UserResponse) => {
+    setSelectedUser(user);
+    setConfirmAction("activate");
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!selectedUser || !confirmAction) return;
+
+    switch (confirmAction) {
+      case "block":
+        await blockUserMutation.mutateAsync(selectedUser.id);
+        break;
+      case "unblock":
+        await unblockUserMutation.mutateAsync(selectedUser.id);
+        break;
+      case "activate":
+        await activateUserMutation.mutateAsync(selectedUser.id);
+        break;
+      case "deactivate":
+        await deactivateUserMutation.mutateAsync(selectedUser.id);
+        break;
+    }
+
+    setShowConfirmModal(false);
+    setSelectedUser(null);
+    setConfirmAction(null);
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSearchQuery2("");
+    setRoleFilter("ALL");
+    setStatusFilter("ALL");
+  };
+
+  // Función para obtener iniciales
+  const getInitials = (fullName: string) => {
+    const names = fullName.split(" ");
+    if (names.length >= 2) {
+      return `${names[0].charAt(0)}${names[names.length - 1].charAt(0)}`.toUpperCase();
+    }
+    return fullName.substring(0, 2).toUpperCase();
+  };
+
+  // Definición de columnas para DataTable
+  const columns = useMemo(() => [
+    {
+      accessorKey: "fullName",
+      header: "Usuario",
+      cell: ({ row }: any) => {
+        const user = row.original;
+        const initials = getInitials(user.fullName);
+        return (
+          <div className="flex items-center gap-3 py-2 pl-4">
+            <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
+              {initials}
+            </div>
+            <div>
+              <p className="font-semibold text-base">{user.fullName}</p>
+              <p className="text-sm text-muted-foreground">@{user.username}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "cedula",
+      header: "Cédula",
+      cell: ({ row }: any) => (
+        <span className="font-mono text-sm">{row.original.cedula}</span>
+      ),
+    },
+    {
+      accessorKey: "phone",
+      header: "Teléfono",
+      cell: ({ row }: any) => (
+        <span className="text-sm">{row.original.phone}</span>
+      ),
+    },
+    {
+      accessorKey: "roles",
+      header: "Rol",
+      cell: ({ row }: any) => {
+        const user = row.original;
+        return (
+          <span className={`px-3 py-1.5 text-xs font-semibold rounded-lg ${getRoleBadgeClass(user.roles)}`}>
+            {getRoleName(user.roles)}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "accountStatus",
+      header: "Estado",
+      cell: ({ row }: any) => {
+        const user = row.original;
+        return (
+          <span className={getStatusBadgeClass(user.accountStatus)}>
+            {getStatusLabel(user.accountStatus)}
+          </span>
+        );
+      },
+    },
+  ], []);
+
+  // Acciones por fila
+  const rowActions = (row: any) => {
+    const user: UserResponse = row.original;
+    
+    // Debug: mostrar info en consola
+    console.log('User:', user.fullName, {
+      accountStatus: user.accountStatus,
+      isAdmin,
+      isModerator,
+      canBlock: canBlock(user),
+      canDeactivate: canDeactivate(user),
+      canEdit: canEdit(user),
+  });
+
+  const editEnabled = canEdit(user);
+    const blockEnabled = canBlock(user);
+    const unblockEnabled = canUnblock(user);
+    const activateEnabled = canActivate(user);
+    const deactivateEnabled = canDeactivate(user);
+
+  return (
+      <TooltipProvider>
+        <div className="flex gap-1 justify-start">
+          {/* Editar - siempre visible, deshabilitado si no verificado */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => editEnabled && handleEdit(user)}
+                disabled={!editEnabled}
+                className={editEnabled 
+                  ? "hover:bg-blue-50 dark:hover:bg-blue-950" 
+                  : "opacity-50 cursor-not-allowed"
+                }
+              >
+                <Edit size={16} className="text-blue-600 dark:text-blue-400" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {editEnabled ? "Editar usuario" : "No se puede editar (usuario no verificado)"}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Activar (solo si está INACTIVE) */}
+          {activateEnabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleActivate(user)}
+                  className="hover:bg-blue-50 dark:hover:bg-blue-950"
+                >
+                  <RotateCcw size={16} className="text-blue-600 dark:text-blue-400" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reactivar usuario</TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Desactivar - siempre visible para admins, deshabilitado si no es ACTIVE */}
+          {isAdmin && !activateEnabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => deactivateEnabled && handleDeactivate(user)}
+                  disabled={!deactivateEnabled}
+                  className={deactivateEnabled 
+                    ? "hover:bg-red-50 dark:hover:bg-red-950" 
+                    : "opacity-50 cursor-not-allowed"
+                  }
+                >
+                  <UserX size={16} className="text-red-600 dark:text-red-400" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {deactivateEnabled ? "Desactivar usuario" : "No se puede desactivar (solo usuarios activos)"}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Bloquear - siempre visible, deshabilitado si no verificado */}
+          {(isAdmin || isModerator) && !unblockEnabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => blockEnabled && handleBlock(user)}
+                  disabled={!blockEnabled}
+                  className={blockEnabled 
+                    ? "hover:bg-orange-50 dark:hover:bg-orange-950" 
+                    : "opacity-50 cursor-not-allowed"
+                  }
+                >
+                  <Ban size={16} className="text-orange-600 dark:text-orange-400" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {blockEnabled ? "Bloquear usuario" : "No se puede bloquear (usuario no verificado o inactivo)"}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Desbloquear */}
+          {unblockEnabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleUnblock(user)}
+                  className="hover:bg-green-50 dark:hover:bg-green-950"
+                >
+                  <Unlock size={16} className="text-green-600 dark:text-green-400" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Desbloquear usuario</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </TooltipProvider>
     );
   };
 
-  const usuariosFiltrados = usuarios.filter((usuario) => {
-    const rolMatch =
-      filtroRolUsuario === "todos" || usuario.rol === filtroRolUsuario;
-    const estadoMatch =
-      filtroEstadoUsuario === "todos" || usuario.estado === filtroEstadoUsuario;
-    const searchMatch =
-      searchUsuario.trim() === "" ||
-      usuario.nombre.toLowerCase().includes(searchUsuario.toLowerCase()) ||
-      usuario.apellido.toLowerCase().includes(searchUsuario.toLowerCase()) ||
-      usuario.email.toLowerCase().includes(searchUsuario.toLowerCase()) ||
-      usuario.cedula.includes(searchUsuario);
+  if (isLoading && !paginatedData) {
+    return <CenteredSpinner />;
+  }
 
-    return rolMatch && estadoMatch && searchMatch;
-  });
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-red-600 dark:text-red-400 mb-4">Error al cargar los usuarios</p>
+        <p className="text-sm text-muted-foreground">{(error as Error).message}</p>
+          </div>
+    );
+  }
 
   return (
-    <div className="animate-fade-in">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Administra los usuarios del marketplace
-          </p>
+    <div className="animate-fade-in space-y-6 pb-8">
+      {/* Header */}
+      <div className="bg-card p-6 rounded-lg shadow border border-border">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold mb-2 flex items-center gap-2">
+              <Users className="w-8 h-8 text-blue-600" />
+              Gestión de Usuarios
+            </h1>
+            <p className="text-muted-foreground">
+              Administra compradores y vendedores del marketplace
+            </p>
+          </div>
         </div>
-        <button
-          onClick={onOpenCreateUser}
-          className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 hover:scale-105 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg"
-        >
-          <UserPlus size={20} />
-          Nuevo Usuario
-        </button>
       </div>
+
+      {/* KPIs mejorados */}
+      <UserKPIs users={filteredUsers} />
 
       {/* Filtros */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Buscador */}
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Buscar por nombre, email o cédula..."
-              value={searchUsuario}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
+      <UserFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchQuery2={searchQuery2}
+        onSearchChange2={setSearchQuery2}
+        roleFilter={roleFilter}
+        onRoleFilterChange={setRoleFilter}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        onClearFilters={handleClearFilters}
+      />
 
-          {/* Filtro por Rol */}
-          <div>
-            <select
-              value={filtroRolUsuario}
-              onChange={(e) => onFiltroRolChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="todos">Todos los roles</option>
-              <option value="COMPRADOR">Comprador</option>
-              <option value="VENDEDOR">Vendedor</option>
-              <option value="MODERADOR">Moderador</option>
-              <option value="ADMINISTRADOR">Administrador</option>
-            </select>
-          </div>
+      {/* Tabla con paginación del servidor */}
+      <DataTable
+        columns={columns}
+        data={filteredUsers}
+        rowActions={rowActions}
+        actionsHeader="Acciones"
+        manualPagination
+        pageCount={paginatedData?.totalPages ?? 0}
+        totalRows={paginatedData?.totalElements ?? 0}
+        state={{
+          pagination: {
+            pageIndex: page,
+            pageSize: size,
+          },
+        }}
+        onPaginationChange={({ pageIndex, pageSize }: { pageIndex: number; pageSize: number }) => {
+          setPage(pageIndex);
+          setSize(pageSize);
+        }}
+        searchable={false}
+        emptyMessage="No se encontraron usuarios con los filtros aplicados"
+        initialPageSize={10}
+        globalFilterFn={undefined}
+        onSelectionChange={undefined}
+        className={undefined}
+      />
 
-          {/* Filtro por Estado */}
-          <div>
-            <select
-              value={filtroEstadoUsuario}
-              onChange={(e) => onFiltroEstadoChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="todos">Todos los estados</option>
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-              <option value="suspendido">Suspendido</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      {/* Modales */}
+      <UserEditModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
 
-      {/* Tabla de usuarios */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Usuario
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Cédula
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Rol
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Registro
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {isLoading ? (
-                [...Array(5)].map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
-                        <div className="space-y-2">
-                          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-32"></div>
-                          <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-24"></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-20"></div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-24"></div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-20"></div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-24"></div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <div className="h-8 w-8 bg-gray-300 dark:bg-gray-700 rounded"></div>
-                        <div className="h-8 w-8 bg-gray-300 dark:bg-gray-700 rounded"></div>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : usuariosFiltrados.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    {searchUsuario ||
-                    filtroRolUsuario !== "todos" ||
-                    filtroEstadoUsuario !== "todos"
-                      ? "No se encontraron usuarios con los filtros aplicados"
-                      : "No hay usuarios registrados"}
-                  </td>
-                </tr>
-              ) : (
-                usuariosFiltrados.map((usuario) => (
-                  <tr
-                    key={usuario.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-white font-medium">
-                            {usuario.nombre.charAt(0)}
-                            {usuario.apellido.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-white">
-                            {usuario.nombre} {usuario.apellido}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {usuario.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300">
-                      {usuario.cedula}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          usuario.rol === "ADMINISTRADOR"
-                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                            : usuario.rol === "MODERADOR"
-                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                              : usuario.rol === "VENDEDOR"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-                        }`}
-                      >
-                        {usuario.rol}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => onToggleUserStatus(usuario)}
-                        className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full transition-colors ${
-                          usuario.estado === "activo"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800"
-                            : usuario.estado === "suspendido"
-                              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800"
-                              : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        }`}
-                      >
-                        {usuario.estado === "activo" ? (
-                          <CheckCircle size={12} />
-                        ) : usuario.estado === "suspendido" ? (
-                          <XCircle size={12} />
-                        ) : (
-                          <AlertCircle size={12} />
-                        )}
-                        {usuario.estado}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(usuario.fechaRegistro).toLocaleDateString(
-                        "es-EC",
-                        {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        },
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => onEditUser(usuario)}
-                          className="text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))]/80 transition-colors p-2 hover:bg-blue-50 dark:hover:bg-blue-950 rounded"
-                          title="Editar usuario"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => onDeleteUser(usuario)}
-                          className="text-red-600 hover:text-red-800 transition-colors p-2 hover:bg-red-50 dark:hover:bg-red-950 rounded"
-                          title="Eliminar usuario"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      {!isLoading && usuariosFiltrados.length > 0 && (
-        <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-          Mostrando {usuariosFiltrados.length} de {usuarios.length} usuarios
-        </div>
-      )}
+      <ConfirmActionModal
+        isOpen={showConfirmModal}
+        onClose={() => {
+          setShowConfirmModal(false);
+          setSelectedUser(null);
+          setConfirmAction(null);
+        }}
+        onConfirm={handleConfirmAction}
+        user={selectedUser}
+        action={confirmAction || "block"}
+        isLoading={
+          blockUserMutation.isPending ||
+          unblockUserMutation.isPending ||
+          activateUserMutation.isPending ||
+          deactivateUserMutation.isPending
+        }
+      />
     </div>
   );
-};
-
-export default UsuariosPage;
+}

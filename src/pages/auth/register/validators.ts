@@ -54,7 +54,7 @@ export const createValidators = (
     if (!/[A-Z]/.test(v)) return "Debe incluir al menos una mayúscula.";
     if (!/[a-z]/.test(v)) return "Debe incluir al menos una minúscula.";
     if (!/\d/.test(v)) return "Debe incluir al menos un número.";
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(v))
+    if (!/[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/.test(v))
       return "Debe incluir al menos un carácter especial.";
     return "";
   },

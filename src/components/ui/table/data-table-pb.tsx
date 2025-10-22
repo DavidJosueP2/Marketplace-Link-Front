@@ -68,6 +68,7 @@ export default function DataTable({
   selectable = false,
   onSelectionChange,
   rowActions,
+  actionsHeader,
   emptyMessage = "Sin datos",
   className,
   // Props para paginación del servidor
@@ -123,9 +124,9 @@ export default function DataTable({
         ? [
             {
               id: "__actions__",
-              header: () => <span className="sr-only">Acciones</span>,
+              header: () => actionsHeader ? <span className="font-semibold">{actionsHeader}</span> : <span className="sr-only">Acciones</span>,
               cell: ({ row }) => (
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center justify-start gap-2">
                   {rowActions(row)}
                 </div>
               ),
@@ -135,7 +136,7 @@ export default function DataTable({
             },
           ]
         : [],
-    [rowActions],
+    [rowActions, actionsHeader],
   );
 
   const allColumns = React.useMemo(

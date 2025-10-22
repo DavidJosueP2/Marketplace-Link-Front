@@ -4,8 +4,10 @@ import authService from "@/services/auth.service";
 import userService, { type UpdateUserPayload, type ChangePasswordPayload } from "@/services/user.service";
 import type { UserResponse } from "@/services/auth/interfaces/UserResponse";
 import { ApiError } from "@/services/api";
+import { useAuth } from "@/hooks/use-auth";
 
 export function useProfile() {
+  const { updateUser } = useAuth(); // Para actualizar el contexto global
   const [profile, setProfile] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [updating, setUpdating] = useState<boolean>(false);
@@ -66,6 +68,10 @@ export function useProfile() {
       setUpdating(true);
       const updatedProfile = await userService.updateProfile(profile.id, payload);
       setProfile(updatedProfile);
+      
+      // ✨ Actualizar el contexto global de autenticación para que se refleje en el header
+      updateUser(updatedProfile);
+      
       toast.success("Perfil actualizado correctamente");
       return true;
     } catch (error) {

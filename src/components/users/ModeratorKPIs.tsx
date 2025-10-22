@@ -1,0 +1,85 @@
+import { Shield, UserCheck, UserX, Ban } from "lucide-react";
+import type { UserResponse } from "@/services/users/types";
+
+
+interface ModeratorKPIsProps {
+  moderators: UserResponse[];
+}
+
+interface KPICardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  bgColor: string;
+  iconColor: string;
+  description?: string;
+}
+
+function KPICard({ icon, label, value, bgColor, iconColor, description }: KPICardProps) {
+  return (
+    <div className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+          <p className="text-3xl font-bold mt-2">{value}</p>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          )}
+        </div>
+        <div className={`${bgColor} ${iconColor} p-4 rounded-xl`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ModeratorKPIs({ moderators }: ModeratorKPIsProps) {
+  // Calcular estadísticas de moderadores
+  const stats = {
+    total: moderators.length,
+    active: moderators.filter(m => m.accountStatus === "ACTIVE").length,
+    inactive: moderators.filter(m => m.accountStatus === "INACTIVE").length,
+    blocked: moderators.filter(m => m.accountStatus === "BLOCKED").length,
+  };
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <KPICard
+        icon={<Shield size={28} />}
+        label="Total"
+        value={stats.total}
+        bgColor="bg-blue-100 dark:bg-blue-950"
+        iconColor="text-blue-600 dark:text-blue-400"
+        description="Moderadores registrados"
+      />
+
+      <KPICard
+        icon={<UserCheck size={28} />}
+        label="Activos"
+        value={stats.active}
+        bgColor="bg-green-100 dark:bg-green-950"
+        iconColor="text-green-600 dark:text-green-400"
+        description="Operando normalmente"
+      />
+
+      <KPICard
+        icon={<UserX size={28} />}
+        label="Inactivos"
+        value={stats.inactive}
+        bgColor="bg-gray-100 dark:bg-gray-800"
+        iconColor="text-gray-600 dark:text-gray-400"
+        description="Desactivados"
+      />
+
+      <KPICard
+        icon={<Ban size={28} />}
+        label="Bloqueados"
+        value={stats.blocked}
+        bgColor="bg-red-100 dark:bg-red-950"
+        iconColor="text-red-600 dark:text-red-400"
+        description="Por admin"
+      />
+    </div>
+  );
+}

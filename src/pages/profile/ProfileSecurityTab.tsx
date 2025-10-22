@@ -107,6 +107,11 @@ const validatePasswordField = (password: string, fieldName: string): string => {
   if (fieldName === "newPassword") {
     if (password.length < 8) return "La contraseña debe tener al menos 8 caracteres";
     if (password.length > 72) return "La contraseña no debe exceder 72 caracteres";
+    if (!/[A-Z]/.test(password)) return "Debe incluir al menos una mayúscula";
+    if (!/[a-z]/.test(password)) return "Debe incluir al menos una minúscula";
+    if (!/\d/.test(password)) return "Debe incluir al menos un número";
+    if (!/[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/.test(password))
+      return "Debe incluir al menos un carácter especial";
   }
 
   return "";

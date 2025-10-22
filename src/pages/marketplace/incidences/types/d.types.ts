@@ -34,6 +34,7 @@ export interface IncidenceDetailResponse {
   incidence_decision: string;
   created_at: Date;
   auto_closed: boolean;
+  moderator_comment: string;
   publication: SimplePublicationResponse;
   reports: SimpleReportResponse[];
 }
@@ -76,4 +77,9 @@ export interface DecisionResponse {
   decision: string;
   status: string;
   message: string;
+}
+
+export interface RequestAppealIncidence {
+  incidence_id: string;
+  reason: string;
 }

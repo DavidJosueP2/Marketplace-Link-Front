@@ -181,7 +181,7 @@ const ReportPublicationModal = ({
             theme === "dark" ? "text-gray-200" : "text-gray-800"
           }`}
         >
-          Comentario (opcional)
+          Comentario
         </label>
         <textarea
           id="report-comment"

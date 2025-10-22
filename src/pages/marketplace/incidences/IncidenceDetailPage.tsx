@@ -8,10 +8,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import incidenceService from "@/services/incidence.service";
 import DecisionModal from "@/components/modals/DecisionModal";
 
-import type {
-  IncidenceDetailResponse,
-  RequestMakeDecision,
-} from "./types/d.types";
+import type { IncidenceDetailResponse } from "./types/d.types";
 import { ApiError } from "@/services/api";
 
 export default function IncidenceDetailPage() {
@@ -184,14 +181,17 @@ export default function IncidenceDetailPage() {
               </Badge>
             </div>
 
-            <Button
-              variant="default"
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={handleClaim}
-            >
-              Atender incidencia
-            </Button>
+            {(status === "PENDING_REVIEW" || status === "OPEN") &&
+              incidence_decision === "PENDING" && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleClaim}
+                >
+                  Atender incidencia
+                </Button>
+              )}
 
             {status === "UNDER_REVIEW" && incidence_decision === "PENDING" && (
               <>
@@ -221,6 +221,29 @@ export default function IncidenceDetailPage() {
           </div>
         </div>
       </Card>
+
+      {/* Aqui poner el comentario del moderador, si es que hizo */}
+      {incidenceDetailResponse.moderator_comment && (
+        <Card className="p-6 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-blue-500" />
+            Comentario del moderador
+          </h3>
+
+          <div className="bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
+            <p
+              className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line"
+              style={{ wordBreak: "break-word" }}
+            >
+              {incidenceDetailResponse.moderator_comment}
+            </p>
+
+            <div className="mt-3 text-xs text-gray-500 dark:text-gray-400 flex justify-end italic">
+              — Comentario añadido durante la decisión de la incidencia
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Reportes en formato cards */}
       <Card className="p-6">

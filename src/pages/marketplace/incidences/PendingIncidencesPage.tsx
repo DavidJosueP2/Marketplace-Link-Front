@@ -6,6 +6,7 @@ import DataTable from "@/components/ui/table/data-table-pb";
 import { columns } from "./extras/columns";
 import { rowActions } from "./extras/row-actions";
 import type { ApiResponseIncidence } from "./types/d.types";
+import { ApiError } from "@/services/api";
 
 interface PaginationState {
   pageIndex: number;
@@ -27,8 +28,18 @@ export default function PendingIncidencesPage() {
       setLoading(true);
       const data = await incidenceService.fetchAllUnreviewed({ page, size });
       setIncidencesData(data);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const payload = err.payload;
+        const message =
+          payload?.message ||
+          payload?.data?.detail ||
+          "No se pudo reclamar la incidencia.";
+
+        toast.errror(message || "Error loading incidences");
+        return;
+      }
+
       toast.error("Error loading incidences");
     } finally {
       setLoading(false);

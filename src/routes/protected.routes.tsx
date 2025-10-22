@@ -15,14 +15,12 @@ import {
   IncidenciasPage,
   ReportesPage,
   MensajesPage,
-  ApelacionesPage,
-  ModeradoresPage,
 } from "@/pages/marketplace";
 import VendorProductsPage from "@/pages/marketplace/VendorProductsPage";
 import PublicationFormPage from "@/pages/marketplace/PublicationFormPage";
 import IncidencesPage from "@/pages/marketplace/incidences/IncidencesPage";
-import { Path } from "leaflet";
 import IncidenceDetailPage from "@/pages/marketplace/incidences/IncidenceDetailPage";
+import AppealPage from "@/pages/marketplace/appeals/AppealPage";
 
 export const protectedRoutes = [
   {
@@ -34,6 +32,7 @@ export const protectedRoutes = [
     children: [
       { path: "incidencias", element: <IncidencesPage /> },
       { path: "incidencias/:publicUi", element: <IncidenceDetailPage /> },
+      { path: "incidencias/:publicUi/apelacion", element: <AppealPage /> },
       //{ path: "apelaciones", element: <ApelacionesPage /> },
       //  { path: "/admin/dashboard", element: <DashboardPage /> },
       // Ejemplo: esta ruta puede ser accedida tanto por ADMIN como por MODERATOR

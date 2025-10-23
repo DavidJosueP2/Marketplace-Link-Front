@@ -376,6 +376,46 @@ export default function UsuariosPage() {
             </TooltipContent>
           </Tooltip>
 
+          {/* Bloquear - siempre visible, deshabilitado si no verificado */}
+          {(isAdmin || isModerator) && !unblockEnabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => blockEnabled && handleBlock(user)}
+                  disabled={!blockEnabled}
+                  className={blockEnabled
+                    ? "hover:bg-orange-50 dark:hover:bg-orange-950"
+                    : "opacity-50 cursor-not-allowed"
+                  }
+                >
+                  <Ban size={16} className="text-orange-600 dark:text-orange-400" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {blockEnabled ? "Bloquear usuario" : "No se puede bloquear (usuario no verificado o inactivo)"}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Desbloquear */}
+          {unblockEnabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleUnblock(user)}
+                  className="hover:bg-green-50 dark:hover:bg-green-950"
+                >
+                  <Unlock size={16} className="text-green-600 dark:text-green-400" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Desbloquear usuario</TooltipContent>
+            </Tooltip>
+          )}
+
           {/* Activar (solo si está INACTIVE) */}
           {activateEnabled && (
             <Tooltip>
@@ -413,46 +453,6 @@ export default function UsuariosPage() {
               <TooltipContent>
                 {deactivateEnabled ? "Desactivar usuario" : "No se puede desactivar (solo usuarios activos)"}
               </TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* Bloquear - siempre visible, deshabilitado si no verificado */}
-          {(isAdmin || isModerator) && !unblockEnabled && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => blockEnabled && handleBlock(user)}
-                  disabled={!blockEnabled}
-                  className={blockEnabled 
-                    ? "hover:bg-orange-50 dark:hover:bg-orange-950" 
-                    : "opacity-50 cursor-not-allowed"
-                  }
-                >
-                  <Ban size={16} className="text-orange-600 dark:text-orange-400" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {blockEnabled ? "Bloquear usuario" : "No se puede bloquear (usuario no verificado o inactivo)"}
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* Desbloquear */}
-          {unblockEnabled && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleUnblock(user)}
-                  className="hover:bg-green-50 dark:hover:bg-green-950"
-                >
-                  <Unlock size={16} className="text-green-600 dark:text-green-400" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Desbloquear usuario</TooltipContent>
             </Tooltip>
           )}
         </div>

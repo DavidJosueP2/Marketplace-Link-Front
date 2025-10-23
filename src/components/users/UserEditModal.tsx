@@ -30,7 +30,7 @@ interface FormErrors {
   gender?: string;
 }
 
-export default function UserEditModal({ isOpen, onClose, user }: UserEditModalProps) {
+export default function UserEditModal({ isOpen, onClose, user }: Readonly<UserEditModalProps>) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<UserUpdateRequest>({
     username: "",

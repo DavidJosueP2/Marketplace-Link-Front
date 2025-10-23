@@ -1,32 +1,50 @@
 import React from "react";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/shadcn/button";
+import { cn } from "@/lib/utils";
 
-export default function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+interface ThemeToggleProps {
+  className?: string;
+}
+
+export default function ThemeToggle({ className }: Readonly<ThemeToggleProps>) {
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+
   React.useEffect(() => setMounted(true), []);
 
-  const toggle = () => {
-    const current = (theme ?? resolvedTheme) === "dark" ? "light" : "dark";
-    setTheme(current);
+  const currentTheme = theme === "system" ? resolvedTheme : theme;
+  const isDark = (currentTheme ?? "light") === "dark";
+
+  const handleToggle = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
+
+  const buttonClasses = cn(
+    "relative flex items-center justify-center rounded-lg p-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF9900] focus-visible:ring-offset-2",
+    isDark ? "hover:bg-gray-800 focus-visible:ring-offset-gray-900" : "hover:bg-gray-100 focus-visible:ring-offset-white",
+    className,
+  );
+
+  const renderIcon = () => {
+    if (!mounted) return <Moon className="h-5 w-5 text-gray-700" />;
+    return isDark ? (
+      <Sun className="h-5 w-5 text-[#FF9900] transition-transform duration-300" />
+    ) : (
+      <Moon className="h-5 w-5 text-gray-700 transition-transform duration-300" />
+    );
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={toggle}
+    <button
+      type="button"
+      onClick={handleToggle}
       aria-label="Cambiar tema"
-      className="relative"
+      aria-pressed={isDark}
+      className={buttonClasses}
     >
-      {/* Sol (modo claro) */}
-      <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      {/* Luna (modo oscuro) */}
-      <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-      {/* Evita parpadeo SSR/CSR */}
-      {!mounted && <span className="sr-only">Toggle</span>}
-    </Button>
+      {renderIcon()}
+      <span className="sr-only">Cambiar tema</span>
+    </button>
   );
 }

@@ -1,8 +1,9 @@
 import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Menu, User, LogOut, Sun, Moon, X, Heart, Package } from "lucide-react";
+import { Search, Menu, User, LogOut, X, Heart, Package } from "lucide-react";
 import { useFavoritesContext } from "@/context/FavoritesContext";
 import { getUserRole } from "@/lib/roleUtils";
+import ThemeToggle from "@/inc/theme/ThemeToggle";
 import type React from "react";
 
 interface User {
@@ -28,7 +29,6 @@ interface HeaderProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   theme: "light" | "dark";
-  toggleTheme: () => void;
   user: User | null;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -49,7 +49,6 @@ const Header = ({
   sidebarOpen,
   setSidebarOpen,
   theme,
-  toggleTheme,
   user,
   searchQuery,
   setSearchQuery,
@@ -197,17 +196,7 @@ const Header = ({
             </button>
           )}
 
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-lg transition-colors duration-200 ${getButtonHoverClasses()}`}
-            aria-label="Toggle theme"
-          >
-            {theme === "light" ? (
-              <Moon className="w-5 h-5 text-gray-700" />
-            ) : (
-              <Sun className="w-5 h-5 text-[#FF9900]" />
-            )}
-          </button>
+          <ThemeToggle />
 
           <div className="relative" ref={userMenuRef}>
             <button

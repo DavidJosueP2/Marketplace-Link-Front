@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/shadcn/sidebar";
 import AdminSidebar from "@/inc/admin/AdminSidebar";
 import AdminBreadcrumbs from "@/inc/admin/AdminBreadcrumbs";
-import ThemeToggle from "@/inc/theme/ThemeToggle.jsx";
+import ThemeToggle from "@/inc/theme/ThemeToggle";
 
 export default function AdminLayout() {
   return (

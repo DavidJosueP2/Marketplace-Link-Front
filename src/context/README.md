@@ -91,7 +91,7 @@ export const useMensajesContext = () => {
 ### 2. Agregar el provider al Layout
 
 ```typescript
-// src/layouts/marketplace_layout_refactored.tsx
+// src/layouts/MarketplaceLayout.tsx
 
 // Import
 import { useMensajesContext, MensajesProvider } from "@/context/MensajesContext";
@@ -160,4 +160,4 @@ Los siguientes contexts deberían implementarse siguiendo este patrón:
 - [ ] `ApelacionesContext` - Apelaciones del usuario
 - [ ] `MyPublicationsContext` - Publicaciones propias del vendedor
 
-Una vez implementados, actualizar el `navigationWithBadges` en `marketplace_layout_refactored.tsx`.
+Una vez implementados, actualizar el `navigationWithBadges` en `MarketplaceLayout.tsx`.

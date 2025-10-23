@@ -1,10 +1,7 @@
 import { createContext, useEffect, useState, useMemo } from "react";
-import {
-  getAccessToken,
-  setAccessToken,
-  clearTokens,
-} from "@/auth/tokenStorage.js";
-import authService from "@/services/auth.service.js";
+import { useNavigate, useLocation } from "react-router-dom";
+import { getAccessToken, setAccessToken, clearTokens } from "@/auth/tokenStorage";
+import authService from "@/services/auth.service";
 
 interface User {
   id?: string | number;
@@ -40,7 +37,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Verifica si hay token al iniciar
+  const navigate = useNavigate();
+  const location = useLocation();
+
   useEffect(() => {
     let timedOut = false;
     const guard = setTimeout(() => {
@@ -51,20 +50,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     (async () => {
       const token = getAccessToken();
       if (!token) {
-        setIsLoading(false);
         setIsAuthenticated(false);
+        if (!timedOut) setIsLoading(false);
+        if (location.pathname !== "/login") navigate("/login", { replace: true });
         return;
       }
       try {
         const profile = await authService.getProfile();
         setUser(profile);
         setIsAuthenticated(true);
-      } catch (e) {
+      } catch {
         clearTokens();
         setUser(null);
         setIsAuthenticated(false);
-        const error = e as { message?: string };
-        console.error("Auth init failed:", error?.message || e);
+        navigate("/login", { replace: true });
       } finally {
         if (!timedOut) setIsLoading(false);
         clearTimeout(guard);
@@ -72,19 +71,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     })();
 
     return () => clearTimeout(guard);
-  }, []);
+  }, [navigate, location.pathname]);
 
-  // LOGIN
   const login = async (dni: string, password: string) => {
     try {
       const data = await authService.login(dni, password);
       const token = data?.accessToken;
-      const profile =
-        data?.user ??
-        (token
-          ? (setAccessToken(token), await authService.getProfile())
-          : null);
-
+      const profile = data?.user ?? (token ? (setAccessToken(token), await authService.getProfile()) : null);
       if (!token || !profile) throw new Error("Credenciales inválidas");
 
       setAccessToken(token);
@@ -95,35 +88,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       clearTokens();
       setUser(null);
       setIsAuthenticated(false);
-
-      // Capturar el error correctamente desde ApiError
       const apiError = error as any;
       const errorData = apiError?.payload?.data || apiError?.response?.data || null;
-
-      return {
-        success: false,
-        errorData,
-      };
+      return { success: false, errorData };
     }
   };
 
-  // LOGOUT
   const logout = async () => {
     try {
       await authService.logout();
-    } catch (error) {
-      const err = error as { message?: string };
-      console.error("Logout error:", err?.message || error);
     } finally {
       clearTokens();
       setUser(null);
       setIsAuthenticated(false);
+      window.location.replace("/");
     }
   };
 
-  // Actualizar perfil del usuario en memoria
   const updateUser = (userData: Partial<User>) =>
-    setUser((prev) => (prev ? { ...prev, ...userData } : userData as User));
+    setUser((prev) => (prev ? { ...prev, ...userData } : (userData as User)));
 
   const value = useMemo(
     () => ({ user, isLoading, isAuthenticated, login, logout, updateUser }),

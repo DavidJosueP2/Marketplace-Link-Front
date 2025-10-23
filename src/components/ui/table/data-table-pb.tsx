@@ -1,4 +1,12 @@
 import React from "react";
+import type {
+  ColumnDef,
+  FilterFn,
+  PaginationState,
+  Row,
+  RowSelectionState,
+  SortingState,
+} from "@tanstack/react-table";
 import {
   flexRender,
   getCoreRowModel,
@@ -20,46 +28,39 @@ import {
   TableCell,
 } from "@/components/ui/shadcn/table";
 
+type ControlledState = {
+  pagination: PaginationState;
+};
+
+type DataTableProps<TData> = {
+  columns: ColumnDef<TData, unknown>[];
+  data: TData[];
+  initialPageSize?: number;
+  searchable?: boolean;
+  globalFilterFn?: FilterFn<TData>;
+  selectable?: boolean;
+  onSelectionChange?: (rows: TData[]) => void;
+  rowActions?: (row: Row<TData>) => React.ReactNode;
+  actionsHeader?: React.ReactNode;
+  emptyMessage?: string;
+  className?: string;
+  manualPagination?: boolean;
+  pageCount?: number;
+  totalRows?: number;
+  state?: ControlledState;
+  onPaginationChange?: (pagination: PaginationState) => void;
+};
+
+type ColumnDefWithSize<TData> = ColumnDef<TData, unknown> & {
+  size?: number;
+};
+
+type SortDirection = "asc" | "desc" | false | undefined;
+
 /**
  * DataTable - Wrapper de TanStack Table con shadcn/ui
- *
- * Props:
- * - columns: ColumnDef[] (TanStack)  -> [{ accessorKey, header, cell, ... }]
- * - data: any[]                      -> filas
- * - initialPageSize?: number         -> tamaño de página inicial (10)
- * - searchable?: boolean             -> muestra input de búsqueda global (true)
- * - globalFilterFn?: (row, columnId, filterValue) => boolean  -> filtro global custom
- * - selectable?: boolean             -> agrega columna de selección (false)
- * - onSelectionChange?: (rows) => void -> callback cuando cambia selección
- * - rowActions?: (row) => ReactNode  -> renderiza acciones por fila al final
- * - emptyMessage?: string            -> mensaje cuando no hay filas
- * - className?: string               -> clases extra del contenedor
- *
- * Props para paginación del servidor:
- * - manualPagination?: boolean       -> true para paginación del servidor
- * - pageCount?: number               -> total de páginas (del servidor)
- * - totalRows?: number               -> total de filas (del servidor)
- * - state?: { pagination: { pageIndex, pageSize } } -> estado de paginación controlado
- * - onPaginationChange?: ({ pageIndex, pageSize }) => void -> callback cuando cambia paginación
- *
- * Uso mínimo:
- *  <DataTable columns={columns} data={data} />
- *
- * Uso con paginación del servidor:
- *  <DataTable
- *    columns={columns}
- *    data={data}
- *    manualPagination
- *    pageCount={totalPages}
- *    totalRows={totalElements}
- *    state={{ pagination: { pageIndex: page, pageSize: size } }}
- *    onPaginationChange={({ pageIndex, pageSize }) => {
- *      setPage(pageIndex);
- *      setSize(pageSize);
- *    }}
- *  />
  */
-export default function DataTable({
+export default function DataTable<TData>({
   columns,
   data,
   initialPageSize = 5,
@@ -71,143 +72,159 @@ export default function DataTable({
   actionsHeader,
   emptyMessage = "Sin datos",
   className,
-  // Props para paginación del servidor
   manualPagination = false,
   pageCount,
   totalRows,
   state,
   onPaginationChange,
-}) {
-  const [sorting, setSorting] = React.useState([]);
+}: Readonly<DataTableProps<TData>>) {
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [rowSelection, setRowSelection] = React.useState({});
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
 
-  // Columna de selección opcional
-  const selectionColumn = React.useMemo(
-    () =>
-      selectable
-        ? [
-            {
-              id: "__select__",
-              header: ({ table }) => (
-                <Checkbox
-                  checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                  }
-                  onCheckedChange={(value) =>
-                    table.toggleAllPageRowsSelected(!!value)
-                  }
-                  aria-label="Seleccionar página"
-                />
-              ),
-              cell: ({ row }) => (
-                <Checkbox
-                  checked={row.getIsSelected()}
-                  onCheckedChange={(value) => row.toggleSelected(!!value)}
-                  aria-label="Seleccionar fila"
-                />
-              ),
-              enableSorting: false,
-              enableHiding: false,
-              size: 48,
-            },
-          ]
-        : [],
-    [selectable],
-  );
+  const controlledPagination = state?.pagination;
 
-  // Columna de acciones opcional (al final)
-  const actionsColumn = React.useMemo(
-    () =>
-      rowActions
-        ? [
-            {
-              id: "__actions__",
-              header: () => actionsHeader ? <span className="font-semibold">{actionsHeader}</span> : <span className="sr-only">Acciones</span>,
-              cell: ({ row }) => (
-                <div className="flex items-center justify-start gap-2">
-                  {rowActions(row)}
-                </div>
-              ),
-              enableSorting: false,
-              enableHiding: false,
-              size: 120,
-            },
-          ]
-        : [],
-    [rowActions, actionsHeader],
-  );
+  const selectionColumn = React.useMemo<ColumnDef<TData, unknown>[]>(() => {
+    if (!selectable) return [];
 
-  const allColumns = React.useMemo(
+    return [
+      {
+        id: "__select__",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Seleccionar pagina"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Seleccionar fila"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 48,
+      },
+    ];
+  }, [selectable]);
+
+  const actionsColumn = React.useMemo<ColumnDef<TData, unknown>[]>(() => {
+    if (!rowActions) return [];
+
+    return [
+      {
+        id: "__actions__",
+        header: () =>
+          actionsHeader ? (
+            <span className="font-semibold uppercase tracking-wide text-[color:var(--muted-foreground)] opacity-80">
+              {typeof actionsHeader === "string"
+                ? actionsHeader.toUpperCase()
+                : actionsHeader}
+            </span>
+          ) : (
+            <span className="sr-only">Acciones</span>
+          ),
+        cell: ({ row }) => (
+          <div className="flex items-center justify-start gap-2">
+            {rowActions(row)}
+          </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        size: 120,
+      },
+    ];
+  }, [actionsHeader, rowActions]);
+
+  const allColumns = React.useMemo<ColumnDef<TData, unknown>[]>(
     () => [...selectionColumn, ...columns, ...actionsColumn],
     [selectionColumn, columns, actionsColumn],
   );
 
-  const table = useReactTable({
+  const fallbackGlobalFilter = React.useCallback<FilterFn<TData>>(
+    (row, _columnId, value) => {
+      const haystack = JSON.stringify(row.original).toLowerCase();
+      return haystack.includes(String(value ?? "").toLowerCase());
+    },
+    [],
+  );
+
+  const table = useReactTable<TData>({
     data,
     columns: allColumns,
     state: {
       sorting,
-      globalFilter: manualPagination ? "" : globalFilter, // Desactivar filtro global en modo servidor
+      globalFilter: manualPagination ? "" : globalFilter,
       rowSelection,
-      ...(state || {}), // Permitir estado controlado desde fuera
+      ...(controlledPagination ? { pagination: controlledPagination } : {}),
     },
     onSortingChange: setSorting,
-    onRowSelectionChange: (updater) => {
-      setRowSelection((prev) => {
-        const next =
-          typeof updater === "function" ? updater(prev) : (updater ?? {});
-        if (onSelectionChange) {
-          const selected = table
-            .getRowModel()
-            .rows.filter((r) => next[r.id])
-            .map((r) => r.original);
-          onSelectionChange(selected);
-        }
-        return next;
-      });
-    },
-    globalFilterFn:
-      globalFilterFn ||
-      ((row, _columnId, value) => {
-        // Búsqueda simple: intenta matchear en string de toda la fila
-        const haystack = JSON.stringify(row.original).toLowerCase();
-        return haystack.includes(String(value).toLowerCase());
-      }),
+    onGlobalFilterChange: setGlobalFilter,
+    onRowSelectionChange: setRowSelection,
+    globalFilterFn: globalFilterFn ?? fallbackGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: manualPagination ? undefined : getFilteredRowModel(),
     getPaginationRowModel: manualPagination
       ? undefined
       : getPaginationRowModel(),
-    // Configuración para paginación del servidor
     manualPagination,
     pageCount: manualPagination ? pageCount : undefined,
-    onPaginationChange,
-    initialState: {
-      pagination: { pageSize: initialPageSize },
-    },
+    initialState: controlledPagination
+      ? undefined
+      : {
+          pagination: { pageSize: initialPageSize },
+        },
   });
 
-  // Obtener información de paginación
-  const paginationState = table.getState().pagination;
-  const currentPage = paginationState.pageIndex;
-  const currentPageSize = paginationState.pageSize;
+  React.useEffect(() => {
+    if (!onSelectionChange) return;
+    const selected = table
+      .getSelectedRowModel()
+      .rows.map((row) => row.original);
+    onSelectionChange(selected);
+  }, [onSelectionChange, rowSelection, table]);
 
-  // Calcular información para mostrar
-  const totalPagesCount = manualPagination ? pageCount : table.getPageCount();
-  const totalRowsCount = manualPagination
-    ? totalRows
-    : table.getFilteredRowModel().rows.length;
-  const startRow = manualPagination
-    ? currentPage * currentPageSize + 1
-    : table.getRowModel().rows.length > 0
-      ? currentPage * currentPageSize + 1
+  const paginationState = table.getState().pagination;
+  const currentPage = paginationState?.pageIndex ?? 0;
+  const currentPageSize = paginationState?.pageSize ?? initialPageSize;
+  const computedPageCount =
+    totalRows && currentPageSize > 0
+      ? Math.ceil(totalRows / currentPageSize)
       : 0;
-  const endRow = manualPagination
+  const totalPagesCount = manualPagination
+    ? pageCount ?? computedPageCount
+    : table.getPageCount();
+  const totalRowsCount = manualPagination
+    ? totalRows ?? 0
+    : table.getFilteredRowModel().rows.length;
+  const hasRows = totalRowsCount > 0;
+  const startRow = hasRows ? currentPage * currentPageSize + 1 : 0;
+  const endRow = hasRows
     ? Math.min((currentPage + 1) * currentPageSize, totalRowsCount)
-    : Math.min((currentPage + 1) * currentPageSize, totalRowsCount);
+    : 0;
+
+  const handlePageSizeChange = (newSize: number) => {
+    if (manualPagination && onPaginationChange) {
+      onPaginationChange({ pageIndex: 0, pageSize: newSize });
+    } else {
+      table.setPageSize(newSize);
+    }
+  };
+
+  const goToPage = (pageIndex: number) => {
+    if (manualPagination && onPaginationChange) {
+      onPaginationChange({ pageIndex, pageSize: currentPageSize });
+    } else {
+      table.setPageIndex(pageIndex);
+    }
+  };
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
@@ -216,34 +233,27 @@ export default function DataTable({
         {searchable && !manualPagination ? (
           <div className="w-full sm:w-80">
             <Input
-              placeholder="Buscar…"
-              value={globalFilter ?? ""}
-              onChange={(e) => setGlobalFilter(e.target.value)}
+              placeholder="Buscar..."
+              value={globalFilter}
+              onChange={(event) => setGlobalFilter(event.target.value)}
             />
           </div>
         ) : (
           <div />
         )}
 
-        {/* Controles rápidos */}
+        {/* Controles rapidos */}
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Filas</span>
             <select
               className="h-9 rounded-md border bg-background px-2 text-sm"
               value={currentPageSize}
-              onChange={(e) => {
-                const newSize = Number(e.target.value);
-                if (manualPagination && onPaginationChange) {
-                  onPaginationChange({ pageIndex: 0, pageSize: newSize });
-                } else {
-                  table.setPageSize(newSize);
-                }
-              }}
+              onChange={(event) => handlePageSizeChange(Number(event.target.value))}
             >
-              {[5, 10, 20, 50, 100].map((s) => (
-                <option key={s} value={s}>
-                  {s}
+              {[5, 10, 20, 50, 100].map((size) => (
+                <option key={size} value={size}>
+                  {size}
                 </option>
               ))}
             </select>
@@ -274,23 +284,26 @@ export default function DataTable({
       </div>
 
       {/* Tabla */}
-      <div className="rounded-xl border bg-card">
-        <Table>
+      <div className="rounded-xl border bg-card shadow-sm">
+        <Table className="min-w-full">
           <TableHeader>
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((header) => {
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
-                  const metaSize = header.column.columnDef.size;
+                  const metaSize = (header.column.columnDef as ColumnDefWithSize<TData>)
+                    .size;
+
                   return (
                     <TableHead
                       key={header.id}
                       style={metaSize ? { width: metaSize } : undefined}
+                      className="text-[color:var(--muted-foreground)]"
                     >
                       {header.isPlaceholder ? null : (
                         <div
                           className={cn(
-                            "flex items-center gap-1",
+                            "flex items-center gap-1 uppercase text-[0.7rem] font-semibold tracking-wide text-current opacity-80 sm:text-xs",
                             canSort && "cursor-pointer select-none",
                           )}
                           onClick={
@@ -300,13 +313,15 @@ export default function DataTable({
                           }
                           title={
                             canSort
-                              ? "Clic para ordenar. Shift + clic para multi-sort."
+                              ? "Clic para ordenar. Shift + clic para multi-orden."
                               : undefined
                           }
                         >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
+                          {transformHeader(
+                            flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            ),
                           )}
                           {canSort && (
                             <SortIndicator dir={header.column.getIsSorted()} />
@@ -339,10 +354,7 @@ export default function DataTable({
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={allColumns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={allColumns.length} className="h-24 text-center">
                   {emptyMessage}
                 </TableCell>
               </TableRow>
@@ -351,14 +363,14 @@ export default function DataTable({
         </Table>
       </div>
 
-      {/* Paginación */}
+      {/* Paginacion */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-muted-foreground">
-          {totalRowsCount > 0 ? (
+          {hasRows ? (
             <>
               {startRow} a {endRow} de {totalRowsCount} fila(s)
               {totalPagesCount > 1 &&
-                ` · Página ${currentPage + 1} de ${totalPagesCount}`}
+                ` - Página ${currentPage + 1} de ${Math.max(totalPagesCount, 1)}`}
             </>
           ) : (
             "Sin datos"
@@ -369,67 +381,34 @@ export default function DataTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              if (manualPagination && onPaginationChange) {
-                onPaginationChange({ pageIndex: 0, pageSize: currentPageSize });
-              } else {
-                table.setPageIndex(0);
-              }
-            }}
+            onClick={() => goToPage(0)}
             disabled={currentPage === 0}
           >
-            « Primera
+            {"<< Primera"}
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              if (manualPagination && onPaginationChange) {
-                onPaginationChange({
-                  pageIndex: currentPage - 1,
-                  pageSize: currentPageSize,
-                });
-              } else {
-                table.previousPage();
-              }
-            }}
+            onClick={() => goToPage(currentPage - 1)}
             disabled={currentPage === 0}
           >
-            ‹ Anterior
+            {"< Anterior"}
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              if (manualPagination && onPaginationChange) {
-                onPaginationChange({
-                  pageIndex: currentPage + 1,
-                  pageSize: currentPageSize,
-                });
-              } else {
-                table.nextPage();
-              }
-            }}
-            disabled={currentPage >= totalPagesCount - 1}
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage >= Math.max(totalPagesCount - 1, 0)}
           >
-            Siguiente ›
+            {"Siguiente >"}
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              if (manualPagination && onPaginationChange) {
-                onPaginationChange({
-                  pageIndex: totalPagesCount - 1,
-                  pageSize: currentPageSize,
-                });
-              } else {
-                table.setPageIndex(totalPagesCount - 1);
-              }
-            }}
-            disabled={currentPage >= totalPagesCount - 1}
+            onClick={() => goToPage(Math.max(totalPagesCount - 1, 0))}
+            disabled={currentPage >= Math.max(totalPagesCount - 1, 0)}
           >
-            Última »
+            {"Ultima >>"}
           </Button>
         </div>
       </div>
@@ -437,9 +416,22 @@ export default function DataTable({
   );
 }
 
-function SortIndicator({ dir }) {
-  if (!dir) return <span className="text-muted-foreground">↕</span>;
-  if (dir === "asc") return <span>↑</span>;
-  if (dir === "desc") return <span>↓</span>;
+function transformHeader(node: React.ReactNode): React.ReactNode {
+  return typeof node === "string" ? node.toUpperCase() : node;
+}
+
+function SortIndicator({ dir }: { dir: SortDirection }) {
+  if (!dir) {
+    return <span className="text-muted-foreground/70 text-xs">-</span>;
+  }
+
+  if (dir === "asc") {
+    return <span className="text-muted-foreground text-xs">^</span>;
+  }
+
+  if (dir === "desc") {
+    return <span className="text-muted-foreground text-xs">v</span>;
+  }
+
   return null;
 }

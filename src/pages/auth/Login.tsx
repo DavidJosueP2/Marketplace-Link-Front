@@ -32,7 +32,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const from = useMemo(() => location.state?.from?.pathname || "/marketplace-refactored/publications", [location.state]);
+  const from = useMemo(() => location.state?.from?.pathname || "/marketplace-refactored", [location.state]);
 
   useEffect(() => {
     if (isAuthenticated) navigate(from, { replace: true });

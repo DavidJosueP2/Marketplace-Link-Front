@@ -1,6 +1,6 @@
-import MarketplaceLayout from "@/layouts/marketplace_layout_refactored";
+import MarketplaceLayout from "@/layouts/MarketplaceLayout.tsx";
 import RoleBasedHome from "@/routes/role-based-home";
-import roleService from "@/services/role.service";
+import roleService from "@/services/roles/role.service.ts";
 import Profile from "@/pages/Profile";
 
 import {
@@ -45,6 +45,7 @@ export const protectedRoutes = [
       { path: "publications", element: <PublicationsPage /> },
       { path: "publication/:id", element: <PublicationDetailPage /> },
       { path: "profile", element: <Profile /> },
+      { path: "favoritos", element: <FavoritosPage /> },
 
       // Buyer + Seller access
       {

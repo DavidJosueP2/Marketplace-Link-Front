@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import favoriteService from "@/services/favorites/favorite.service";
 import type { FavoritePublicationResponse } from "@/services/favorites/interfaces/FavoritePublicationResponse";
+import type { PageResponse } from "@/services/publications/interfaces/PageResponse";
 
 /**
  * Hook para verificar si una publicación es favorita
@@ -21,14 +22,25 @@ export function useIsFavorite(publicationId: number) {
 /**
  * Hook para obtener todos los favoritos del usuario
  */
-export function useUserFavorites(userId?: number) {
-  const { data: favorites = [], isLoading, error, refetch } = useQuery({
-    queryKey: ["user-favorites", userId],
-    queryFn: () => favoriteService.getUserFavorites(userId),
+export function useUserFavorites(userId?: number, page = 0, size = 10) {
+  const { data, isLoading, error, refetch } = useQuery<PageResponse<FavoritePublicationResponse>>({
+    queryKey: ["user-favorites", userId, page, size],
+    queryFn: () => favoriteService.getUserFavorites(userId, page, size),
     staleTime: 1000 * 30, // 30 segundos
   });
 
-  return { favorites, isLoading, error, refetch };
+  const favorites = data?.content ?? [];
+
+  return {
+    favorites,
+    page: data?.number ?? page,
+    size: data?.size ?? size,
+    totalElements: data?.totalElements ?? 0,
+    totalPages: data?.totalPages ?? 0,
+    isLoading,
+    error,
+    refetch,
+  };
 }
 
 /**

@@ -1,6 +1,7 @@
 import { Heart, ShoppingBag } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { useUserFavorites, useFavorites } from "@/hooks/use-favorites";
+import { useFavorites } from "@/hooks/use-favorites";
+import { useFavoritesContext } from "@/context/FavoritesContext";
 import {
   getTextPrimaryClasses,
   getTextSecondaryClasses,
@@ -13,7 +14,17 @@ import {
  */
 const FavoritosPage = () => {
   const navigate = useNavigate();
-  const { favorites, isLoading, error } = useUserFavorites();
+  const { 
+    favorites, 
+    isLoading, 
+    error, 
+    page, 
+    size, 
+    totalPages, 
+    totalElements,
+    setPage,
+    setSize
+  } = useFavoritesContext();
   const { removeFavorite } = useFavorites();
   
   // Obtener theme desde el contexto del layout
@@ -94,13 +105,11 @@ const FavoritosPage = () => {
       <div className="mb-6">
         <h1 className={`text-3xl font-bold ${textPrimary}`}>Mis Favoritos</h1>
         <p className={`text-sm ${textSecondary} mt-1`}>
-          {favorites.length} publicación
-          {favorites.length === 1 ? "" : "es"} guardada
-          {favorites.length === 1 ? "" : "s"}
+          {totalElements} publicación{totalElements === 1 ? "" : "es"} guardada{totalElements === 1 ? "" : "s"}
         </p>
       </div>
 
-      {favorites.length === 0 ? (
+  {favorites.length === 0 ? (
         /* Empty State */
         <div className={`${cardClasses} rounded-lg p-12 text-center`}>
           <div className="flex flex-col items-center gap-4">
@@ -247,6 +256,41 @@ const FavoritosPage = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination controls */}
+      {!isLoading && totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page <= 0}
+              className="px-3 py-2 rounded-lg border bg-white hover:bg-gray-100 disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+              disabled={page >= totalPages - 1}
+              className="px-3 py-2 rounded-lg border bg-white hover:bg-gray-100 disabled:opacity-50"
+            >
+              Siguiente
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={`${textSecondary}`}>Página {page + 1} de {totalPages}</span>
+            <select
+              value={size}
+              onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }}
+              className="px-2 py-1 border rounded-lg"
+            >
+              {[5,10,20,50].map((s) => (
+                <option key={s} value={s}>{s} / página</option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
     </div>

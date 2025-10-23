@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { ArrowLeft, Heart, Package, User, Tag } from "lucide-react";
 import { usePublicationDetail } from "@/hooks/use-publication-detail";
+import { usePublicationFavorite } from "@/hooks/use-favorites";
 import { usePublications } from "@/hooks/use-publication";
 import { getUserLocation } from "@/auth/userStorage";
 import PublicationCard from "@/components/common/publications/PublicationCard";
@@ -69,7 +70,7 @@ const PublicationDetailPage = () => {
   const theme = context?.theme || "light";
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  // local array for quick UI feedback on related publications (optional)
   const [favorites, setFavorites] = useState<number[]>([]);
 
   // Get publication ID from URL
@@ -89,6 +90,13 @@ const PublicationDetailPage = () => {
   };
 
   const { data: publication, isLoading, error } = usePublicationDetail(publicationId);
+
+  // Favorite state & toggle for this publication (backend-driven)
+  const {
+    isFavorite,
+    isLoading: isFavoriteLoading,
+    toggleFavorite,
+  } = usePublicationFavorite(publicationId);
 
   // Get related publications (same category)
   const userLocation = getUserLocation();
@@ -112,14 +120,18 @@ const PublicationDetailPage = () => {
   const textSecondary = getTextSecondaryClasses(theme);
   const borderClass = getBorderClasses(theme);
 
-  const handleToggleFavorite = () => {
-    if (publication) {
-      setIsFavorite(!isFavorite);
+  const handleToggleFavorite = async () => {
+    if (!publication) return;
+    try {
+      await toggleFavorite();
+      // optimistic local update for related items UI
       setFavorites((prev) =>
         prev.includes(publication.id)
           ? prev.filter((id) => id !== publication.id)
           : [...prev, publication.id]
       );
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
     }
   };
 
@@ -254,7 +266,8 @@ const PublicationDetailPage = () => {
                 {/* Botón favorito */}
                 <button
                   onClick={handleToggleFavorite}
-                  className="absolute top-4 left-4 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md hover:scale-110 transition-transform"
+                  disabled={isFavoriteLoading}
+                  className="absolute top-4 left-4 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md hover:scale-110 transition-transform disabled:opacity-60"
                 >
                   <Heart
                     size={24}

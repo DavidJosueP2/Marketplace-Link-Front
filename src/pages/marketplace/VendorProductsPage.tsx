@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useVendorPublications, useVendorPublicationsActions } from "@/hooks/marketplace";
+import { useCategories } from "@/hooks/use-categories";
 import { ProductoSkeleton } from "@/components/common/Skeletons";
 import Pagination from "@/components/common/Pagination";
 import DeletePublicationModal from "@/components/modals/DeletePublicationModal";
-import { Package, Plus, Edit, Trash2, Eye, AlertTriangle, X } from "lucide-react";
+import { Package, Plus, Edit, Trash2, Eye, AlertTriangle, X, SlidersHorizontal } from "lucide-react";
 import type { PublicationSummary } from "@/services/publications/interfaces/PublicationSummary";
 import {
   getTextPrimaryClasses,
@@ -20,6 +22,7 @@ import {
 const VendorProductsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   // Hook personalizado para acciones CRUD (delete con refresh automático)
   const { deletePublication, isDeleting } = useVendorPublicationsActions();
@@ -30,6 +33,8 @@ const VendorProductsPage = () => {
   
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showPendingReviewAlert, setShowPendingReviewAlert] = useState(false);
   const [pendingReviewMessage, setPendingReviewMessage] = useState<{
     title: string;
@@ -45,11 +50,15 @@ const VendorProductsPage = () => {
   const textSecondary = getTextSecondaryClasses(theme);
   const cardClasses = getCardWithShadowClasses(theme);
 
+  // Obtener categorías
+  const { data: categories = [] } = useCategories();
+
   // Obtener publicaciones del vendedor actual desde el backend
   const { data, isLoading, error } = useVendorPublications({
     vendorId: (user?.id as number) || 0,
     page: currentPage,
     size: itemsPerPage,
+    categoryIds: selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined,
   });
 
   const publications = data?.content || [];
@@ -65,11 +74,17 @@ const VendorProductsPage = () => {
         setPendingReviewMessage(parsed);
         setShowPendingReviewAlert(true);
         sessionStorage.removeItem("pendingReviewMessage");
+        
+        // Remover completamente la cache para forzar un fetch fresco (usar el queryKey correcto)
+        queryClient.removeQueries({ 
+          queryKey: ['vendor-publications'],
+          exact: false
+        });
       } catch (error) {
         console.error("Error parsing pending review message:", error);
       }
     }
-  }, []);
+  }, [queryClient]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page - 1);
@@ -78,6 +93,20 @@ const VendorProductsPage = () => {
 
   const handleItemsPerPageChange = (value: number) => {
     setItemsPerPage(value);
+    setCurrentPage(0);
+  };
+
+  const handleCategoryToggle = (categoryId: number) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+    setCurrentPage(0); // Reset to first page when filter changes
+  };
+
+  const handleClearFilters = () => {
+    setSelectedCategoryIds([]);
     setCurrentPage(0);
   };
 
@@ -163,6 +192,16 @@ const VendorProductsPage = () => {
 
   return (
     <div className="animate-fade-in">
+      {/* Back to Home Button */}
+      <button
+        type="button"
+        onClick={() => navigate("/marketplace-refactored/publications")}
+        className="flex items-center gap-2 mb-4 px-4 py-2 rounded-lg bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 transition-all duration-200 font-medium"
+      >
+       
+        Volver a la página de inicio
+      </button>
+
       {/* Alerta de Contenido en Revisión (403) */}
       {showPendingReviewAlert && pendingReviewMessage && (
         <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-6 relative">
@@ -185,12 +224,6 @@ const VendorProductsPage = () => {
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={() => navigate("/marketplace-refactored/apelaciones")}
-                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  Ver mis apelaciones
-                </button>
-                <button
                   onClick={() => setShowPendingReviewAlert(false)}
                   className="px-4 py-2 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-yellow-800 dark:text-yellow-300 border border-yellow-400 dark:border-yellow-600 rounded-lg text-sm font-medium transition-colors"
                 >
@@ -204,31 +237,17 @@ const VendorProductsPage = () => {
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-        <div>
-          <h1 className={`${textPrimary} text-3xl font-bold flex items-center gap-2`}>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold flex items-center gap-2 mb-2">
             <Package className="w-8 h-8 text-[#FF9900]" />
-            Mis Publicaciones
+            <span className={textPrimary}>Mis Publicaciones</span>
           </h1>
-          <p className={`${textSecondary} text-sm mt-1`}>
-            {isLoading ? (
-              "Cargando..."
-            ) : (
-              <>
-                Mostrando {currentPage * itemsPerPage + 1}-
-                {Math.min((currentPage + 1) * itemsPerPage, totalElements)} de{" "}
-                {totalElements} publicaciones
-              </>
-            )}
+          <p className="text-[#FF9900] dark:text-[#FFB84D] text-lg font-medium italic mb-1">
+          Gestiona tus productos y servicios aquí.
           </p>
+         
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => navigate("/marketplace-refactored/publications")}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap"
-          >
-            <Eye size={20} />
-            Ver Catálogo
-          </button>
           <button
             onClick={() => navigate("/marketplace-refactored/publicar")}
             className="bg-[#FF9900] hover:bg-[#FFB84D] hover:scale-105 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap"
@@ -237,6 +256,64 @@ const VendorProductsPage = () => {
             Nueva Publicación
           </button>
         </div>
+      </div>
+
+      {/* Filter Panel */}
+      {showFilterPanel && (
+        <div className={`${cardClasses} rounded-lg p-6 mb-6 animate-fade-in`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={`${textPrimary} text-lg font-semibold`}>
+              Filtrar por Categoría
+            </h3>
+            {selectedCategoryIds.length > 0 && (
+              <button
+                onClick={handleClearFilters}
+                className="text-[#FF9900] hover:text-[#FFB84D] text-sm font-medium"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => handleCategoryToggle(category.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedCategoryIds.includes(category.id)
+                    ? "bg-[#FF9900] text-white shadow-md"
+                    : theme === "dark"
+                    ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filter Button - Above Publications */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => setShowFilterPanel(!showFilterPanel)}
+          className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg ${
+            selectedCategoryIds.length > 0
+              ? "bg-[#FF9900] text-white"
+              : theme === "dark"
+              ? "bg-gray-700 hover:bg-gray-600 text-white"
+              : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+          }`}
+        >
+          <SlidersHorizontal size={20} />
+          Filtros
+          {selectedCategoryIds.length > 0 && (
+            <span className="bg-white text-[#FF9900] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+              {selectedCategoryIds.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Loading State */}
@@ -362,18 +439,16 @@ const VendorProductsPage = () => {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-8">
-                  <Pagination
-                    currentPage={currentPage + 1}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    itemsPerPage={itemsPerPage}
-                    onItemsPerPageChange={handleItemsPerPageChange}
-                    totalItems={totalElements}
-                    theme={theme}
-                  />
-                </div>
+              {publications.length > 0 && (
+                <Pagination
+                  currentPage={currentPage + 1}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                  itemsPerPage={itemsPerPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  totalItems={totalElements}
+                  theme={theme}
+                />
               )}
             </>
           )}

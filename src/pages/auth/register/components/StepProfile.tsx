@@ -20,12 +20,12 @@ export default function StepProfile({
   handleChange,
   handleBlur,
   setForm
-}: StepProfileProps) {
+}: Readonly<StepProfileProps>) {
   return (
     <div className="grid gap-5">
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <Label className="mb-1 block">Nombre</Label>
+          <Label className="mb-1 justify-start">Nombre</Label>
           <Input
             name="firstName"
             value={form.firstName}
@@ -34,10 +34,10 @@ export default function StepProfile({
             placeholder="Tu nombre real"
             autoComplete="given-name"
           />
-          {touched.firstName && errors.firstName && <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>}
+          {touched.firstName && errors.firstName && <p className="text-xs text-red-600 mt-1 text-left">{errors.firstName}</p>}
         </div>
         <div>
-          <Label className="mb-1 block">Apellido</Label>
+          <Label className="mb-1 justify-start">Apellido</Label>
           <Input
             name="lastName"
             value={form.lastName}
@@ -46,13 +46,13 @@ export default function StepProfile({
             placeholder="Tu apellido"
             autoComplete="family-name"
           />
-          {touched.lastName && errors.lastName && <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>}
+          {touched.lastName && errors.lastName && <p className="text-xs text-red-600 mt-1 text-left">{errors.lastName}</p>}
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <Label className="mb-1 block">Cédula</Label>
+          <Label className="mb-1 justify-start">Cédula</Label>
           <Input
             name="cedula"
             value={form.cedula}
@@ -60,12 +60,12 @@ export default function StepProfile({
             onBlur={handleBlur}
             placeholder="10 dígitos (solo números)"
           />
-          {touched.cedula && errors.cedula && <p className="text-xs text-red-600 mt-1">{errors.cedula}</p>}
+          {touched.cedula && errors.cedula && <p className="text-xs text-red-600 mt-1 text-left">{errors.cedula}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="mb-1 block">Género</Label>
+            <Label className="mb-1 justify-start">Género</Label>
             <Combobox
               options={GENDERS}
               value={form.gender}
@@ -73,10 +73,10 @@ export default function StepProfile({
               placeholder="Selecciona tu género"
               searchPlaceholder="Buscar…"
             />
-            {touched.gender && errors.gender && <p className="text-xs text-red-600 mt-1">{errors.gender}</p>}
+            {touched.gender && errors.gender && <p className="text-xs text-red-600 mt-1 text-left">{errors.gender}</p>}
           </div>
           <div>
-            <Label className="mb-1 block">Rol</Label>
+            <Label className="mb-1 justify-start">Rol</Label>
             <Combobox
               options={ROLES}
               value={form.roleName}
@@ -84,11 +84,10 @@ export default function StepProfile({
               placeholder="Selecciona tu rol"
               searchPlaceholder="Buscar…"
             />
-            {touched.roleName && errors.roleName && <p className="text-xs text-red-600 mt-1">{errors.roleName}</p>}
+            {touched.roleName && errors.roleName && <p className="text-xs text-red-600 mt-1 text-left">{errors.roleName}</p>}
           </div>
         </div>
       </div>
     </div>
   );
 }
-

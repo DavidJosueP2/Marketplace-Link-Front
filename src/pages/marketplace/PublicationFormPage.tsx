@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserData } from "@/auth/userStorage";
 import publicationService from "@/services/publications/publication.service";
@@ -40,6 +41,7 @@ const PublicationFormPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const isEditMode = !!id;
 
@@ -60,7 +62,8 @@ const PublicationFormPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [useRegisteredLocation, setUseRegisteredLocation] = useState(false);
+  const [useRegisteredLocation, setUseRegisteredLocation] = useState(!isEditMode);
+  const [isService, setIsService] = useState(false);
   
   // Get user data from local storage
   const userData = getUserData();
@@ -124,8 +127,14 @@ const PublicationFormPage = () => {
             useRegisteredLocation: false,
           });
 
+          // Determinar si es servicio basado en si tiene horario
+          if (publication.workingHours) {
+            setIsService(true);
+          }
+
           // Guardar imágenes existentes para mostrar preview
           setExistingImages(publication.images.map(img => img.url));
+          setKeptExistingImages(publication.images.map(img => img.url));
         } catch (error) {
           console.error("Error loading publication:", error);
           toast({
@@ -146,6 +155,10 @@ const PublicationFormPage = () => {
   const handleLocationChange = (lat: number, lng: number) => {
     setValue("latitude", lat);
     setValue("longitude", lng);
+    // Si el usuario selecciona manualmente una ubicación, desmarcar el checkbox
+    if (useRegisteredLocation) {
+      setUseRegisteredLocation(false);
+    }
   };
 
   // Manejar uso de ubicación registrada
@@ -197,6 +210,12 @@ const PublicationFormPage = () => {
           title: "¡Publicación actualizada!",
           description: "Tu publicación ha sido actualizada exitosamente",
         });
+        
+        // Invalidar caché para mostrar los cambios (usar el queryKey correcto)
+        await queryClient.invalidateQueries({ 
+          queryKey: ['vendor-publications'],
+          exact: false
+        });
       } else {
         // Crear nueva publicación
         const request: PublicationCreateRequest = {
@@ -217,6 +236,12 @@ const PublicationFormPage = () => {
           title: "¡Publicación creada!",
           description: "Tu publicación ha sido creada exitosamente",
         });
+        
+        // Invalidar caché para mostrar la nueva publicación (usar el queryKey correcto)
+        await queryClient.invalidateQueries({ 
+          queryKey: ['vendor-publications'],
+          exact: false
+        });
       }
 
       navigate("/marketplace-refactored/mis-productos");
@@ -231,14 +256,22 @@ const PublicationFormPage = () => {
       if (status === 403) {
         console.log("403 Forbidden detected, data:", errorData);
         
+        // Remover completamente la cache de publicaciones del vendedor (usar el queryKey correcto)
+        queryClient.removeQueries({ 
+          queryKey: ['vendor-publications'],
+          exact: false
+        });
+        
         // Guardar mensaje en sessionStorage para mostrarlo en la página de destino
         sessionStorage.setItem("pendingReviewMessage", JSON.stringify({
           title: errorData?.title || "Contenido peligroso detectado",
           detail: errorData?.detail || "Tu publicación ha sido enviada a revisión",
         }));
 
-        // Redirigir a mis productos
-        navigate("/marketplace-refactored/mis-productos");
+        // Esperar un momento antes de redirigir para que se limpie la caché
+        setTimeout(() => {
+          navigate("/marketplace-refactored/mis-productos");
+        }, 1000);
         return;
       }
 
@@ -444,21 +477,45 @@ const PublicationFormPage = () => {
             )}
           </div>
 
-          {/* Horario de atención (opcional) */}
+          {/* Horario de atención (solo si es servicio) */}
           <div>
-            <label htmlFor="workingHours" className={`block text-sm font-medium ${textPrimary} mb-2`}>
-              <Clock size={16} className="inline mr-1" />
-              Horario de atención (opcional)
+            <label className="flex items-center gap-2 cursor-pointer mb-3">
+              <input
+                type="checkbox"
+                checked={isService}
+                onChange={(e) => {
+                  setIsService(e.target.checked);
+                  if (!e.target.checked) {
+                    setValue("workingHours", "");
+                  }
+                }}
+                className="w-4 h-4 text-[#FF9900] focus:ring-[#FF9900] rounded"
+              />
+              <span className={`text-sm font-medium ${textPrimary}`}>
+                ¿Es un servicio?
+              </span>
             </label>
-            <input
-              {...register("workingHours")}
-              type="text"
-              id="workingHours"
-              className={`w-full px-4 py-2 border ${borderClass} rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-transparent ${
-                theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-              }`}
-              placeholder="Ej: Lun-Vie 9:00-18:00"
-            />
+
+            {isService && (
+              <div className="animate-fade-in">
+                <label htmlFor="workingHours" className={`block text-sm font-medium ${textPrimary} mb-2`}>
+                  <Clock size={16} className="inline mr-1" />
+                  Horario de atención
+                </label>
+                <input
+                  {...register("workingHours")}
+                  type="text"
+                  id="workingHours"
+                  className={`w-full px-4 py-2 border ${borderClass} rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-transparent ${
+                    theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+                  }`}
+                  placeholder="Ej: Lun-Vie 9:00-18:00"
+                />
+                <p className={`${textSecondary} text-xs mt-1`}>
+                  Especifica los días y horarios en que ofreces tu servicio
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -502,11 +559,7 @@ const PublicationFormPage = () => {
         <div className={`${cardClasses} rounded-lg p-6 space-y-4`}>
           <h2 className={`text-xl font-semibold ${textPrimary}`}>
             Imágenes <span className="text-red-500">*</span>
-            {isEditMode && existingImages.length > 0 && (
-              <span className={`text-sm font-normal ${textSecondary} ml-2`}>
-                ({existingImages.length} imagen{existingImages.length > 1 ? "es" : ""} actual{existingImages.length > 1 ? "es" : ""})
-              </span>
-            )}
+           
           </h2>
           {isEditMode && existingImages.length > 0 && (
             <div className={`${textSecondary} text-sm space-y-1`}>
@@ -519,7 +572,7 @@ const PublicationFormPage = () => {
                 Nuevas imágenes que subirás
               </p>
               <p className="text-xs mt-2">
-                💡 Puedes mantener las actuales, eliminarlas o agregar nuevas (máximo 5 en total)
+              Puedes mantener las actuales, eliminarlas o agregar nuevas (mínimo 1, máximo 5)
               </p>
             </div>
           )}
@@ -527,7 +580,7 @@ const PublicationFormPage = () => {
             onImagesChange={setImages}
             onExistingImagesChange={setKeptExistingImages}
             maxImages={5}
-            minImages={isEditMode ? 0 : 1}
+            minImages={1}
             error={fieldErrors.images}
             theme={theme}
             existingImageUrls={existingImages}

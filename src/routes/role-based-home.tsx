@@ -4,18 +4,17 @@ import { useAuth } from "@/hooks/use-auth";
 export default function RoleBasedHome() {
   const { user } = useAuth();
 
-  const roles = Array.isArray(user?.roles)
-    ? user.roles.map((r) => {
-        const roleName = typeof r === "string" ? r : r?.name || "";
-        return String(roleName).toUpperCase();
-      })
+  const roles: string[] = Array.isArray(user?.roles)
+    ? user.roles.map((r: any) =>
+      (typeof r === "string" ? r : r?.name || "")).map((n: string) => n.toUpperCase())
     : [];
 
-  // Redirect to publications page for all authenticated users
-  if (roles.length > 0) {
-    return <Navigate to="/marketplace-refactored/publications" replace />;
-  }
+  const has = (r: string) => roles.includes(r);
+  const isStaff = has("ROLE_ADMIN") || has("ROLE_MODERATOR") || has("ROLE_SUPER_ADMIN");
 
-  // If no roles, redirect to 404
+  if (isStaff) return <Navigate to="/marketplace-refactored/incidencias" replace />;
+  if (has("ROLE_SELLER")) return <Navigate to="/marketplace-refactored/mis-productos" replace />;
+  if (has("ROLE_BUYER")) return <Navigate to="/marketplace-refactored/productos" replace />;
+
   return <Navigate to="/404" replace />;
 }

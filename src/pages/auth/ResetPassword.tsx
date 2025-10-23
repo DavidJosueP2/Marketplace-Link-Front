@@ -17,7 +17,7 @@ const validatePwd = (v: string): string => {
   if (!/[A-Z]/.test(v)) return "Debe incluir al menos una mayúscula.";
   if (!/[a-z]/.test(v)) return "Debe incluir al menos una minúscula.";
   if (!/\d/.test(v)) return "Debe incluir al menos un número.";
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(v)) return "Debe incluir al menos un carácter especial.";
+  if (!/[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/.test(v)) return "Debe incluir al menos un carácter especial.";
   return "";
 };
 
@@ -40,7 +40,7 @@ const pwd2Validator = (touched: boolean, pwd2: string, pwd: string): string => {
 /* ───────── UI piezas pequeñas (fuera del componente, evita S6478) ───────── */
 
 interface ActionProps { status: Status; onGoLogin: () => void; }
-function Action({ status, onGoLogin }: ActionProps) {
+function Action({ status, onGoLogin }: Readonly<ActionProps>) {
   if (status === "success") {
     return <Button onClick={onGoLogin} className="w-full">Ir al login</Button>;
   }
@@ -52,7 +52,7 @@ function Action({ status, onGoLogin }: ActionProps) {
 }
 
 interface FeedbackProps { status: Status; message: string; }
-function Feedback({ status, message }: FeedbackProps) {
+function Feedback({ status, message }: Readonly<FeedbackProps>) {
   if (!message) return null;
   const isSuccess = status === "success";
   const isError = status === "invalid" || status === "expired" || status === "error";
@@ -87,7 +87,7 @@ interface PasswordFieldProps {
 }
 function PasswordField({
                          id, name, label, value, onChange, onBlur, disabled, hint, error,
-                       }: PasswordFieldProps) {
+                       }: Readonly<PasswordFieldProps>) {
   const [reveal, setReveal] = useState(false);
   return (
     <div className="grid gap-2">
@@ -116,7 +116,8 @@ function PasswordField({
           className="absolute inset-y-0 right-2 flex items-center justify-center w-8 h-8 rounded-md hover:bg-foreground/5"
           tabIndex={-1}
         >
-          {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {reveal ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+
         </button>
       </div>
       {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
@@ -179,12 +180,12 @@ export default function ResetPassword() {
 
   return (
     <div className="relative min-h-dvh w-full overflow-hidden">
-      <div className="relative flex justify-center items-center min-h-[calc(100vh-3.5rem)] px-4 sm:px-8 py-6 sm:py-8">
+      <div className="flex items-center justify-center min-h-screen px-4 sm:px-8">
         <div className="relative h-[70vh] sm:h-[72vh] w-full sm:w-[92%] lg:w-[70%] xl:w-[60%] max-w-4xl rounded-2xl overflow-hidden">
-          <div className="liquid-pill" style={{ "--glass-blur": "8px", "--glass-alpha": 0.3 } as React.CSSProperties} />
+          <div className="liquid-pill" style={{ "--glass-blur": "16px", "--glass-alpha": 0.3 } as React.CSSProperties} />
           <div className="relative h-full flex flex-col items-center justify-center gap-6 px-6 sm:px-12 md:px-16 text-center">
             <div className="max-w-2xl">
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">Restablecer contraseña</h1>
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">Restablecer contraseña</h1>
               <p className="mt-2 text-sm sm:text-base text-muted-foreground">Crea una nueva contraseña para tu cuenta.</p>
               <Feedback status={status} message={message} />
             </div>

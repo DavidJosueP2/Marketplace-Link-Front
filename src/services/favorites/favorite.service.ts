@@ -84,26 +84,29 @@ const favoriteService = {
   /**
    * GET /api/users/{userId}/favorites
    * 
-   * Obtiene todas las publicaciones favoritas de un usuario
-   * Ordenadas por fecha de agregado (más recientes primero)
-   * 
+   * Obtiene las publicaciones favoritas de un usuario con paginación.
+   * El backend ahora devuelve un objeto PageResponse<FavoritePublicationResponse>.
+   *
    * @param userId - ID del usuario (opcional, se obtiene del localStorage si no se proporciona)
-   * @returns Array de publicaciones favoritas con toda su información
+   * @param page - número de página (0-based)
+   * @param size - tamaño de página
+   * @returns PageResponse<FavoritePublicationResponse>
    * 
    * Errores:
    * - 404: Usuario no encontrado
    */
-  getUserFavorites: async (userId?: number): Promise<FavoritePublicationResponse[]> => {
+  getUserFavorites: async (userId?: number, page = 0, size = 10) => {
     const effectiveUserId = userId ?? favoriteService.getUserId();
-    
+
     if (!effectiveUserId) {
       throw new Error("Usuario no autenticado. Por favor inicia sesión.");
     }
 
-    const response = await api.get<FavoritePublicationResponse[]>(
-      `/api/users/${effectiveUserId}/favorites`
-    );
-    
+    const response = await api.get(`/api/users/${effectiveUserId}/favorites`, {
+      params: { page, size },
+    });
+
+    // El backend devuelve PageResponse<FavoritePublicationResponse>
     return response.data;
   },
 

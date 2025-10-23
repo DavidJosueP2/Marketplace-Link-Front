@@ -87,7 +87,7 @@ export const navigationByRole = {
             icon: AlertTriangle,
             badge: null, // Se calcula dinámicamente en el layout
           },
-          { name: "Reportes", id: "reportes", icon: Shield, badge: null }, // Se calcula dinámicamente en el layout
+          { name: "Apelaciones", id: "apelaciones", icon: Shield, badge: null }, // Se calcula dinámicamente en el layout
         ],
       },
       {
@@ -126,7 +126,7 @@ export const navigationByRole = {
             icon: AlertTriangle,
             badge: null, // Se calcula dinámicamente en el layout
           },
-          { name: "Reportes", id: "reportes", icon: Shield, badge: null }, // Se calcula dinámicamente en el layout
+          { name: "Apelaciones", id: "apelaciones", icon: Shield, badge: null }, // Se calcula dinámicamente en el layout
         ],
       },
       {

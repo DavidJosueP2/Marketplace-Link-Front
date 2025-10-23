@@ -19,7 +19,7 @@ export interface RequestPagination {
 }
 
 export interface ApiResponseIncidence {
-  content: IncidenceDetailResponse[]; // elementos actuales
+  content: IncidenceDetailsResponse[]; // elementos actuales
   size: number; // tamano de la pagina actual  
   number: number; // pagina actual 
   totalElements: number; // total de registros
@@ -28,7 +28,7 @@ export interface ApiResponseIncidence {
   last: boolean; // es ultima pagina
 }
 
-export interface IncidenceDetailResponse {
+export interface IncidenceDetailsResponse {
   incidence_id: string;
   status: string;
   incidence_decision: string;
@@ -82,4 +82,49 @@ export interface DecisionResponse {
 export interface RequestAppealIncidence {
   incidence_id: string;
   reason: string;
+}
+
+export interface ApiResponseAppeal {
+  content: AppealSimpleDetailsResponse[];
+  size: number;
+  number: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}
+
+export interface AppealDetailsResponse {
+  id: number;
+  status: string;
+  seller: UserSimpleResponse;
+  incidence: AppealIncidenceResponse;
+  created_at: Date;
+  final_decision: string;
+  new_moderator: ModeratorInfo;
+}
+
+export interface AppealIncidenceResponse {
+  incidence_id: string;
+  moderator_comment: string;
+  status: string;
+  created_at: Date;
+  previous_moderator: ModeratorInfo;
+  publication: SimplePublicationResponse;
+  reports: SimpleReportResponse[];
+}
+
+export interface AppealSimpleDetailsResponse {
+  id: string;
+  status: string;
+  created_at: Date;
+  final_decision: string;
+  new_moderator: ModeratorInfo;
+  seller: UserSimpleResponse;
+}
+
+export interface ModeratorInfo {
+  id: number;
+  fullname: string;
+  email: string;
 }

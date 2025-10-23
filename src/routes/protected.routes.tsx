@@ -1,10 +1,8 @@
-import AuthLayout from "@/layouts/AuthLayout";
 import MarketplaceLayout from "@/layouts/marketplace_layout_refactored";
 import RoleBasedHome from "@/routes/role-based-home";
 import roleService from "@/services/role.service";
 import Profile from "@/pages/Profile";
 
-// Marketplace Pages
 import {
   DashboardPage,
   PublicationsPage,
@@ -12,85 +10,113 @@ import {
   FavoritosPage,
   UsuariosPage,
   ConfiguracionPage,
-  IncidenciasPage,
   ReportesPage,
   MensajesPage,
+  ApelacionesPage,
+  ModeradoresPage,
 } from "@/pages/marketplace";
 import VendorProductsPage from "@/pages/marketplace/VendorProductsPage";
 import PublicationFormPage from "@/pages/marketplace/PublicationFormPage";
-import IncidencesPage from "@/pages/marketplace/incidences/IncidencesPage";
 import IncidenceDetailPage from "@/pages/marketplace/incidences/IncidenceDetailPage";
 import AppealPage from "@/pages/marketplace/appeals/AppealPage";
+import IncidencesPage from "@/pages/marketplace/incidences/IncidencesPage";
+import MyAppealsPage from "@/pages/marketplace/appeals/MyAppealsPage";
+import AppealDetailPage from "@/pages/marketplace/appeals/AppealDetailPage";
+
+const BUYER_SELLER = [roleService.getRoleBuyer(), roleService.getRoleSeller()];
+const SELLER = [roleService.getRoleSeller()];
+const STAFF = [
+  roleService.getRoleModerator(),
+  roleService.getRoleAdmin(),
+  roleService.getRoleSuperAdmin(),
+];
+const ADMINS = [roleService.getRoleAdmin(), roleService.getRoleSuperAdmin()];
 
 export const protectedRoutes = [
   {
     protected: true,
     path: "/marketplace-refactored",
-    allowedRoles: [roleService.getRoleAdmin(), roleService.getRoleModerator()],
-    element: <MarketplaceLayout />,
-    layout: null,
+    layout: <MarketplaceLayout />,
     children: [
-      { path: "incidencias", element: <IncidencesPage /> },
-      { path: "incidencias/:publicUi", element: <IncidenceDetailPage /> },
-      //{ path: "apelaciones", element: <ApelacionesPage /> },
-      //  { path: "/admin/dashboard", element: <DashboardPage /> },
-      // Ejemplo: esta ruta puede ser accedida tanto por ADMIN como por MODERATOR
-      // { path: "/admin/users", element: <UsersPage />, allowedRoles: ["ADMIN", "MODERATOR"] },
-    ],
-  },
-  {
-    protected: true,
-    allowedRoles: [roleService.getRoleModerator()],
-    layout: <AuthLayout />,
-    children: [
-      // { path: "/moderator/panel", element: <ModeratorPanel /> },
-    ],
-  },
-  {
-    protected: true,
-    allowedRoles: [roleService.getRoleBuyer()],
-    layout: <AuthLayout />,
-    children: [
-      // { path: "/shop", element: <ShopPage /> },
-    ],
-  },
-  {
-    protected: true,
-    allowedRoles: [roleService.getRoleSeller()],
-    layout: <AuthLayout />,
-    children: [
-      { path: "incidencias/:publicUi/apelacion", element: <AppealPage /> },
-      // { path: "/sales", element: <SalesPage /> },
-    ],
-  },
-  {
-    protected: true,
-    layout: <AuthLayout />,
-    children: [
+      // Default route: redirects user based on their role
       { index: true, element: <RoleBasedHome /> },
-      { path: "/profile", element: <Profile /> },
-    ],
-  },
-  // Marketplace Refactored Routes - Cada página tiene su propia ruta
-  {
-    protected: false,
-    path: "/marketplace-refactored",
-    element: <MarketplaceLayout />,
-    layout: null,
-    children: [
-      { index: true, element: <PublicationsPage /> },
-      { path: "dashboard", element: <DashboardPage /> },
+
+      // General access (any authenticated user)
       { path: "publications", element: <PublicationsPage /> },
       { path: "publication/:id", element: <PublicationDetailPage /> },
-      { path: "favoritos", element: <FavoritosPage /> },
-      { path: "mis-productos", element: <VendorProductsPage /> },
-      { path: "publicar", element: <PublicationFormPage /> },
-      { path: "editar/:id", element: <PublicationFormPage /> },
-      { path: "publish", element: <PublicationFormPage /> },
-      { path: "mensajes", element: <MensajesPage /> },
-      { path: "usuarios", element: <UsuariosPage /> },
-      { path: "configuracion", element: <ConfiguracionPage /> },
       { path: "profile", element: <Profile /> },
+
+      // Buyer + Seller access
+      {
+        path: "favoritos",
+        element: <FavoritosPage />,
+        allowedRoles: BUYER_SELLER,
+      },
+      {
+        path: "mensajes",
+        element: <MensajesPage />,
+        allowedRoles: BUYER_SELLER,
+      },
+
+      // Seller-only access
+      {
+        path: "mis-productos",
+        element: <VendorProductsPage />,
+        allowedRoles: SELLER,
+      },
+      {
+        path: "publicar",
+        element: <PublicationFormPage />,
+        allowedRoles: SELLER,
+      },
+      {
+        path: "editar/:id",
+        element: <PublicationFormPage />,
+        allowedRoles: SELLER,
+      },
+      {
+        path: "publish",
+        element: <PublicationFormPage />,
+        allowedRoles: SELLER,
+      },
+
+      // Staff access (Moderator + Admin + SuperAdmin)
+
+      { path: "usuarios", element: <UsuariosPage />, allowedRoles: STAFF },
+      { path: "dashboard", element: <DashboardPage />, allowedRoles: STAFF },
+      { path: "apelaciones", element: <MyAppealsPage />, allowedRoles: STAFF },
+      {
+        path: "apelaciones/:appealId",
+        element: <AppealDetailPage />,
+        allowedRoles: STAFF,
+      },
+
+      // Admin / SuperAdmin access only
+      {
+        path: "moderadores",
+        element: <ModeradoresPage />,
+        allowedRoles: ADMINS,
+      },
+      {
+        path: "incidencias",
+        element: <IncidencesPage />,
+        allowedRoles: STAFF,
+      },
+      {
+        path: "incidencias/:publicUi",
+        element: <IncidenceDetailPage />,
+        allowedRoles: STAFF,
+      },
+      {
+        path: "incidencias/:publicUi/apelacion",
+        element: <AppealPage />,
+        allowedRoles: SELLER,
+      },
+      {
+        path: "configuracion",
+        element: <ConfiguracionPage />,
+        allowedRoles: ADMINS,
+      },
     ],
   },
 ];

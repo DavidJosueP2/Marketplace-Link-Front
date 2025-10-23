@@ -4,6 +4,7 @@ import Forbidden from "@/pages/Forbidden";
 import NotFound from "@/pages/NotFound";
 import PublicExamplePage from "@/pages/PublicExamplePage";
 
+
 const Login = lazy(() => import("@/pages/auth/Login"));
 const Register = lazy(() => import("@/pages/auth/Register"));
 const PasswordRecovery = lazy(() => import("@/pages/auth/PasswordRecovery"));
@@ -14,6 +15,7 @@ export const publicRoutes = [
   {
     layout: <AuthLayout />,
     children: [
+      { index: true, element: <Login /> },
       { path: "/public-example", element: <PublicExamplePage /> },
       { path: "/login", element: <Login /> },
       { path: "/register", element: <Register /> },

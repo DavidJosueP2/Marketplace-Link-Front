@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/shadcn/card";
 import { Button } from "@/components/ui/shadcn/button";
-import { ArrowLeft, FileWarning } from "lucide-react";
+import { FileWarning } from "lucide-react";
 import { toast } from "sonner";
 import incidenceService from "@/services/incidence.service";
 import { ApiError } from "@/services/api";
@@ -14,15 +14,16 @@ export default function AppealPage() {
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [incidenceName, setIncidenceName] = useState<string>("");
+  const [publicationName, setPublicationName] = useState<string>("");
 
   // Cargar datos básicos de la incidencia
   useEffect(() => {
     const fetchIncidence = async () => {
       try {
         if (!publicUi) return;
-        const data = await incidenceService.fetchIncidenceById(publicUi);
-        setIncidenceName(data.publication?.name || "Publicación desconocida");
+        const data =
+          await incidenceService.fetchIncidenceByIdForSeller(publicUi);
+        setPublicationName(data.publication?.name || "Publicación desconocida");
       } catch {
         toast.error("No se pudieron cargar los datos de la incidencia.");
       }
@@ -56,10 +57,11 @@ export default function AppealPage() {
       };
       const res = await incidenceService.appeal(payload);
       toast.success(res.message || "Apelación enviada correctamente.");
-      navigate("/marketplace-refactored/incidencias");
+      navigate("/marketplace-refactored/");
     } catch (err: any) {
       if (err instanceof ApiError) {
         const payload = err.payload;
+
         if (payload.type === "validation" && payload.data?.errors) {
           const validationMessages = Object.values(payload.data.errors)
             .map((msg) => String(msg).trim())
@@ -86,7 +88,7 @@ export default function AppealPage() {
       {/* Header */}
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+          <h1 className="text-2xl font-bold !text-black dark:!text-gray-100">
             Apelar decisión
           </h1>
         </div>
@@ -100,7 +102,9 @@ export default function AppealPage() {
             <p className="text-gray-700 dark:text-gray-200 font-medium">
               Publicación:{" "}
               <span className="text-blue-600 dark:text-blue-400">
-                {incidenceName}
+                {publicationName
+                  ? publicationName
+                  : "Publicación desconocida..."}
               </span>
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -125,12 +129,12 @@ export default function AppealPage() {
             rows={7}
             placeholder="Describe con detalle los motivos de tu apelación. Debe tener entre 100 y 500 caracteres."
             className={`w-full rounded-lg border px-3 py-2 text-sm transition-all
-            ${
-              error
-                ? "border-red-400 focus:ring-red-400"
-                : "border-gray-300 focus:ring-[#FF9900]"
-            } dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100
-            focus:ring-2 focus:outline-none`}
+              ${
+                error
+                  ? "border-red-400 focus:ring-red-400"
+                  : "border-gray-300 focus:ring-[#FF9900]"
+              } dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100
+              focus:ring-2 focus:outline-none`}
           />
           <div
             className={`text-xs text-right ${

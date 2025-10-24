@@ -13,14 +13,6 @@ import { getUserData } from "@/auth/userStorage";
  */
 
 const favoriteService = {
-  /**
-   * Obtiene el userId desde localStorage
-   * Este dato se almacena después de un login exitoso en auth.service.ts
-   */
-  getUserId: (): number | null => {
-    const userData = getUserData();
-    return userData?.id ?? null;
-  },
 
   /**
    * POST /api/publications/{publicationId}/favorite?userId={userId}
@@ -36,19 +28,10 @@ const favoriteService = {
    * - 404: Usuario o publicación no encontrados
    * - 409: La publicación ya está marcada como favorita
    */
-  addFavorite: async (publicationId: number, userId?: number): Promise<MessageResponse> => {
-    const effectiveUserId = userId ?? favoriteService.getUserId();
-    
-    if (!effectiveUserId) {
-      throw new Error("Usuario no autenticado. Por favor inicia sesión.");
-    }
-
+  addFavorite: async (publicationId: number): Promise<MessageResponse> => {
     const response = await api.post<MessageResponse>(
       `/api/publications/${publicationId}/favorite`,
-      null,
-      {
-        params: { userId: effectiveUserId }
-      }
+      null
     );
     
     return response.data;
@@ -66,18 +49,9 @@ const favoriteService = {
    * Errores:
    * - 404: El favorito no existe
    */
-  removeFavorite: async (publicationId: number, userId?: number): Promise<void> => {
-    const effectiveUserId = userId ?? favoriteService.getUserId();
-    
-    if (!effectiveUserId) {
-      throw new Error("Usuario no autenticado. Por favor inicia sesión.");
-    }
-
+  removeFavorite: async (publicationId: number): Promise<void> => {
     await api.delete(
-      `/api/publications/${publicationId}/favorite`,
-      {
-        params: { userId: effectiveUserId }
-      }
+      `/api/publications/${publicationId}/favorite`
     );
   },
 
@@ -95,14 +69,9 @@ const favoriteService = {
    * Errores:
    * - 404: Usuario no encontrado
    */
-  getUserFavorites: async (userId?: number, page = 0, size = 10) => {
-    const effectiveUserId = userId ?? favoriteService.getUserId();
+  getUserFavorites: async (page = 0, size = 10) => {
 
-    if (!effectiveUserId) {
-      throw new Error("Usuario no autenticado. Por favor inicia sesión.");
-    }
-
-    const response = await api.get(`/api/users/${effectiveUserId}/favorites`, {
+    const response = await api.get(`/api/users/favorites`, {
       params: { page, size },
     });
 
@@ -119,20 +88,11 @@ const favoriteService = {
    * @param userId - ID del usuario (opcional, se obtiene del localStorage si no se proporciona)
    * @returns true si está en favoritos, false si no
    */
-  isFavorite: async (publicationId: number, userId?: number): Promise<boolean> => {
-    const effectiveUserId = userId ?? favoriteService.getUserId();
+  isFavorite: async (publicationId: number): Promise<boolean> => {
     
-    if (!effectiveUserId) {
-      // Si no hay usuario autenticado, no puede tener favoritos
-      return false;
-    }
-
     try {
       const response = await api.get<boolean>(
-        `/api/publications/${publicationId}/favorite/check`,
-        {
-          params: { userId: effectiveUserId }
-        }
+        `/api/publications/${publicationId}/favorite/check`
       );
       
       return response.data;
@@ -151,14 +111,14 @@ const favoriteService = {
    * @param userId - ID del usuario (opcional)
    * @returns nuevo estado (true = agregado, false = removido)
    */
-  toggleFavorite: async (publicationId: number, userId?: number): Promise<boolean> => {
-    const isFav = await favoriteService.isFavorite(publicationId, userId);
+  toggleFavorite: async (publicationId: number): Promise<boolean> => {
+    const isFav = await favoriteService.isFavorite(publicationId);
     
     if (isFav) {
-      await favoriteService.removeFavorite(publicationId, userId);
+      await favoriteService.removeFavorite(publicationId);
       return false;
     } else {
-      await favoriteService.addFavorite(publicationId, userId);
+      await favoriteService.addFavorite(publicationId);
       return true;
     }
   }

@@ -22,10 +22,11 @@ export function useIsFavorite(publicationId: number) {
 /**
  * Hook para obtener todos los favoritos del usuario
  */
-export function useUserFavorites(userId?: number, page = 0, size = 10) {
+export function useUserFavorites(page = 0, size = 10) {
   const { data, isLoading, error, refetch } = useQuery<PageResponse<FavoritePublicationResponse>>({
-    queryKey: ["user-favorites", userId, page, size],
-    queryFn: () => favoriteService.getUserFavorites(userId, page, size),
+    // The backend identifies the user via the Authorization header, so do not include userId here
+    queryKey: ["user-favorites", page, size],
+    queryFn: () => favoriteService.getUserFavorites(page, size),
     staleTime: 1000 * 30, // 30 segundos
   });
 
@@ -52,8 +53,8 @@ export function useFavorites() {
 
   // Mutación para agregar favorito
   const addFavoriteMutation = useMutation({
-    mutationFn: ({ publicationId, userId }: { publicationId: number; userId?: number }) =>
-      favoriteService.addFavorite(publicationId, userId),
+    mutationFn: ({ publicationId }: { publicationId: number }) =>
+      favoriteService.addFavorite(publicationId),
     onSuccess: (_, variables) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: ["favorite-status", variables.publicationId] });
@@ -63,8 +64,8 @@ export function useFavorites() {
 
   // Mutación para remover favorito
   const removeFavoriteMutation = useMutation({
-    mutationFn: ({ publicationId, userId }: { publicationId: number; userId?: number }) =>
-      favoriteService.removeFavorite(publicationId, userId),
+    mutationFn: ({ publicationId }: { publicationId: number }) =>
+      favoriteService.removeFavorite(publicationId),
     onSuccess: (_, variables) => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: ["favorite-status", variables.publicationId] });
@@ -74,8 +75,8 @@ export function useFavorites() {
 
   // Mutación para toggle (agregar o remover)
   const toggleFavoriteMutation = useMutation({
-    mutationFn: ({ publicationId, userId }: { publicationId: number; userId?: number }) =>
-      favoriteService.toggleFavorite(publicationId, userId),
+    mutationFn: ({ publicationId }: { publicationId: number }) =>
+      favoriteService.toggleFavorite(publicationId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["favorite-status", variables.publicationId] });
       queryClient.invalidateQueries({ queryKey: ["user-favorites"] });
@@ -84,22 +85,22 @@ export function useFavorites() {
 
   // Funciones helper
   const addFavorite = useCallback(
-    (publicationId: number, userId?: number) => {
-      return addFavoriteMutation.mutateAsync({ publicationId, userId });
+    (publicationId: number) => {
+      return addFavoriteMutation.mutateAsync({ publicationId });
     },
     [addFavoriteMutation]
   );
 
   const removeFavorite = useCallback(
-    (publicationId: number, userId?: number) => {
-      return removeFavoriteMutation.mutateAsync({ publicationId, userId });
+    (publicationId: number) => {
+      return removeFavoriteMutation.mutateAsync({ publicationId });
     },
     [removeFavoriteMutation]
   );
 
   const toggleFavorite = useCallback(
-    (publicationId: number, userId?: number) => {
-      return toggleFavoriteMutation.mutateAsync({ publicationId, userId });
+    (publicationId: number) => {
+      return toggleFavoriteMutation.mutateAsync({ publicationId });
     },
     [toggleFavoriteMutation]
   );

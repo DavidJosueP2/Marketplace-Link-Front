@@ -69,8 +69,7 @@ export default function MyAppealsPage() {
           <Scale className="text-blue-500" /> Mis Apelaciones
         </h1>
         <p className="text-gray-500 dark:text-gray-400">
-          Estas son las apelaciones que has enviado o que estás revisando como
-          moderador.
+          Estas son las apelaciones que estás revisando como moderador.
         </p>
       </header>
 

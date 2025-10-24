@@ -1,5 +1,4 @@
 @import "./styles/fonts.css";
-
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -9,57 +8,50 @@
   color-scheme:light;
   --radius:.625rem;
 
-  /* Base */
-  --background:oklch(.99 .02 85);
-  --foreground:oklch(.23 .04 30);
-  --card:oklch(.995 .015 85);
+  --background:oklch(.99 0 0);
+  --foreground:oklch(.22 0 0);
+  --card:oklch(.99 0 0);
   --card-foreground:var(--foreground);
-  --popover:oklch(1 .015 85);
+  --popover:oklch(1 0 0);
   --popover-foreground:var(--foreground);
-  --border:oklch(.90 .02 85);
-  --input:oklch(.92 .02 85);
-  --ring:oklch(.78 .12 55);
+  --border:oklch(.90 0 0);
+  --input:oklch(.92 0 0);
+  --ring:oklch(.78 0 0);
 
-  /* Brand Fuel (naranjas energéticos) */
-  --brand-1:oklch(.92 .15 60);
+  --brand-1:oklch(.95 .04 55);
   --brand-2:oklch(.86 .18 50);
   --brand-3:oklch(.78 .20 45);
-  --brand-veil:oklch(.97 .03 70);
+  --brand-veil:oklch(.98 0 0);
   --brand:var(--brand-2);
-  --brand-contrast:oklch(.17 .03 40);
+  --brand-contrast:oklch(.10 0 0);
 
-  /* shadcn tokens principales */
   --primary:var(--brand);
-  --primary-foreground:oklch(.99 .01 85);
-  --secondary:oklch(.96 .03 95);
-  --secondary-foreground:oklch(.32 .03 40);
-  --accent:var(--brand-1);
-  --accent-foreground:var(--brand-contrast);
-  --muted:oklch(.95 .02 95);
-  --muted-foreground:oklch(.48 .03 40);
-  --destructive:oklch(.60 .19 27);
+  --primary-foreground:oklch(.99 0 0);
 
-  --primary-hover: color-mix(in oklab, var(--brand-2), white 16%);
-  --primary-active: color-mix(in oklab, var(--brand-3), black 8%);
+  --secondary:oklch(.96 0 0);
+  --secondary-foreground:oklch(.28 0 0);
+  --accent:oklch(.95 0 0);
+  --accent-foreground:oklch(.28 0 0);
+  --muted:oklch(.95 0 0);
+  --muted-foreground:oklch(.45 0 0);
+  --destructive:oklch(.55 .02 25);
 
-  /* Charts - Colores para pastillas de vehículos */
-  /* chart-1: Vehículos LIGHT (livianos) - Azul suave */
-  --chart-1:oklch(.65 .08 240);
-  /* chart-2: Vehículos HEAVY (pesados) - Púrpura suave */
-  --chart-2:oklch(.60 .10 300);
-  /* Otros charts para gráficas */
-  --chart-3:oklch(.83 .17 64);
-  --chart-4:oklch(.71 .06 20);
-  --chart-5:oklch(.68 .08 80);
+  --primary-hover:color-mix(in oklab, var(--brand-2), white 16%);
+  --primary-active:color-mix(in oklab, var(--brand-3), black 8%);
 
-  /* Sidebar */
-  --sidebar:oklch(.98 .015 85);
+  --chart-1:oklch(.70 0 0);
+  --chart-2:oklch(.55 0 0);
+  --chart-3:oklch(.80 0 0);
+  --chart-4:oklch(.65 0 0);
+  --chart-5:oklch(.40 0 0);
+
+  --sidebar:oklch(.98 0 0);
   --sidebar-foreground:var(--foreground);
-  --sidebar-primary:var(--brand);
-  --sidebar-primary-foreground:oklch(.99 .01 85);
-  --sidebar-accent:oklch(.95 .02 90);
-  --sidebar-accent-foreground:oklch(.32 .03 40);
-  --sidebar-border:oklch(.88 .02 85);
+  --sidebar-primary:var(--primary);
+  --sidebar-primary-foreground:var(--primary-foreground);
+  --sidebar-accent:oklch(.95 0 0);
+  --sidebar-accent-foreground:oklch(.28 0 0);
+  --sidebar-border:oklch(.88 0 0);
   --sidebar-ring:var(--ring);
 }
 
@@ -110,61 +102,58 @@
   --color-sidebar-border:var(--sidebar-border);
   --color-sidebar-ring:var(--sidebar-ring);
 
-  /* Para clases bg-brand / text-brand, etc. */
   --color-brand:var(--brand);
   --color-brand-1:var(--brand-1);
   --color-brand-2:var(--brand-2);
   --color-brand-3:var(--brand-3);
   --color-brand-contrast:var(--brand-contrast);
 
-  --glass-blur: 10px;         /* <— cambia el nivel de blur */
-  --glass-sat: 130%;
-  --glass-contrast: 105%;
-  --glass-alpha: 0.04;        /* <— tinte MUY leve (0.00–0.10) */
+  --glass-blur:10px;
+  --glass-sat:130%;
+  --glass-contrast:105%;
+  --glass-alpha:0.04;
 }
 
-.dark{
-  color-scheme:dark;
-  --background:oklch(.19 .02 255);
-  --foreground:oklch(.95 .01 90);
-  --card:oklch(.24 .02 255);
-  --card-foreground:var(--foreground);
-  --popover:oklch(.24 .02 255);
-  --popover-foreground:var(--foreground);
-  --border:oklch(.50 .02 260 / .24);
-  --input:oklch(.52 .02 260 / .26);
-  --ring:oklch(.72 .13 50);
-
-  --primary:oklch(.78 .20 48);
-  --primary-foreground:oklch(.11 .02 260);
-  --secondary:oklch(.28 .02 260);
-  --secondary-foreground:var(--foreground);
-  --accent:oklch(.70 .18 55);
-  --accent-foreground:oklch(.13 .02 255);
-  --muted:oklch(.30 .02 260);
-  --muted-foreground:oklch(.75 .02 260);
-  --destructive:oklch(.58 .19 27);
-
-  --primary-hover: color-mix(in oklab, var(--brand-2), black 12%);
-  --primary-active: color-mix(in oklab, var(--brand-3), black 22%);
-
-  --sidebar:oklch(.24 .02 255);
-  --sidebar-foreground:var(--foreground);
-  --sidebar-primary:var(--primary);
-  --sidebar-primary-foreground:var(--primary-foreground);
-
-  --brand-1:oklch(.82 .19 55);
-  --brand-2:oklch(.76 .21 48);
-  --brand-3:oklch(.68 .20 45);
-  --brand-veil:oklch(.35 .03 60);
-  --brand:var(--brand-2);
-  --brand-contrast:var(--foreground);
-
-  --glass-blur: 12px;         /* opcional: un pelín más en dark */
-  --glass-alpha: 0.06;        /* leve incremento en dark */
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.23 0.025 250);
+  --foreground: oklch(0.97 0.015 260);
+  --card: oklch(0.26 0.025 250);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.28 0.025 250);
+  --popover-foreground: var(--foreground);
+  --border: oklch(0.46 0.025 250 / 0.3);
+  --input: oklch(0.50 0.025 250 / 0.35);
+  --ring: oklch(0.70 0.06 250);
+  --primary: oklch(0.74 0.18 48);
+  --primary-foreground: oklch(0.12 0.015 260);
+  --secondary: oklch(0.34 0.02 255);
+  --secondary-foreground: var(--foreground);
+  --accent: oklch(0.38 0.03 255);
+  --accent-foreground: oklch(0.94 0.015 260);
+  --muted: oklch(0.30 0.015 255);
+  --muted-foreground: oklch(0.82 0.015 260);
+  --destructive: oklch(0.52 0.10 25);
+  --primary-hover: color-mix(in oklab, var(--primary), white 10%);
+  --primary-active: color-mix(in oklab, var(--primary), black 15%);
+  --sidebar: oklch(0.25 0.025 255);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-border: oklch(0.40 0.025 255 / 0.3);
+  --brand-1: oklch(0.88 0.06 55);
+  --brand-2: oklch(0.72 0.16 48);
+  --brand-3: oklch(0.64 0.14 45);
+  --brand-veil: oklch(0.28 0.025 255);
+  --brand: var(--brand-2);
+  --brand-contrast: var(--foreground);
+  --glass-blur: 14px;
+  --glass-alpha: 0.05;
 }
 
-/* Base */
+
+
+
 @layer base{
   *{@apply border-border outline-ring/50}
   html,body,#root{height:100%}
@@ -173,3 +162,4 @@
 
 #root{max-width:none!important;margin:0!important;padding:0!important;text-align:unset!important}
 body{display:block!important;place-items:initial!important;min-height:100vh}
+

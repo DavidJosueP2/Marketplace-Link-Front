@@ -1,6 +1,6 @@
-import MarketplaceLayout from "@/layouts/marketplace_layout_refactored";
+import MarketplaceLayout from "@/layouts/MarketplaceLayout.tsx";
 import RoleBasedHome from "@/routes/role-based-home";
-import roleService from "@/services/role.service";
+import roleService from "@/services/roles/role.service.ts";
 import Profile from "@/pages/Profile";
 
 import {
@@ -27,10 +27,10 @@ export const protectedRoutes = [{
     // General access (any authenticated user)
     { path: "publications", element: <PublicationsPage /> },
     { path: "publication/:id", element: <PublicationDetailPage /> },
+    { path: "favoritos", element: <FavoritosPage /> },
     { path: "profile", element: <Profile /> },
 
     // Buyer + Seller access
-    { path: "favoritos", element: <FavoritosPage />, allowedRoles: BUYER_SELLER },
     { path: "mensajes",  element: <MensajesPage  />, allowedRoles: BUYER_SELLER },
 
     // Seller-only access

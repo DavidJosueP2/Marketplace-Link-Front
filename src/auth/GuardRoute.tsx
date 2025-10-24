@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 
 const norm = (r: string | { name?: string } | null | undefined): string =>
@@ -35,11 +35,10 @@ export function GuardRoute({
   children,
 }: GuardRouteProps) {
   const { user, isLoading, isAuthenticated } = useAuth();
-  const location = useLocation();
 
   if (isLoading) return <>{fallback}</>;
   if (!isAuthenticated)
-    return <Navigate to={redirectToLogin} state={{ from: location }} replace />;
+    return <Navigate to={redirectToLogin} replace />;
 
   const roles = Array.isArray(user?.roles)
     ? user.roles.map((r: string | { name?: string }) => {

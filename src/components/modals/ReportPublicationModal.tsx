@@ -16,7 +16,7 @@ const reasons = [
   { value: "Spam o publicidad", label: "Spam o publicidad" },
   { value: "Contenido inapropiado", label: "Contenido inapropiado" },
   { value: "Estafa o fraude", label: "Estafa o fraude" },
-  { value: "Otro", label: "Otro" },
+  { value: "OTHER", label: "Otro" },
 ];
 
 const ReportPublicationModal = ({
@@ -27,7 +27,7 @@ const ReportPublicationModal = ({
   theme = "light",
 }: ReportPublicationModalProps) => {
   const [reason, setReason] = useState<string>("");
-  const [customReason, setCustomReason] = useState<string>(""); // motivo personalizado si elige “Otro”
+  const [customReason, setCustomReason] = useState<string>("");
   const [comment, setComment] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,9 +60,6 @@ const ReportPublicationModal = ({
       if (response.publication_status === "UNDER_REVIEW") {
         toast.info(
           "Tu reporte fue enviado. La publicación está ahora bajo revisión por el equipo de moderación.",
-          {
-            description: "Te notificaremos si se toma una decisión sobre ella.",
-          },
         );
         onReported?.();
       } else {
@@ -83,17 +80,13 @@ const ReportPublicationModal = ({
           setError(validationMessages + ".");
           return;
         }
-        if (payload.type === "forbidden" && payload.data?.blocked_until) {
-          const until = formatBackendDate(payload.data.blocked_until);
-          const message =
-            payload.data?.detail ||
-            payload.message ||
-            "Has sido bloqueado temporalmente.";
-          setError(`${message} No podrás volver a reportarla hasta ${until}.`);
-          return;
-        }
 
-        setError(payload.message || "Error enviando el reporte");
+        const message =
+          payload?.message ||
+          payload?.data?.detail ||
+          "No se pudo reclamar la incidencia.";
+
+        setError(message || "Error enviando el reporte");
       } else {
         setError("Error desconocido al enviar el reporte");
       }
@@ -101,17 +94,6 @@ const ReportPublicationModal = ({
       setSubmitting(false);
     }
   };
-
-  function formatBackendDate(isoString: string): string {
-    const date = new Date(isoString);
-    return new Intl.DateTimeFormat("es-EC", {
-      dateStyle: "full",
-      timeStyle: "short",
-    }).format(date);
-  }
-
-  const textSecondary = theme === "dark" ? "text-gray-300" : "text-gray-600";
-  const borderClass = theme === "dark" ? "border-gray-700" : "border-gray-200";
 
   const body = (
     <div className="space-y-6">
@@ -179,7 +161,12 @@ const ReportPublicationModal = ({
               setReason("");
               setCustomReason("");
             }}
-            className="text-xs text-[#FF9900] hover:underline mt-1 cursor-pointer"
+            className={`text-xs mt-1 cursor-pointer transition-all px-2 py-[2px] rounded-md
+    ${
+      theme === "dark"
+        ? "text-white hover:text-gray-200 shadow-[0_1px_4px_rgba(255,255,255,0.1)] hover:shadow-[0_2px_6px_rgba(255,255,255,0.15)]"
+        : "text-[#FF9900] hover:text-[#e68900] shadow-[0_1px_3px_rgba(0,0,0,0.12)] hover:shadow-[0_2px_5px_rgba(0,0,0,0.18)]"
+    }`}
           >
             ← Volver a la lista de motivos
           </button>
@@ -194,7 +181,7 @@ const ReportPublicationModal = ({
             theme === "dark" ? "text-gray-200" : "text-gray-800"
           }`}
         >
-          Comentario (opcional)
+          Comentario
         </label>
         <textarea
           id="report-comment"
@@ -273,7 +260,7 @@ const ReportPublicationModal = ({
       closeOnBackdrop={true}
       theme={theme}
     >
-      <div className="px-6 py-2">{body}</div>
+      <div className="px-3 py-3">{body}</div>
     </Modal>
   );
 };

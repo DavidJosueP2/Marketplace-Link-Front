@@ -41,7 +41,7 @@ const incidenceService = {
   },
 
   fetchIncidenceByIdForSeller: async (publicUi: string) => {
-    const response = await api.get<IncidenceDetailsResponse>(`/api/incidences/p/${publicUi}`);
+    const response = await api.get<IncidenceDetailsResponse>(`/api/incidences/s/${publicUi}`);
     return response.data;
   },
 

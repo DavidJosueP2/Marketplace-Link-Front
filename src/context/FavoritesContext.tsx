@@ -30,7 +30,7 @@ export const FavoritesProvider = ({ children }: FavoritesProviderProps) => {
   const [size, setSize] = useState<number>(10);
 
   const { favorites, isLoading, error, refetch, totalElements, totalPages } =
-    useUserFavorites(undefined, page, size);
+    useUserFavorites(page, size);
 
   const value: FavoritesContextValue = useMemo(
     () => ({

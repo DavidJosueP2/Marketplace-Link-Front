@@ -56,21 +56,31 @@ export default function MyIncidencesPage() {
 
   if (!incidencesData || incidencesData.content.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-300">
-        <ClipboardCheck className="w-8 h-8 text-green-500 mb-2" />
-        <p>No incidences assigned to you yet</p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-2xl mb-4">
+            <ClipboardCheck className="w-12 h-12 text-green-500 dark:text-green-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            No tienes incidencias asignadas
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 max-w-md">
+            No se encontraron incidencias asignadas a ti en este momento. Revisa
+            las incidencias pendientes para reclamar alguna.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-          <ClipboardCheck className="text-green-500" /> My Incidences
-        </h1>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <header className="flex flex-col gap-1 mb-6">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          <ClipboardCheck className="text-green-500" /> Mis Incidencias
+        </h2>
         <p className="text-gray-500 dark:text-gray-400">
-          Incidences you are currently reviewing or have claimed.
+          Incidencias que estás revisando actualmente o has reclamado
         </p>
       </header>
 

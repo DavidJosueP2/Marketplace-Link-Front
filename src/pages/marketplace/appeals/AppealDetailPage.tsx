@@ -215,18 +215,18 @@ export default function AppealDetailPage() {
         {/* Información del vendedor */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-10">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-              <User className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+              <User className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
               Información del Vendedor
             </h3>
           </div>
 
-          <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border-l-4 border-green-500">
+          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-6 border-l-4 border-orange-500">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-                <span className="text-green-600 dark:text-green-400 font-semibold text-lg">
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
+                <span className="text-orange-600 dark:text-orange-400 font-semibold text-lg">
                   {seller.fullname?.charAt(0) || "?"}
                 </span>
               </div>

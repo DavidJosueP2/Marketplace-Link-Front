@@ -264,7 +264,7 @@ export default function IncidenceDetailPage() {
                 <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                Comentario del moderador
+                Comentario agregado
               </h3>
             </div>
 

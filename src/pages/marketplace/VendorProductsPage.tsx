@@ -2,12 +2,24 @@ import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { useVendorPublications, useVendorPublicationsActions } from "@/hooks/marketplace";
+import {
+  useVendorPublications,
+  useVendorPublicationsActions,
+} from "@/hooks/marketplace";
 import { useCategories } from "@/hooks/use-categories";
 import { ProductoSkeleton } from "@/components/common/Skeletons";
 import Pagination from "@/components/common/Pagination";
 import DeletePublicationModal from "@/components/modals/DeletePublicationModal";
-import { Package, Plus, Edit, Trash2, Eye, AlertTriangle, X, SlidersHorizontal } from "lucide-react";
+import {
+  Package,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  AlertTriangle,
+  X,
+  SlidersHorizontal,
+} from "lucide-react";
 import type { PublicationSummary } from "@/services/publications/interfaces/PublicationSummary";
 import {
   getTextPrimaryClasses,
@@ -23,14 +35,14 @@ const VendorProductsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  
+
   // Hook personalizado para acciones CRUD (delete con refresh automático)
   const { deletePublication, isDeleting } = useVendorPublicationsActions();
-  
+
   // Get theme from layout context
   const context = useOutletContext<{ theme?: "light" | "dark" }>();
   const theme = context?.theme || "light";
-  
+
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
@@ -40,10 +52,11 @@ const VendorProductsPage = () => {
     title: string;
     detail: string;
   } | null>(null);
-  
+
   // Estados para el modal de eliminación
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [publicationToDelete, setPublicationToDelete] = useState<PublicationSummary | null>(null);
+  const [publicationToDelete, setPublicationToDelete] =
+    useState<PublicationSummary | null>(null);
 
   // Theme classes
   const textPrimary = getTextPrimaryClasses(theme);
@@ -58,7 +71,8 @@ const VendorProductsPage = () => {
     vendorId: (user?.id as number) || 0,
     page: currentPage,
     size: itemsPerPage,
-    categoryIds: selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined,
+    categoryIds:
+      selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined,
   });
 
   const publications = data?.content || [];
@@ -74,11 +88,11 @@ const VendorProductsPage = () => {
         setPendingReviewMessage(parsed);
         setShowPendingReviewAlert(true);
         sessionStorage.removeItem("pendingReviewMessage");
-        
+
         // Remover completamente la cache para forzar un fetch fresco (usar el queryKey correcto)
-        queryClient.removeQueries({ 
-          queryKey: ['vendor-publications'],
-          exact: false
+        queryClient.removeQueries({
+          queryKey: ["vendor-publications"],
+          exact: false,
         });
       } catch (error) {
         console.error("Error parsing pending review message:", error);
@@ -100,7 +114,7 @@ const VendorProductsPage = () => {
     setSelectedCategoryIds((prev) =>
       prev.includes(categoryId)
         ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
+        : [...prev, categoryId],
     );
     setCurrentPage(0); // Reset to first page when filter changes
   };
@@ -112,7 +126,7 @@ const VendorProductsPage = () => {
 
   const handleViewPublication = (publication: PublicationSummary) => {
     // Marcar que viene desde "Mis Productos" para la navegación correcta
-    sessionStorage.setItem('fromMyProducts', 'true');
+    sessionStorage.setItem("fromMyProducts", "true");
     navigate(`/marketplace-refactored/publication/${publication.id}`);
   };
 
@@ -132,7 +146,7 @@ const VendorProductsPage = () => {
     const { success, newPage } = await deletePublication(
       publicationToDelete.id,
       currentPage,
-      publications.length
+      publications.length,
     );
 
     if (success) {
@@ -178,7 +192,9 @@ const VendorProductsPage = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <p className="text-red-500 mb-4 text-lg">Error al cargar publicaciones</p>
+        <p className="text-red-500 mb-4 text-lg">
+          Error al cargar publicaciones
+        </p>
         <p className={`${textSecondary} mb-6`}>{error.message}</p>
         <button
           onClick={() => window.location.reload()}
@@ -198,7 +214,6 @@ const VendorProductsPage = () => {
         onClick={() => navigate("/marketplace-refactored/publications")}
         className="flex items-center gap-2 mb-4 px-4 py-2 rounded-lg bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 transition-all duration-200 font-medium"
       >
-       
         Volver a la página de inicio
       </button>
 
@@ -243,9 +258,8 @@ const VendorProductsPage = () => {
             <span className={textPrimary}>Mis Publicaciones</span>
           </h1>
           <p className="text-[#FF9900] dark:text-[#FFB84D] text-lg font-medium italic mb-1">
-          Gestiona tus productos y servicios aquí.
+            Gestiona tus productos y servicios aquí.
           </p>
-         
         </div>
         <div className="flex gap-3">
           <button
@@ -283,8 +297,8 @@ const VendorProductsPage = () => {
                   selectedCategoryIds.includes(category.id)
                     ? "bg-[#FF9900] text-white shadow-md"
                     : theme === "dark"
-                    ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                      ? "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                 }`}
               >
                 {category.name}
@@ -302,8 +316,8 @@ const VendorProductsPage = () => {
             selectedCategoryIds.length > 0
               ? "bg-[#FF9900] text-white"
               : theme === "dark"
-              ? "bg-gray-700 hover:bg-gray-600 text-white"
-              : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                ? "bg-gray-700 hover:bg-gray-600 text-white"
+                : "bg-gray-200 hover:bg-gray-300 text-gray-700"
           }`}
         >
           <SlidersHorizontal size={20} />
@@ -348,13 +362,19 @@ const VendorProductsPage = () => {
               {/* Publications Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {publications.map((publication) => {
-                  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
-                  const imageFileName = publication.image.url;
-                  const cleanFileName = imageFileName.startsWith('/') ? imageFileName.substring(1) : imageFileName;
+                  const baseUrl =
+                    import.meta.env.VITE_API_URL || "http://localhost:8080";
+                  const imageFileName = publication.image?.url || "";
+                  const cleanFileName = imageFileName.startsWith("/")
+                    ? imageFileName.substring(1)
+                    : imageFileName;
                   const imageUrl = `${baseUrl}/${cleanFileName}`;
 
                   return (
-                    <div key={publication.id} className={`${cardClasses} rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300`}>
+                    <div
+                      key={publication.id}
+                      className={`${cardClasses} rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300`}
+                    >
                       {/* Image Section */}
                       <div className="h-48 relative overflow-hidden bg-gray-200 dark:bg-gray-700">
                         <img
@@ -391,7 +411,9 @@ const VendorProductsPage = () => {
                           <span
                             className={`inline-block px-2 py-1 rounded text-xs font-medium ${getAvailabilityColor(publication.availability)}`}
                           >
-                            {getAvailabilityDisplayName(publication.availability)}
+                            {getAvailabilityDisplayName(
+                              publication.availability,
+                            )}
                           </span>
                         </div>
 

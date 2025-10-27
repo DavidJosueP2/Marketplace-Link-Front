@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/shadcn/badge";
-import { Card } from "@/components/ui/shadcn/card";
 import { Button } from "@/components/ui/shadcn/button";
 import { ArrowLeft, Clock, AlertCircle, User } from "lucide-react";
 import { toast } from "sonner";
@@ -63,14 +62,7 @@ export default function AppealDetailPage() {
     );
   }
 
-  const {
-    status,
-    final_decision,
-    created_at,
-    new_moderator,
-    seller,
-    incidence,
-  } = appeal;
+  const { status, final_decision, created_at, seller, incidence } = appeal;
 
   const date = new Date(created_at);
 
@@ -83,248 +75,321 @@ export default function AppealDetailPage() {
   const canMakeAppeal =
     status === "ASSIGNED" && incidence.status === "APPEALED";
 
+  const statusColors = {
+    PENDING:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    ASSIGNED: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    FAILED_NO_MOD: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    REVIEWED:
+      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  };
+
+  const decisionColors = {
+    ACCEPTED:
+      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    REJECTED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    PENDING: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200",
+  };
+
   const statusColor =
-    {
-      PENDING:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-      ASSIGNED: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      FAILED_NO_MOD:
-        "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-      REVIEWED:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    }[status] ||
+    statusColors[status as keyof typeof statusColors] ||
     "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
 
   const decisionColor =
-    {
-      ACCEPTED:
-        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      REJECTED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-      PENDING: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200",
-    }[final_decision] ||
+    decisionColors[final_decision as keyof typeof decisionColors] ||
     "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
 
+  console.log("apelacion", appeal);
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+      <div className="space-y-10">
+        {/* Header */}
+        <header className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" /> Volver
           </Button>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-            Detalles de la Apelación
-          </h1>
-        </div>
-      </header>
-
-      {/* Información general */}
-      {/* Info general */}
-      <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
-              Publicación:{" "}
-              <span className="text-blue-600 dark:text-blue-400">
-                {incidence.publication?.name}
-              </span>
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Creada el {date.toLocaleDateString()}{" "}
-              {date.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Detalles de la Apelación
+            </h1>
           </div>
+        </header>
 
-          {/* Botones de estado + acción */}
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex gap-2">
-              <Badge
-                className={
-                  {
-                    PENDING:
-                      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-                    ASSIGNED:
-                      "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-                    FAILED_NO_MOD:
-                      "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-                    REVIEWED:
-                      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-                  }[status] || "bg-gray-100 text-gray-800"
-                }
-              >
-                {status === "ASSIGNED"
-                  ? "Asignada"
-                  : status === "REVIEWED"
-                    ? "Revisada"
-                    : "Pendiente"}
-              </Badge>
-
-              <Badge
-                className={
-                  {
-                    ACCEPTED:
-                      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-                    REJECTED:
-                      "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-                    PENDING:
-                      "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200",
-                  }[final_decision]
-                }
-              >
-                {final_decision === "PENDING"
-                  ? "Pendiente"
-                  : final_decision === "ACCEPTED"
-                    ? "Aceptada"
-                    : "Rechazada"}
-              </Badge>
+        {/* Información general */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-10">
+          <div className="flex items-start justify-between mb-8">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Publicación:{" "}
+                <span className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer">
+                  {incidence.publication?.name}
+                </span>
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Apelación creada el {date.toLocaleDateString()}{" "}
+                {date.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+              {incidence.publication?.description && (
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                    {incidence.publication.description}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {canMakeAppeal && (
-              <>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="bg-[#FF9900] hover:bg-[#FFB84D] text-white"
-                  onClick={handleAppeal}
-                >
-                  Decidir apelación
-                </Button>
-
-                <AppealDecisionModal
-                  isOpen={showAppealModal}
-                  onClose={() => setShowAppealModal(false)}
-                  appealId={appealId!}
-                  onDecided={async () => {
-                    const updated = await appealService.fetchById(appealId!);
-                    setAppeal(updated);
-                  }}
-                  theme="light"
-                />
-              </>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {/* Vendedor */}
-      <Card className="p-6 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 shadow-sm">
-        <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100 flex items-center gap-2">
-          <User className="w-5 h-5 text-blue-500" />
-          Vendedor
-        </h3>
-        <p className="text-sm text-gray-700 dark:text-gray-300">
-          {seller.fullname} ({seller.email})
-        </p>
-      </Card>
-
-      {/* Moderador anterior */}
-      {incidence.previous_moderator && (
-        <Card className="p-6 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 shadow-sm">
-          <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <User className="w-5 h-5 text-gray-500" />
-            Moderador anterior
-          </h3>
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            {incidence.previous_moderator.fullname} (
-            {incidence.previous_moderator.email})
-          </p>
-          <div className="mt-3 bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
-            <p
-              className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line"
-              style={{ wordBreak: "break-word" }}
-            >
-              {incidence.moderator_comment ||
-                "Sin comentario del moderador anterior."}
-            </p>
-          </div>
-        </Card>
-      )}
-
-      {/* Reportes asociados */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-100">
-          <AlertCircle className="w-5 h-5 text-orange-500" />
-          Reportes asociados ({incidence.reports.length})
-        </h3>
-
-        {incidence.reports.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
-            No hay reportes registrados.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {paginatedReports.map((r, i) => (
-              <div
-                key={i}
-                className="p-4 bg-white dark:bg-gray-900/40 rounded-md shadow-sm border-l-4 border-orange-400 hover:shadow-md transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Reportado por:
-                    </p>
-                    <p className="font-medium text-gray-800 dark:text-gray-100">
-                      {r.reporter?.fullname ?? "Usuario desconocido"}
-                    </p>
-                  </div>
-
-                  <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                    {r.reason}
+            <div className="flex flex-col items-end gap-3 ml-6">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Estado:
+                  </span>
+                  <Badge
+                    className={`${statusColor} px-3 py-1 text-sm font-medium`}
+                  >
+                    {{
+                      PENDING: "Pendiente",
+                      ASSIGNED: "Asignada",
+                      FAILED_NO_MOD: "Sin moderador",
+                      REVIEWED: "Revisada",
+                    }[status as keyof typeof statusColors] || "Desconocido"}
                   </Badge>
                 </div>
 
-                <p
-                  className="text-sm text-gray-700 dark:text-gray-300 mb-2 leading-relaxed break-words whitespace-pre-line max-w-full overflow-hidden"
-                  style={{ wordBreak: "break-word" }}
-                >
-                  {r.comment || "Sin comentario."}
-                </p>
-
-                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                  <span>ID: #{r.id}</span>
-                  <span>
-                    {r.created_at
-                      ? new Date(r.created_at).toLocaleString()
-                      : "Fecha no disponible"}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Decisión:
                   </span>
+                  <Badge
+                    className={`${decisionColor} px-3 py-1 text-sm font-medium`}
+                  >
+                    {{
+                      ACCEPTED: "Aceptada",
+                      REJECTED: "Rechazada",
+                      PENDING: "Pendiente",
+                    }[final_decision as keyof typeof decisionColors] ||
+                      "Desconocido"}
+                  </Badge>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Paginación */}
-        {incidence.reports.length > pageSize && (
-          <div className="flex justify-between items-center mt-6">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Página {currentPage} de {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
-                ‹ Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-              >
-                Siguiente ›
-              </Button>
+              {canMakeAppeal && (
+                <>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 font-medium"
+                    onClick={handleAppeal}
+                  >
+                    Decidir apelación
+                  </Button>
+
+                  <AppealDecisionModal
+                    isOpen={showAppealModal}
+                    onClose={() => setShowAppealModal(false)}
+                    appealId={appealId!}
+                    onDecided={async () => {
+                      const updated = await appealService.fetchById(appealId!);
+                      setAppeal(updated);
+                    }}
+                    theme="light"
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Información del vendedor */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+              <User className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              Información del Vendedor
+            </h3>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-6 border-l-4 border-green-500">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                <span className="text-green-600 dark:text-green-400 font-semibold text-lg">
+                  {seller.fullname?.charAt(0) || "?"}
+                </span>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white text-lg">
+                  {seller.fullname}
+                </p>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {seller.email}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Moderador anterior */}
+        {incidence.previous_moderator && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                Moderador Anterior
+              </h3>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border-l-4 border-blue-500">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold text-lg">
+                    {incidence.previous_moderator.fullname?.charAt(0) || "?"}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white text-lg">
+                    {incidence.previous_moderator.fullname}
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {incidence.previous_moderator.email}
+                  </p>
+                </div>
+              </div>
+
+              {incidence.moderator_comment && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                    {incidence.moderator_comment}
+                  </p>
+                  <div className="mt-3 text-sm text-blue-600 dark:text-blue-400 font-medium">
+                    — Comentario del moderador anterior
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
-      </Card>
+
+        {/* Reportes asociados */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-10">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              Reportes asociados ({incidence.reports.length})
+            </h3>
+          </div>
+
+          {incidence.reports.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-2xl w-fit mx-auto mb-6">
+                <AlertCircle className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">
+                No hay reportes registrados para esta apelación.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {paginatedReports.map((r) => (
+                <div
+                  key={r.id}
+                  className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
+                        <span className="text-orange-600 dark:text-orange-400 font-semibold text-sm">
+                          {r.reporter?.fullname?.charAt(0) || "?"}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Reportado por:
+                        </p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {r.reporter?.fullname ?? "Usuario desconocido"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 px-3 py-1">
+                      {r.reason}
+                    </Badge>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                      {r.comment || "Sin comentario adicional."}
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+                    <span className="font-medium">ID: #{r.id}</span>
+                    <span>
+                      {r.created_at
+                        ? new Date(r.created_at).toLocaleDateString() +
+                          " " +
+                          new Date(r.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "Fecha no disponible"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Paginación */}
+          {incidence.reports.length > pageSize && (
+            <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Página {currentPage} de {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  ‹ Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  Siguiente ›
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

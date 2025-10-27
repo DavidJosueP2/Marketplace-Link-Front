@@ -183,7 +183,10 @@ const ApelacionesPage = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Búsqueda */}
           <div>
-            <label htmlFor="buscar-apelacion" className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="buscar-apelacion"
+              className="block text-sm font-medium mb-2"
+            >
               Buscar
             </label>
             <div className="relative">
@@ -201,7 +204,10 @@ const ApelacionesPage = ({
 
           {/* Filtro Estado */}
           <div>
-            <label htmlFor="filtro-estado" className="block text-sm font-medium mb-2">
+            <label
+              htmlFor="filtro-estado"
+              className="block text-sm font-medium mb-2"
+            >
               Estado
             </label>
             <select

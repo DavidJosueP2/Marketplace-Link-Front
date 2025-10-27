@@ -16,6 +16,7 @@ export const appealService = {
     const response = await api.get<AppealDetailsResponse>(
       `/api/appeals/${appealId}`
     );
+
     return response.data;
   },
 

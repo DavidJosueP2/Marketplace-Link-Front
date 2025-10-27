@@ -1,4 +1,4 @@
-// Mock data para el marketplace
+// Mock data para el marketplace que se utilizara
 export const mockUser = {
   name: "Juan Pérez",
   email: "juan.perez@example.com",

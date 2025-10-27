@@ -64,8 +64,7 @@ const PublicationCard = ({
 
   // Construct image URL from backend
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
-  const imageFileName = publication.image.url;
-  // Remove leading slash if present to avoid double slashes
+  const imageFileName = publication.image?.url || "";
   const cleanFileName = imageFileName.startsWith("/")
     ? imageFileName.substring(1)
     : imageFileName;

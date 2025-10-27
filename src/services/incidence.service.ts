@@ -1,4 +1,4 @@
-import type { ApiResponseIncidence, ClaimIncidenceResponse, DecisionResponse, IncidenceDetailsResponse, ReportResponse, RequestAppealIncidence, RequestMakeDecision, RequestPagination, RequestUserReport } from "@/pages/marketplace/incidences/types/d.types";
+import type { ApiResponseIncidence, ClaimIncidenceResponse, DecisionResponse, IncidenceDetailsResponse, IncidenceStatsResponse, ReportResponse, RequestAppealIncidence, RequestMakeDecision, RequestPagination, RequestUserReport } from "@/pages/marketplace/incidences/types/d.types";
 import api from "./api";
 
 
@@ -65,6 +65,11 @@ const incidenceService = {
     };
 
     const response = await api.post(`/api/incidences/appeal`, body);
+    return response.data;
+  },
+
+  fetchStats: async () => {
+    const response = await api.get<IncidenceStatsResponse>(`/api/incidences/stats`);
     return response.data;
   },
 

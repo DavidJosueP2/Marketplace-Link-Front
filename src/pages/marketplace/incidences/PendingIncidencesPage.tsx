@@ -56,21 +56,31 @@ export default function PendingIncidencesPage() {
 
   if (!incidencesData || incidencesData.content.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-300">
-        <UserX className="w-8 h-8 text-orange-500 mb-2" />
-        <p>No pending incidences found</p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl mb-4">
+            <UserX className="w-12 h-12 text-orange-500 dark:text-orange-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            No hay incidencias pendientes
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 max-w-md">
+            No se encontraron incidencias pendientes de revisión en este
+            momento.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-          <UserX className="text-orange-500" /> Pending Incidences
-        </h1>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+      <header className="flex flex-col gap-1 mb-6">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          <UserX className="text-orange-500" /> Incidencias Pendientes
+        </h2>
         <p className="text-gray-500 dark:text-gray-400">
-          Review and manage unreviewed incidences
+          Revisa y administra las incidencias sin revisar
         </p>
       </header>
 

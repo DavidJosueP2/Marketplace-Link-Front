@@ -1,0 +1,166 @@
+{
+  "config": {
+    "configFile": "C:\\Users\\Joel\\Desktop\\Universidad\\Sexto Semestre\\GESTION DE PRUEBAS E IMPLANTACIÓN DE SOFTWARE\\Proyecto\\Code\\front\\Marketplace-Link-Front\\playwright.config.ts",
+    "rootDir": "C:/Users/Joel/Desktop/Universidad/Sexto Semestre/GESTION DE PRUEBAS E IMPLANTACIÓN DE SOFTWARE/Proyecto/Code/front/Marketplace-Link-Front/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "C:/Users/Joel/Desktop/Universidad/Sexto Semestre/GESTION DE PRUEBAS E IMPLANTACIÓN DE SOFTWARE/Proyecto/Code/front/Marketplace-Link-Front/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/Joel/Desktop/Universidad/Sexto Semestre/GESTION DE PRUEBAS E IMPLANTACIÓN DE SOFTWARE/Proyecto/Code/front/Marketplace-Link-Front/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 8,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:5174",
+      "reuseExistingServer": true,
+      "timeout": 120000,
+      "stdout": "ignore",
+      "stderr": "pipe"
+    }
+  },
+  "suites": [
+    {
+      "title": "publications\\filter-publications-by-distance-price-category.spec.ts",
+      "file": "publications/filter-publications-by-distance-price-category.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "PS-MGP-001 - Filtrado de publicaciones por distancia, precio y categoría",
+          "file": "publications/filter-publications-by-distance-price-category.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "debería filtrar publicaciones por distancia, precio y categoría correctamente",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15421,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Iniciar sesión con credenciales de comprador",
+                          "duration": 1808
+                        },
+                        {
+                          "title": "Verificar que se muestra la lista de publicaciones",
+                          "duration": 1031
+                        },
+                        {
+                          "title": "Verificar que el panel lateral de filtros está visible",
+                          "duration": 1046
+                        },
+                        {
+                          "title": "Aplicar filtro de distancia: 5 km",
+                          "duration": 1593
+                        },
+                        {
+                          "title": "Aplicar filtro de precio: $30 - $500",
+                          "duration": 1765
+                        },
+                        {
+                          "title": "Aplicar filtro de categoría: Hogar",
+                          "duration": 1587
+                        },
+                        {
+                          "title": "Verificar que la lista de publicaciones se actualiza automáticamente",
+                          "duration": 3567
+                        },
+                        {
+                          "title": "Verificar que el tiempo de actualización es menor a 2 segundos",
+                          "duration": 113
+                        }
+                      ],
+                      "startTime": "2025-11-05T18:04:51.429Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "51b352be8161ff844d05-f7c0e8d0a5fdb8010d29",
+              "file": "publications/filter-publications-by-distance-price-category.spec.ts",
+              "line": 32,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-11-05T18:04:49.465Z",
+    "duration": 18232.709,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

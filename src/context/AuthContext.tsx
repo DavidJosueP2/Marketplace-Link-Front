@@ -47,12 +47,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
     }, 3000);
 
+   
+    const publicRoutes = [
+      "/login",
+      "/register",
+      "/password-recovery",
+      "/reset-password",
+      "/verify-email",
+      "/public-example",
+    ];
+
+    const isPublicRoute = publicRoutes.includes(location.pathname);
+
     (async () => {
       const token = getAccessToken();
       if (!token) {
         setIsAuthenticated(false);
         if (!timedOut) setIsLoading(false);
-        if (location.pathname !== "/login") navigate("/login", { replace: true });
+
+        if (!isPublicRoute) {
+          navigate("/login", { replace: true });
+        }
         return;
       }
       try {
@@ -63,7 +78,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         clearTokens();
         setUser(null);
         setIsAuthenticated(false);
-        navigate("/login", { replace: true });
+    
+        if (!isPublicRoute) {
+          navigate("/login", { replace: true });
+        }
       } finally {
         if (!timedOut) setIsLoading(false);
         clearTimeout(guard);

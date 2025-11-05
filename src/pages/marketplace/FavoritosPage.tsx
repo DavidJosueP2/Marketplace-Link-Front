@@ -1,4 +1,5 @@
-import { Heart, ShoppingBag } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Heart, ShoppingBag, Search, X } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useFavoritesContext } from "@/context/FavoritesContext";
@@ -6,6 +7,7 @@ import {
   getTextPrimaryClasses,
   getTextSecondaryClasses,
   getCardWithShadowClasses,
+  getBorderClasses,
 } from "@/lib/themeHelpers";
 
 /**
@@ -20,7 +22,6 @@ const FavoritosPage = () => {
     error, 
     page, 
     size, 
-    totalPages, 
     totalElements,
     setPage,
     setSize
@@ -31,9 +32,100 @@ const FavoritosPage = () => {
   const context = useOutletContext<{ theme?: "light" | "dark" }>();
   const theme = context?.theme || "light";
 
+  // Estados de filtros
+  const [searchName, setSearchName] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [dateFilterType, setDateFilterType] = useState<"publicationDate" | "favoritedAt">("favoritedAt");
+
   const textPrimary = getTextPrimaryClasses(theme);
   const textSecondary = getTextSecondaryClasses(theme);
   const cardClasses = getCardWithShadowClasses(theme);
+  const borderClass = getBorderClasses(theme);
+
+  // Aplicar filtros del lado del cliente
+  const filteredFavorites = useMemo(() => {
+    let filtered = [...favorites];
+
+    // Filtro por nombre
+    if (searchName.trim()) {
+      const searchLower = searchName.toLowerCase().trim();
+      filtered = filtered.filter(fav =>
+        fav.name.toLowerCase().includes(searchLower) ||
+        fav.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filtro por rango de fechas
+    if (dateFrom || dateTo) {
+      filtered = filtered.filter(fav => {
+        const dateStr = dateFilterType === "publicationDate" 
+          ? fav.publicationDate 
+          : fav.favoritedAt;
+        const favoriteDate = new Date(dateStr);
+        
+        // Ajustar a inicio del día para comparaciones
+        favoriteDate.setHours(0, 0, 0, 0);
+        
+        if (dateFrom && dateTo) {
+          const fromDate = new Date(dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          return favoriteDate >= fromDate && favoriteDate <= toDate;
+        } else if (dateFrom) {
+          const fromDate = new Date(dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          return favoriteDate >= fromDate;
+        } else if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          return favoriteDate <= toDate;
+        }
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [favorites, searchName, dateFrom, dateTo, dateFilterType]);
+
+  // Calcular páginas totales basadas en favoritos filtrados
+  const filteredTotalPages = Math.max(1, Math.ceil(filteredFavorites.length / size));
+  const filteredTotalElements = filteredFavorites.length;
+
+  // Ajustar página si excede el total después del filtrado
+  const effectivePage = page >= filteredTotalPages ? 0 : page;
+
+  // Aplicar paginación después del filtrado
+  const paginatedFavorites = useMemo(() => {
+    const startIndex = effectivePage * size;
+    const endIndex = startIndex + size;
+    return filteredFavorites.slice(startIndex, endIndex);
+  }, [filteredFavorites, effectivePage, size]);
+
+  // Resetear página cuando cambian los filtros o cuando excede el total
+  useEffect(() => {
+    if (page > 0 && page >= filteredTotalPages) {
+      setPage(0);
+    }
+  }, [filteredTotalPages, page, setPage]);
+
+  // Resetear página cuando cambian los filtros
+  useEffect(() => {
+    if (page > 0) {
+      setPage(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchName, dateFrom, dateTo, dateFilterType]); // setPage es estable, no necesita estar en deps
+
+  const handleClearFilters = () => {
+    setSearchName("");
+    setDateFrom("");
+    setDateTo("");
+    setPage(0);
+  };
+
+  const hasActiveFilters = Boolean(searchName.trim() || dateFrom || dateTo);
 
   // Función para construir URL de imagen desde el backend
   const getImageUrl = (imageUrl: string): string => {
@@ -61,6 +153,10 @@ const FavoritosPage = () => {
   const handleRemoveFavorite = async (publicationId: number) => {
     try {
       await removeFavorite(publicationId);
+      // Si estamos en una página que quedó vacía después de eliminar, volver a la anterior
+      if (paginatedFavorites.length === 1 && effectivePage > 0) {
+        setPage(effectivePage - 1);
+      }
     } catch (err) {
       console.error("Error removing favorite:", err);
     }
@@ -105,40 +201,137 @@ const FavoritosPage = () => {
       <div className="mb-6">
         <h1 className={`text-3xl font-bold ${textPrimary}`}>Mis Favoritos</h1>
         <p className={`text-sm ${textSecondary} mt-1`}>
-          {totalElements} publicación{totalElements === 1 ? "" : "es"} guardada{totalElements === 1 ? "" : "s"}
+          {hasActiveFilters 
+            ? `${filteredTotalElements} de ${totalElements} publicación${totalElements === 1 ? "" : "es"}`
+            : `${totalElements} publicación${totalElements === 1 ? "" : "es"} guardada${totalElements === 1 ? "" : "s"}`
+          }
         </p>
       </div>
 
-  {favorites.length === 0 ? (
+      {/* Filtros */}
+      <div className={`${cardClasses} rounded-lg p-4 mb-6`}>
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Búsqueda por nombre */}
+          <div className="flex-1">
+            <label className={`block text-sm font-medium mb-2 ${textPrimary}`}>
+              Buscar por nombre
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                placeholder="Buscar por nombre o descripción..."
+                className={`w-full pl-10 pr-10 py-2 border ${borderClass} rounded-lg ${theme === "dark" ? "bg-gray-700" : "bg-white"} focus:ring-2 focus:ring-[#FF9900] focus:outline-none`}
+              />
+              {searchName && (
+                <button
+                  type="button"
+                  onClick={() => setSearchName("")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filtro por fecha */}
+          <div className="flex-1">
+            <label className={`block text-sm font-medium mb-2 ${textPrimary}`}>
+              Filtrar por fecha
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={dateFilterType}
+                onChange={(e) => setDateFilterType(e.target.value as "publicationDate" | "favoritedAt")}
+                className={`flex-shrink-0 px-3 py-2 border ${borderClass} rounded-lg ${theme === "dark" ? "bg-gray-700" : "bg-white"} focus:ring-2 focus:ring-[#FF9900] focus:outline-none text-sm`}
+              >
+                <option value="favoritedAt">Fecha guardado</option>
+                <option value="publicationDate">Fecha publicación</option>
+              </select>
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className={`flex-1 px-3 py-2 border ${borderClass} rounded-lg ${theme === "dark" ? "bg-gray-700" : "bg-white"} focus:ring-2 focus:ring-[#FF9900] focus:outline-none text-sm`}
+                  placeholder="Desde"
+                />
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className={`flex-1 px-3 py-2 border ${borderClass} rounded-lg ${theme === "dark" ? "bg-gray-700" : "bg-white"} focus:ring-2 focus:ring-[#FF9900] focus:outline-none text-sm`}
+                  placeholder="Hasta"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Botón limpiar filtros */}
+          {hasActiveFilters && (
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className={`px-4 py-2 border ${borderClass} rounded-lg ${theme === "dark" ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors flex items-center gap-2 ${textPrimary}`}
+              >
+                <X size={16} />
+                Limpiar
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+  {filteredFavorites.length === 0 ? (
         /* Empty State */
         <div className={`${cardClasses} rounded-lg p-12 text-center`}>
           <div className="flex flex-col items-center gap-4">
             <div
               className={`w-24 h-24 ${theme === "dark" ? "bg-gray-700" : "bg-gray-100"} rounded-full flex items-center justify-center`}
             >
-              <Heart size={48} className="text-gray-400" />
+              {hasActiveFilters ? (
+                <Search size={48} className="text-gray-400" />
+              ) : (
+                <Heart size={48} className="text-gray-400" />
+              )}
             </div>
             <h3 className={`text-xl font-semibold ${textPrimary}`}>
-              No tienes favoritos aún
+              {hasActiveFilters ? "No se encontraron resultados" : "No tienes favoritos aún"}
             </h3>
             <p className={`${textSecondary} max-w-md`}>
-              Empieza a guardar publicaciones que te interesen haciendo clic en el
-              corazón ❤️
+              {hasActiveFilters 
+                ? "Intenta ajustar los filtros para encontrar tus favoritos"
+                : "Empieza a guardar publicaciones que te interesen haciendo clic en el corazón ❤️"
+              }
             </p>
-            <button
-              type="button"
-              onClick={onNavigateToPublications}
-              className="mt-4 bg-[#FF9900] hover:bg-[#FFB84D] active:bg-[#CC7A00] text-white font-medium px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <ShoppingBag size={20} />
-              Explorar Publicaciones
-            </button>
+            {hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="mt-4 text-[#FF9900] hover:text-[#FFB84D] font-medium px-6 py-3 rounded-lg transition-colors"
+              >
+                Limpiar filtros
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onNavigateToPublications}
+                className="mt-4 bg-[#FF9900] hover:bg-[#FFB84D] active:bg-[#CC7A00] text-white font-medium px-6 py-3 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <ShoppingBag size={20} />
+                Explorar Publicaciones
+              </button>
+            )}
           </div>
         </div>
       ) : (
         /* Publications Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-fade-in-up">
-          {favorites.map((favorite) => (
+          {paginatedFavorites.map((favorite) => (
             <div
               key={favorite.id}
               className={`${cardClasses} rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200`}
@@ -260,31 +453,31 @@ const FavoritosPage = () => {
       )}
 
       {/* Pagination controls */}
-      {!isLoading && totalPages > 1 && (
+      {!isLoading && filteredTotalPages > 1 && (
         <div className="mt-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page <= 0}
-              className="px-3 py-2 rounded-lg border bg-white hover:bg-gray-100 disabled:opacity-50"
+              onClick={() => setPage(Math.max(0, effectivePage - 1))}
+              disabled={effectivePage <= 0}
+              className={`px-3 py-2 rounded-lg border ${borderClass} ${theme === "dark" ? "bg-gray-800 hover:bg-gray-700" : "bg-white hover:bg-gray-100"} disabled:opacity-50 transition-colors`}
             >
               Anterior
             </button>
             <button
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page >= totalPages - 1}
-              className="px-3 py-2 rounded-lg border bg-white hover:bg-gray-100 disabled:opacity-50"
+              onClick={() => setPage(Math.min(filteredTotalPages - 1, effectivePage + 1))}
+              disabled={effectivePage >= filteredTotalPages - 1}
+              className={`px-3 py-2 rounded-lg border ${borderClass} ${theme === "dark" ? "bg-gray-800 hover:bg-gray-700" : "bg-white hover:bg-gray-100"} disabled:opacity-50 transition-colors`}
             >
               Siguiente
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className={`${textSecondary}`}>Página {page + 1} de {totalPages}</span>
+            <span className={`${textSecondary}`}>Página {effectivePage + 1} de {filteredTotalPages}</span>
             <select
               value={size}
               onChange={(e) => { setSize(Number(e.target.value)); setPage(0); }}
-              className="px-2 py-1 border rounded-lg"
+              className={`px-2 py-1 border ${borderClass} rounded-lg ${theme === "dark" ? "bg-gray-700" : "bg-white"}`}
             >
               {[5,10,20,50].map((s) => (
                 <option key={s} value={s}>{s} / página</option>

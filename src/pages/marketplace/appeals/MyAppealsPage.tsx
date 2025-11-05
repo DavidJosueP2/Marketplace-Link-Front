@@ -55,41 +55,75 @@ export default function MyAppealsPage() {
 
   if (!appealsData || appealsData.content.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-300">
-        <Scale className="w-8 h-8 text-blue-500 mb-2" />
-        <p>No tienes apelaciones registradas aún.</p>
+      <div className="animate-fade-in space-y-8 pb-8">
+        {/* Header */}
+        <div className="bg-card p-6 rounded-lg shadow border border-border">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-extrabold mb-2 flex items-center gap-2">
+                <Scale className="w-8 h-8 text-blue-600" />
+                Mis Apelaciones
+              </h1>
+              <p className="text-muted-foreground">
+                Estas son las apelaciones que estás revisando como moderador.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-card rounded-lg shadow border border-border p-10">
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl mb-6">
+              <Scale className="w-12 h-12 text-blue-500 dark:text-blue-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No tienes apelaciones registradas aún
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md">
+              No se encontraron apelaciones registradas en tu cuenta.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-          <Scale className="text-blue-500" /> Mis Apelaciones
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Estas son las apelaciones que estás revisando como moderador.
-        </p>
-      </header>
+    <div className="animate-fade-in space-y-8 pb-8">
+      {/* Header */}
+      <div className="bg-card p-6 rounded-lg shadow border border-border">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold mb-2 flex items-center gap-2">
+              <Scale className="w-8 h-8 text-blue-600" />
+              Mis Apelaciones
+            </h1>
+            <p className="text-muted-foreground">
+              Estas son las apelaciones que estás revisando como moderador.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <DataTable
-        columns={columns}
-        data={appealsData.content}
-        manualPagination
-        totalRows={appealsData.totalElements}
-        pageCount={appealsData.totalPages}
-        state={{
-          pagination: {
-            pageIndex: appealsData.number,
-            pageSize: appealsData.size,
-          },
-        }}
-        onPaginationChange={(newPage: PaginationState) =>
-          loadAppeals(newPage.pageIndex, newPage.pageSize)
-        }
-        rowActions={rowActions}
-      />
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <DataTable
+          columns={columns}
+          data={appealsData.content}
+          manualPagination
+          totalRows={appealsData.totalElements}
+          pageCount={appealsData.totalPages}
+          state={{
+            pagination: {
+              pageIndex: appealsData.number,
+              pageSize: appealsData.size,
+            },
+          }}
+          onPaginationChange={(newPage: PaginationState) =>
+            loadAppeals(newPage.pageIndex, newPage.pageSize)
+          }
+          rowActions={rowActions}
+        />
+      </div>
     </div>
   );
 }

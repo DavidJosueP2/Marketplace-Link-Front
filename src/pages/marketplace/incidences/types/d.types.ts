@@ -128,3 +128,11 @@ export interface ModeratorInfo {
   fullname: string;
   email: string;
 }
+
+export interface IncidenceStatsResponse {
+  total: number;
+  pending: number;
+  under_review: number;
+  appealed: number;
+  resolved: number;
+}

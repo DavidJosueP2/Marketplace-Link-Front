@@ -16,6 +16,8 @@ export interface ReportResponse {
 export interface RequestPagination {
   page?: number;
   size?: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface ApiResponseIncidence {

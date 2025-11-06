@@ -74,6 +74,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!isPublicRoute) {
           navigate("/login", { replace: true });
         }
+
+        if (!isPublicRoute) {
+          navigate("/login", { replace: true });
+        }
         return;
       }
       try {

@@ -14,9 +14,11 @@ export default function RoleBasedHome() {
   const isStaff =
     has("ROLE_ADMIN") || has("ROLE_MODERATOR") || has("ROLE_SUPER_ADMIN");
 
+  // Prioridad: Staff > Buyer > Seller
+  // Si un usuario tiene múltiples roles, se prioriza el rol de comprador sobre vendedor
   if (isStaff) return <Navigate to="/marketplace-refactored/incidencias" replace />;
-  if (has("ROLE_SELLER")) return <Navigate to="/marketplace-refactored/mis-productos" replace />;
   if (has("ROLE_BUYER")) return <Navigate to="/marketplace-refactored/publications" replace />;
+  if (has("ROLE_SELLER")) return <Navigate to="/marketplace-refactored/publications" replace />;
 
   return <Navigate to="/404" replace />;
 }

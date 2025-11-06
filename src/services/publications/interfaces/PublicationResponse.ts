@@ -29,4 +29,5 @@ export interface PublicationResponse {
   images: PublicationImageResponse[];
   category: CategoryResponse;
   vendor: VendorResponse;
+  canReport: boolean;
 }

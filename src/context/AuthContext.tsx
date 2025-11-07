@@ -1,6 +1,10 @@
 import { createContext, useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getAccessToken, setAccessToken, clearTokens } from "@/auth/tokenStorage";
+import {
+  getAccessToken,
+  setAccessToken,
+  clearTokens,
+} from "@/auth/tokenStorage";
 import authService from "@/services/auth.service";
 
 interface User {
@@ -18,7 +22,10 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (dni: string, password: string) => Promise<{ success: boolean; user?: User; errorData?: any }>;
+  login: (
+    dni: string,
+    password: string,
+  ) => Promise<{ success: boolean; user?: User; errorData?: any }>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -47,7 +54,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
     }, 3000);
 
-   
     const publicRoutes = [
       "/login",
       "/register",
@@ -68,6 +74,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!isPublicRoute) {
           navigate("/login", { replace: true });
         }
+
+        if (!isPublicRoute) {
+          navigate("/login", { replace: true });
+        }
         return;
       }
       try {
@@ -78,7 +88,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         clearTokens();
         setUser(null);
         setIsAuthenticated(false);
-    
+
         if (!isPublicRoute) {
           navigate("/login", { replace: true });
         }
@@ -95,7 +105,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const data = await authService.login(dni, password);
       const token = data?.accessToken;
-      const profile = data?.user ?? (token ? (setAccessToken(token), await authService.getProfile()) : null);
+      const profile =
+        data?.user ??
+        (token
+          ? (setAccessToken(token), await authService.getProfile())
+          : null);
       if (!token || !profile) throw new Error("Credenciales inválidas");
 
       setAccessToken(token);
@@ -107,7 +121,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       setIsAuthenticated(false);
       const apiError = error as any;
-      const errorData = apiError?.payload?.data || apiError?.response?.data || null;
+      const errorData =
+        apiError?.payload?.data || apiError?.response?.data || null;
       return { success: false, errorData };
     }
   };
@@ -128,7 +143,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = useMemo(
     () => ({ user, isLoading, isAuthenticated, login, logout, updateUser }),
-    [user, isLoading, isAuthenticated]
+    [user, isLoading, isAuthenticated],
   );
 
   return (

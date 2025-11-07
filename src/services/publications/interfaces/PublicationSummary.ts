@@ -11,6 +11,7 @@ export interface PublicationSummary {
   availability: "AVAILABLE" | "UNAVAILABLE";
   publicationDate: string;
   image: PublicationImage;
+  canReport: boolean;
 }
 
 

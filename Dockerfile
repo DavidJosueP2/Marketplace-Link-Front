@@ -40,6 +40,10 @@ COPY nginx.config /etc/nginx/conf.d/default.conf
 # Copiar archivos compilados desde la etapa anterior
 COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
+# Copiar script de entrypoint para configuración runtime
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # Ajustar permisos en directorios relevantes para usuario nginx
 RUN mkdir -p /var/log/nginx /var/cache/nginx /tmp/nginx && \
     chown -R nginx:nginx /var/log/nginx /var/cache/nginx /etc/nginx/conf.d /tmp/nginx && \
@@ -56,5 +60,5 @@ EXPOSE 80
 # NO usar USER nginx - Nginx necesita root para bind en puerto 80
 # El proceso worker de Nginx seguirá ejecutándose como nginx según nginx.conf
 
-# Iniciar Nginx en foreground
-CMD ["nginx", "-g", "daemon off;"]
+# Usar entrypoint que configura variables de entorno en runtime
+ENTRYPOINT ["/docker-entrypoint.sh"]

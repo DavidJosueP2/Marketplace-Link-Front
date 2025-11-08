@@ -16,21 +16,41 @@ const incidenceService = {
   },
 
   fetchAllUnreviewed: async (pagination?: RequestPagination) => {
+    const params: Record<string, any> = {
+      page: pagination?.page ?? 0,
+      size: pagination?.size ?? 10,
+    };
+    
+    if (pagination?.startDate) {
+      params.startDate = pagination.startDate;
+    }
+    
+    if (pagination?.endDate) {
+      params.endDate = pagination.endDate;
+    }
+    
     const response = await api.get<ApiResponseIncidence>(`/api/incidences/all`, {
-      params: {
-        page: pagination?.page ?? 0,
-        size: pagination?.size ?? 10,
-      },
+      params,
     });
     return response.data;
   },
 
   fetchAllReviewed: async (pagination?: RequestPagination) => {
+    const params: Record<string, any> = {
+      page: pagination?.page ?? 0,
+      size: pagination?.size ?? 10,
+    };
+    
+    if (pagination?.startDate) {
+      params.startDate = pagination.startDate;
+    }
+    
+    if (pagination?.endDate) {
+      params.endDate = pagination.endDate;
+    }
+    
     const response = await api.get<ApiResponseIncidence>(`/api/incidences/my`, {
-      params: {
-        page: pagination?.page ?? 0,
-        size: pagination?.size ?? 10,
-      },
+      params,
     });
     return response.data;
   },

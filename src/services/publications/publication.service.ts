@@ -95,24 +95,36 @@ update: async (id: number, request: PublicationUpdateRequest): Promise<Publicati
     formData.append('workingHours', request.workingHours);
   }
   
-  // IMPORTANTE: El backend Java compara getOriginalFilename() con img.getPath()
-  // Para las imágenes existentes, necesitamos crear archivos "dummy" con el nombre correcto
-  // o el backend las tratará como eliminadas
+  // IMPORTANTE: Para las imágenes existentes, el backend necesita recibir el nombre del archivo
+  // tal como viene del GET. El backend compara f.getOriginalFilename() con img.getPath()
+  // para determinar si mantener la imagen. Además, valida que el archivo tenga una firma
+  // de imagen válida (JPEG: ffd8ff, PNG: 89504e47, etc.)
   
+  // PRIMERO: Agregar las imágenes existentes (SIEMPRE, incluso si no hay nuevas imágenes)
   if (request.existingImageUrls && request.existingImageUrls.length > 0) {
-    // Crear archivos vacíos con los nombres de las imágenes existentes
-    // para que el backend las reconozca y no las elimine
     request.existingImageUrls.forEach((url) => {
-      // Extraer solo el nombre del archivo del path completo
-      const filename = url.split('/').pop() || url;
+      // La URL viene del backend como el path guardado (ej: "a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg")
+      // El backend devuelve image.getPath() directamente como url
+      // Limpiar la URL: remover el "/" inicial si existe y cualquier ruta
+      let cleanUrl = url.startsWith('/') ? url.substring(1) : url;
       
-      // Crear un Blob vacío con el nombre del archivo existente
-      const dummyFile = new File([''], filename, { type: 'image/jpeg' });
+      // Extraer solo el nombre del archivo (última parte después de la última barra)
+      // Esto es lo que el backend espera en getOriginalFilename()
+      const filename = cleanUrl.split('/').pop() || cleanUrl;
+      
+      // Crear un archivo dummy con el nombre exacto del archivo existente
+      // El archivo debe tener una firma de imagen válida para pasar la validación del backend
+      // Para JPEG, la firma es: ffd8ff (los primeros 3 bytes)
+      // El backend necesita al menos 4 bytes para validar la firma, así que agregamos un byte más
+      // Nota: Este archivo dummy solo sirve para que el backend identifique la imagen existente
+      // El backend NO guardará este archivo si el nombre coincide con una imagen existente
+      const jpegSignature = new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0]);
+      const dummyFile = new File([jpegSignature], filename, { type: 'image/jpeg' });
       formData.append('images', dummyFile);
     });
   }
   
-  // Agregar nuevas imágenes reales (File[])
+  // DESPUÉS: Agregar nuevas imágenes reales (File[])
   if (request.images && request.images.length > 0) {
     request.images.forEach((image) => {
       formData.append('images', image);

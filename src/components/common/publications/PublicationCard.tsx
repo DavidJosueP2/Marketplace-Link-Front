@@ -20,6 +20,7 @@ interface Publication {
   availability: "AVAILABLE" | "UNAVAILABLE";
   publicationDate: string;
   image: PublicationImage;
+  canReport: boolean;
 }
 
 interface PublicationCardProps {
@@ -106,41 +107,43 @@ const PublicationCard = ({
         />
       </div>
 
-      {/* Botón de tres puntos SIEMPRE visible */}
-      <div className="absolute top-2 right-2 z-20">
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          className="
-            p-1 rounded-full transition-colors 
-            text-[#606770] hover:bg-[#F0F2F5] 
-            dark:text-[white] dark:hover:bg-[#4E4F50]
-          "
-        >
-          <MoreVertical size={20} />
-        </button>
-
-        {/* Menú accesible */}
-        {menuOpen && (
-          <div
-            ref={menuRef}
-            className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2"
-            role="menu"
+      {/* Botón de tres puntos - Solo visible si hay opciones disponibles */}
+      {publication.canReport && (
+        <div className="absolute top-2 right-2 z-20">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className="
+              p-1 rounded-full transition-colors 
+              text-[#606770] hover:bg-[#F0F2F5] 
+              dark:text-[white] dark:hover:bg-[#4E4F50]
+            "
           >
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                setIsReportModalOpen(true);
-              }}
-              role="menuitem"
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900 cursor-pointer rounded"
+            <MoreVertical size={20} />
+          </button>
+
+          {/* Menú accesible */}
+          {menuOpen && (
+            <div
+              ref={menuRef}
+              className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2"
+              role="menu"
             >
-              Reportar publicación
-            </button>
-          </div>
-        )}
-      </div>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setIsReportModalOpen(true);
+                }}
+                role="menuitem"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900 cursor-pointer rounded"
+              >
+                Reportar publicación
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Content */}
       <div className="p-4">

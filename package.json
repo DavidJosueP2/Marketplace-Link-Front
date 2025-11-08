@@ -12,7 +12,17 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:publications": "playwright test tests/e2e/publications --workers=1",
+    "test:e2e:publications:ui": "playwright test tests/e2e/publications --ui --workers=1",
+    "test:e2e:publications:headed": "playwright test tests/e2e/publications --headed --workers=1",
+    "test:e2e:publications:parallel": "playwright test tests/e2e/publications",
+    "test:e2e:publications:parallel:ui": "playwright test tests/e2e/publications --ui",
+    "setup:playwright": "npm install -D @playwright/test && npx playwright install"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
@@ -74,6 +84,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/vite": "^4.1.14",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
@@ -82,6 +93,7 @@
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@types/react-router-dom": "^5.3.3",
+    "@types/dotenv": "^8.2.0",
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "@typescript-eslint/parser": "^8.46.1",
     "@vitejs/plugin-react": "^5.0.4",
@@ -91,6 +103,7 @@
     "autoprefixer": "^10.4.21",
     "cypress": "^3.8.3",
     "cypress-lighthouse": "^0.1.0",
+    "dotenv": "^16.4.5",
     "eslint": "^9.38.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",

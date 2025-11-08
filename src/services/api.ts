@@ -6,6 +6,7 @@ import type {
   InternalAxiosRequestConfig,
 } from "axios";
 import { getAccessToken, clearTokens } from "@/auth/tokenStorage.js";
+import { getApiUrl } from "@/config/env";
 
 /** Error de servicios */
 export interface ApiErrorPayload {
@@ -26,7 +27,7 @@ export class ApiError extends Error {
 
 /** Axios base */
 export const api: AxiosInstance = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL as string) || "",
+  baseURL: getApiUrl(), // ✅ Now uses runtime config instead of build-time env var
   timeout: 10000,
   headers: {
     "Content-Type": "application/json; charset=utf-8",

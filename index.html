@@ -34,15 +34,8 @@
   <!-- 🔹 Preload most-used font for faster first text paint -->
   <link rel="preload" href="/assets/fonts/onest/Onest-Regular.woff2" as="font" type="font/woff2" crossorigin>
 
-  <!-- 🔹 Load base CSS (non-blocking, swap onload) -->
-  <link rel="preload" href="/src/index.css" as="style">
-  <link rel="stylesheet" href="/src/index.css" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
-
-  <!-- 🔹 Defer decorative CSS (backdrops, blurs, shapes, gradients) -->
-  <link rel="preload" href="/src/styles/decor.css" as="style">
-  <link rel="stylesheet" href="/src/styles/decor.css" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="/src/styles/decor.css"></noscript>
+  <!-- 🔹 Runtime configuration (can be overridden by env vars in Azure) -->
+  <script src="/config.js"></script>
 </head>
 
 <body>

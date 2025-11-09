@@ -1,7 +1,7 @@
 # =============================================================================
 # Stage 1: Builder - Node.js para compilar la aplicación
 # =============================================================================
-FROM node:21-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependencias (solo producción, ya que Vite build no las necesita todas)
-RUN npm ci --no-audit --no-fund
+RUN npm ci --no-audit --no-fund --prefer-offline
 
 # Copiar el resto del código fuente
 COPY . .
@@ -42,7 +42,8 @@ COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
 # Copiar script de entrypoint para configuración runtime
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Strip potential Windows CRLF line endings to avoid shebang '/bin/sh\r' execution failure
+RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
 
 # Ajustar permisos en directorios relevantes para usuario nginx
 RUN mkdir -p /var/log/nginx /var/cache/nginx /tmp/nginx && \

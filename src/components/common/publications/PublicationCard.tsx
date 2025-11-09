@@ -66,10 +66,11 @@ const PublicationCard = ({
   // Construct image URL from backend
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
   const imageFileName = publication.image?.url || "";
-  const cleanFileName = imageFileName.startsWith("/")
-    ? imageFileName.substring(1)
-    : imageFileName;
-  const imageUrl = `${baseUrl}/${cleanFileName}`;
+  
+  // Si ya es una URL completa (Azure Blob Storage), decodificarla y usarla directamente
+  const imageUrl = (imageFileName.startsWith('http://') || imageFileName.startsWith('https://'))
+    ? decodeURIComponent(imageFileName)
+    : `${baseUrl}/${imageFileName.startsWith("/") ? imageFileName.substring(1) : imageFileName}`;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);

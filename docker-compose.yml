@@ -1,21 +1,23 @@
 version: "3.9"
 
 services:
-  hospital_frontend:
+  marketplace_frontend:
     build:
       context: .
-      dockerfile: Dockerfile-hospital-frontend
+      dockerfile: Dockerfile
       args:
-        - VITE_API_URL=http://localhost:8080
-    container_name: hospital_frontend
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+        VITE_FRONTEND_URL: ${VITE_FRONTEND_URL:-http://localhost:5174}
+    container_name: marketplace_frontend
+    restart: unless-stopped
     ports:
-      - "5174:80"
+      - "${FRONT_PORT:-5174}:80"
+    env_file:
+      - .env
     networks:
-      - hospital_network
-
-volumes:
-  hospital_data:
+      - marketplace_net
 
 networks:
-  hospital_network:
-    driver: bridge
+  marketplace_net:
+    external: true
+

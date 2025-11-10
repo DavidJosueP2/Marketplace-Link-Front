@@ -10,9 +10,7 @@ import {
   FavoritosPage,
   UsuariosPage,
   ConfiguracionPage,
-  ReportesPage,
   MensajesPage,
-  ApelacionesPage,
   ModeradoresPage,
 } from "@/pages/marketplace";
 import VendorProductsPage from "@/pages/marketplace/VendorProductsPage";

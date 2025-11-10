@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+.next
+.git
+Dockerfile
+docker-compose.yml
+playwright-report
+test-results
+*.log
+

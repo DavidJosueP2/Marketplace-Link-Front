@@ -71,7 +71,8 @@ const PublicationCardWithFavorites = ({
   const textSecondary = getTextSecondaryClasses(theme);
 
   // Construct image URL from backend
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const baseUrl =
+    (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
   const imageFileName = publication.image.url;
   const cleanFileName = imageFileName.startsWith('/') ? imageFileName.substring(1) : imageFileName;
   const imageUrl = `${baseUrl}/${cleanFileName}`;

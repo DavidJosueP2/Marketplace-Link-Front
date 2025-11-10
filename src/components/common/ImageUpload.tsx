@@ -89,7 +89,8 @@ const ImageUpload = ({
   };
 
   // Construct full image URL
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const baseUrl =
+    (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
   const getImageUrl = (imageUrl: string) => {
     const cleanFileName = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
     return `${baseUrl}/${cleanFileName}`;

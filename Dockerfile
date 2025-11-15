@@ -8,8 +8,10 @@ WORKDIR /app
 # Copiar solo los archivos necesarios primero (para mejor caché)
 COPY package*.json ./
 
-# Instalar dependencias (solo producción, ya que Vite build no las necesita todas)
-RUN npm ci --no-audit --no-fund --prefer-offline
+# Instalar TODAS las dependencias (necesarias para build) pero skip Cypress binary
+ENV CYPRESS_INSTALL_BINARY=0
+RUN npm ci --no-audit --no-fund --prefer-offline || \
+    npm install --no-audit --no-fund
 
 # Copiar el resto del código fuente
 COPY . .

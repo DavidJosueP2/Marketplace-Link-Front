@@ -44,6 +44,36 @@ const ImageUpload = ({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
+    // Validar que solo sean imágenes permitidas (PNG, JPG, JPEG), rechazar PDFs y otros archivos
+    const allowedImageTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    const allowedExtensions = ['.png', '.jpg', '.jpeg', '.webp'];
+    
+    const invalidFiles = files.filter(file => {
+      const fileType = file.type.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      
+      // Rechazar PDFs explícitamente
+      if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+        return true;
+      }
+      
+      // Verificar que sea un tipo de imagen permitido
+      const isValidImageType = allowedImageTypes.includes(fileType);
+      const isValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      // Rechazar si no es una imagen permitida
+      return !isValidImageType && !isValidExtension;
+    });
+
+    if (invalidFiles.length > 0) {
+      alert("Solo se permiten archivos de imagen (PNG, JPG, JPEG, WEBP). Los archivos PDF y otros formatos no están permitidos.");
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+    
     const totalImages = existingImages.length + images.length + files.length;
     if (totalImages > maxImages) {
       alert(`Solo puedes tener un máximo de ${maxImages} imágenes en total`);

@@ -5,6 +5,7 @@ import {
   getTextPrimaryClasses,
   getTextSecondaryClasses,
 } from "@/lib/themeHelpers";
+import { getApiUrl } from "@/config/env";
 
 interface PublicationImage {
   id: number;
@@ -58,6 +59,7 @@ const getAvailabilityDisplayName = (availability: string): string => {
  * - Muestra estado de carga mientras se procesa
  * - Sincroniza automáticamente con el backend
  */
+
 const PublicationCardWithFavorites = ({
   publication,
   onView,
@@ -71,11 +73,18 @@ const PublicationCardWithFavorites = ({
   const textSecondary = getTextSecondaryClasses(theme);
 
   // Construct image URL from backend
+<<<<<<< HEAD
   const baseUrl =
     (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
+=======
+  const baseUrl = getApiUrl();
+>>>>>>> 0c0542d5e52f85262af5a2177b39bc4a582ec640
   const imageFileName = publication.image.url;
-  const cleanFileName = imageFileName.startsWith('/') ? imageFileName.substring(1) : imageFileName;
-  const imageUrl = `${baseUrl}/${cleanFileName}`;
+  
+  // Si ya es una URL completa (Azure Blob Storage), decodificarla y usarla directamente
+  const imageUrl = (imageFileName.startsWith('http://') || imageFileName.startsWith('https://'))
+    ? decodeURIComponent(imageFileName)
+    : `${baseUrl}/${imageFileName.startsWith('/') ? imageFileName.substring(1) : imageFileName}`;
 
   return (
     <div

@@ -131,9 +131,9 @@ const FavoritosPage = () => {
   const getImageUrl = (imageUrl: string): string => {
     if (!imageUrl) return '';
     
-    // Si ya es una URL completa, devolverla tal cual
+    // Si ya es una URL completa, devolverla decodificada
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
+      return decodeURIComponent(imageUrl);
     }
     
     // Construir URL desde el backend

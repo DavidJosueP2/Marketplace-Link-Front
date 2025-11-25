@@ -19,6 +19,7 @@ import {
   getCardWithShadowClasses,
   getBorderClasses,
 } from "@/lib/themeHelpers";
+import { extractFileName, createDummyFile } from "@/lib/imageUtils";
 
 interface FormData {
   name: string;
@@ -189,6 +190,16 @@ const PublicationFormPage = () => {
 
     try {
       if (isEditMode) {
+        // Crear archivos dummy para las imágenes existentes que se mantienen
+        // El backend usa el nombre del archivo para identificar qué imágenes mantener
+        const dummyFiles = keptExistingImages.map((imageUrl) => {
+          const fileName = extractFileName(imageUrl);
+          return createDummyFile(fileName);
+        });
+
+        // Combinar archivos dummy (imágenes mantenidas) con nuevas imágenes
+        const allImages = [...dummyFiles, ...images];
+
         // Actualizar publicación existente
         const request: PublicationUpdateRequest = {
           name: data.name,
@@ -200,8 +211,7 @@ const PublicationFormPage = () => {
           workingHours: data.workingHours || undefined,
           categoryId: data.categoryId,
           vendorId: user?.id as number,
-          images: images, // Nuevas imágenes (File[])
-          existingImageUrls: keptExistingImages, // Imágenes antiguas que se mantienen (string[])
+          images: allImages, // Archivos dummy + nuevas imágenes (File[])
         };
 
         await publicationService.update(Number(id), request);

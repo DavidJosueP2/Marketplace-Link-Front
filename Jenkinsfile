@@ -17,6 +17,7 @@ pipeline {
         booleanParam(name: 'BUILD_DOCKER', defaultValue: true)
         booleanParam(name: 'RUN_TESTS', defaultValue: false, description: 'Ejecutar tests E2E con Playwright')
         booleanParam(name: 'PUSH_DOCKER', defaultValue: false)
+        booleanParam(name: 'EXPOSE_FRONTEND', defaultValue: false, description: 'Exponer el frontend en el puerto 8081 del host (solo para desarrollo/testing local)')
         choice(name: 'DEPLOY_ENV', choices: ['none','staging','production'])
     }
 
@@ -92,31 +93,40 @@ pipeline {
                                 echo "✅ Backend disponible (HTTP ${backendAvailable})"
                             }
                             
-                            // Ejecutar tests dentro de un contenedor Docker con Node.js
-                            // Esto evita problemas de dependencias en el agente de Jenkins
-                            echo "🐳 Ejecutando tests en contenedor Docker con Node.js..."
+                            // Ejecutar tests dentro de un contenedor Docker con Playwright preinstalado
+                            // Usar imagen oficial de Playwright que ya tiene Chromium y dependencias instaladas
+                            echo "🐳 Ejecutando tests en contenedor Docker con Playwright..."
                             
-                            // Obtener la IP del host Docker para que los tests puedan acceder al backend
-                            def dockerHost = sh(
-                                script: 'docker run --rm --network host alpine ip route | awk \'/default/ {print $3}\' || echo "host.docker.internal"',
+                            // Detectar cómo acceder al backend desde el contenedor de tests
+                            // Usar --network host para que pueda acceder a localhost:8080 del host Docker
+                            def backendContainer = sh(
+                                script: 'docker ps --filter "name=mplink-backend" --format "{{.Names}}" 2>/dev/null | head -1 || echo ""',
                                 returnStdout: true
                             ).trim()
                             
-                            // Si estamos en Linux, usar la IP del gateway de Docker
-                            def backendUrl = "http://${dockerHost}:8080"
-                            echo "   Backend URL para tests: ${backendUrl}"
+                            def backendUrl = "http://localhost:8080"
+                            
+                            if (backendContainer == "mplink-backend") {
+                                echo "✅ Backend detectado corriendo: ${backendContainer}"
+                                echo "   Los tests se conectarán al backend en localhost:8080 (usando --network host)"
+                            } else {
+                                echo "⚠️ Backend no detectado corriendo"
+                                echo "   Los tests intentarán conectarse a localhost:8080"
+                            }
+                            
+                            echo "   Usando imagen: mcr.microsoft.com/playwright:v1.40.0-focal"
+                            echo "   Backend URL: ${backendUrl}"
                             
                             sh """
                                 docker run --rm \
                                     -v "\$(pwd):/workspace" \
                                     -w /workspace \
+                                    --network host \
                                     -e VITE_FRONTEND_URL=http://localhost:5174 \
                                     -e VITE_API_URL=${backendUrl} \
-                                    --network host \
-                                    node:20-alpine \
+                                    mcr.microsoft.com/playwright:v1.40.0-focal \
                                     sh -c "
                                         npm ci --no-audit --no-fund || npm install --no-audit --no-fund && \
-                                        npx playwright install --with-deps || true && \
                                         npm run test:e2e || echo '⚠️ Algunos tests fallaron'
                                     "
                             """
@@ -182,11 +192,23 @@ pipeline {
                             """
                             
                             // Ejecutar contenedor temporalmente
+                            // Si EXPOSE_FRONTEND está habilitado, exponer el puerto hacia el host
+                            def portMapping = params.EXPOSE_FRONTEND ? '-p 8081:80' : ''
+                            if (params.EXPOSE_FRONTEND) {
+                                echo "🌐 Frontend será expuesto en http://localhost:8081"
+                                echo "   ⚠️ IMPORTANTE: Para que funcione, el contenedor Jenkins debe tener el puerto expuesto:"
+                                echo "      docker run ... -p 8081:8081 ... jenkins-docker"
+                                echo "   O si usas docker-compose, agrega 'ports: - \"8081:8081\"' al servicio Jenkins"
+                            } else {
+                                echo "🔒 Frontend solo accesible dentro del contenedor Jenkins (puerto no expuesto)"
+                                echo "   💡 Para exponerlo, habilita el parámetro EXPOSE_FRONTEND en el siguiente build"
+                            }
+                            
                             def containerId = sh(
                                 script: """
                                     docker run -d \
                                         --name mplink-frontend \
-                                        -p 8081:80 \
+                                        ${portMapping} \
                                         ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} 2>&1 || echo "ERROR"
                                 """,
                                 returnStdout: true

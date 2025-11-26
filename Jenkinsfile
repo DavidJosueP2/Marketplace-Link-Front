@@ -253,6 +253,7 @@ pipeline {
                                     -e npm_config_fetch_retry_factor=2 \
                                     -e npm_config_fetch_retry_mintimeout=10000 \
                                     -e npm_config_fetch_retry_maxtimeout=60000 \
+                                    -e CI=true \
                                     node:22 \
                                     sh -c "
                                         set +e
@@ -289,8 +290,10 @@ pipeline {
                                             ls -la /home/node/.cache/ms-playwright/ 2>/dev/null || echo '   Cache no encontrado'
                                         fi
                                         
-                                        echo '🧪 Ejecutando tests E2E...'
-                                        npm run test:e2e || {
+                                        echo '🧪 Ejecutando tests E2E (modo CI, sin servidor HTML interactivo)...'
+                                        # CI=true deshabilita el servidor HTML interactivo
+                                        # timeout 600 = 10 minutos máximo para los tests
+                                        timeout 600 npm run test:e2e || {
                                             echo '⚠️ Algunos tests fallaron, pero el build continúa'
                                             exit 0
                                         }

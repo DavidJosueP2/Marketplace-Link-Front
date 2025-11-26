@@ -110,7 +110,7 @@ pipeline {
                         // Usar catchError para que los tests no detengan el pipeline
                         // Temporalmente desactivado para verificar que las siguientes fases funcionen
                         catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                            echo "🧪 Ejecutando tests E2E con Playwright..."
+                        echo "🧪 Ejecutando tests E2E con Playwright..."
                             echo "⚠️ NOTA: Los tests están configurados para no detener el pipeline"
                             echo "   Si fallan, el build continuará pero se marcará como UNSTABLE"
                             
@@ -166,6 +166,22 @@ pipeline {
                                 echo "✅ Conectividad a npm registry verificada (HTTP ${networkTest})"
                             }
                             
+                            // Limpiar node_modules antes de instalar (puede tener permisos incorrectos de builds anteriores)
+                            echo "🧹 Limpiando node_modules con permisos incorrectos..."
+                            sh """
+                                # Limpiar node_modules usando Docker (como root) para evitar problemas de permisos
+                                docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
+                                    sh -c "
+                                        echo 'Limpiando node_modules con permisos incorrectos...'
+                                        chmod -R 777 /workspace/node_modules 2>/dev/null || true
+                                        rm -rf /workspace/node_modules 2>/dev/null || true
+                                        echo '✅ node_modules limpiado'
+                                    " || echo "⚠️ No se pudo limpiar node_modules con Docker"
+                                
+                                # También intentar limpieza normal
+                                rm -rf node_modules 2>/dev/null || true
+                            """
+                            
                             // Montar cache de npm si existe para acelerar instalación
                             def npmCacheDir = "${env.WORKSPACE}/.npm-cache"
                             sh "mkdir -p ${npmCacheDir} || true"
@@ -181,6 +197,7 @@ pipeline {
                             ).trim()
                             
                             echo "   Usando UID/GID: ${jenkinsUid}/${jenkinsGid} para archivos generados"
+                            echo "   node_modules limpiado, instalando dependencias frescas..."
                             
                             sh """
                                 docker run --rm \
@@ -207,9 +224,13 @@ pipeline {
                                         node --version
                                         npm --version
                                         
+                                        # Asegurar que el workspace tenga permisos correctos
+                                        echo '🔧 Verificando permisos del workspace...'
+                                        chmod -R u+w /workspace 2>/dev/null || true
+                                        
                                         echo '📦 Instalando dependencias con npm ci (con timeout extendido)...'
                                         timeout 300 npm ci --no-audit --no-fund --prefer-offline --maxsockets=5 --fetch-timeout=120000 || {
-                                            echo '⚠️ npm ci falló o timeout, intentando npm install...'
+                                            echo '⚠️ npm ci falló, intentando npm install...'
                                             timeout 300 npm install --no-audit --no-fund --maxsockets=5 --fetch-timeout=120000 || {
                                                 echo '❌ Error instalando dependencias después de múltiples intentos'
                                                 echo '💡 Verifica la conectividad de red del contenedor Jenkins'
@@ -232,17 +253,17 @@ pipeline {
                                         echo '🔧 Corrigiendo permisos de archivos generados...'
                                         chmod -R u+w playwright-report test-results .playwright 2>/dev/null || true
                                     "
-                            """
-                            
-                            // Publicar resultados de Playwright si existen
-                            if (fileExists('test-results')) {
-                                echo "📊 Resultados de tests encontrados en test-results/"
-                                archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
-                            }
-                            
-                            if (fileExists('playwright-report')) {
-                                echo "📊 Reporte de Playwright encontrado"
-                                archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
+                        """
+                        
+                        // Publicar resultados de Playwright si existen
+                        if (fileExists('test-results')) {
+                            echo "📊 Resultados de tests encontrados en test-results/"
+                            archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+                        }
+                        
+                        if (fileExists('playwright-report')) {
+                            echo "📊 Reporte de Playwright encontrado"
+                            archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
                             }
                         }
                     }
@@ -309,8 +330,8 @@ pipeline {
                             
                             def containerId = sh(
                                 script: """
-                                    docker run -d \
-                                        --name mplink-frontend \
+                                docker run -d \
+                                    --name mplink-frontend \
                                         ${portMapping} \
                                         ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} 2>&1 || echo "ERROR"
                                 """,
@@ -370,7 +391,7 @@ pipeline {
                                     
                                     # Método 3: Intentar desde el host usando el puerto mapeado (puede funcionar si Jenkins tiene acceso directo)
                                     if [ "\$http_code" = "000" ] || [ -z "\$http_code" ]; then
-                                        http_code=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081 2>/dev/null || echo "000")
+                                    http_code=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081 2>/dev/null || echo "000")
                                     fi
                                     
                                     if [ "\$http_code" = "200" ] || [ "\$http_code" = "301" ] || [ "\$http_code" = "302" ]; then
@@ -503,7 +524,7 @@ pipeline {
                     docker stop mplink-frontend 2>/dev/null || true
                     docker rm mplink-frontend 2>/dev/null || true
                 """
-            }
+              }
             echo "Build finalizado con estado: ${currentBuild.currentResult}"
         }
     }

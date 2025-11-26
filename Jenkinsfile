@@ -6,6 +6,7 @@ pipeline {
         ansiColor('xterm')
         timeout(time: 30, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '10'))
+        skipDefaultCheckout(true)  // Deshabilitar checkout automático para limpiar primero
     }
 
     environment {
@@ -23,56 +24,42 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
+        stage('Limpiar y Checkout') {
             steps {
                 script {
-                    // Limpiar archivos problemáticos ANTES del checkout
-                    // Esto evita errores de permisos durante el checkout de Git
-                    echo "🧹 Limpiando archivos generados por tests anteriores (antes del checkout)..."
+                    // IMPORTANTE: Limpiar archivos problemáticos ANTES del checkout
+                    // Estos archivos fueron creados por root dentro del contenedor Docker
+                    // y bloquean el checkout de Git
+                    echo "🧹 Limpiando archivos generados por tests anteriores..."
                     
-                    // Intentar múltiples métodos para eliminar archivos con permisos incorrectos
+                    // Usar Docker para limpiar como root (método más confiable)
                     sh """
-                        # Método 1: Intentar con permisos normales
-                        rm -rf playwright-report test-results .playwright 2>/dev/null || true
-                        
-                        # Método 2: Si los archivos fueron creados por root, usar docker para eliminarlos
-                        # Esto funciona porque docker puede ejecutar como root
+                        # Método principal: Usar Docker para eliminar archivos como root
+                        # Esto funciona incluso si los archivos fueron creados por root
                         docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
-                            sh -c "rm -rf /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true" || true
+                            sh -c "
+                                echo 'Limpiando archivos con Docker (como root)...'
+                                chmod -R 777 /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true
+                                rm -rf /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true
+                                echo '✅ Archivos limpiados'
+                            " || echo "⚠️ Docker no disponible, intentando métodos alternativos..."
                         
-                        # Método 3: Corregir permisos y luego eliminar
+                        # Métodos alternativos si Docker falla
                         chmod -R u+w playwright-report test-results .playwright 2>/dev/null || true
                         rm -rf playwright-report test-results .playwright 2>/dev/null || true
                         
-                        # Método 4: Eliminar archivos específicos problemáticos usando find
-                        find . -name 'index.html' -path '*/playwright-report/*' -type f 2>/dev/null | while read f; do
-                            chmod u+w "\$f" 2>/dev/null || true
-                            rm -f "\$f" 2>/dev/null || true
-                        done || true
+                        # Eliminar archivos específicos problemáticos
+                        find . -name 'index.html' -path '*/playwright-report/*' -exec rm -f {} \\; 2>/dev/null || true
+                        find . -name '.last-run.json' -path '*/test-results/*' -exec rm -f {} \\; 2>/dev/null || true
+                        find . -name 'results.json' -path '*/test-results/*' -exec rm -f {} \\; 2>/dev/null || true
                         
-                        find . -name '.last-run.json' -path '*/test-results/*' -type f 2>/dev/null | while read f; do
-                            chmod u+w "\$f" 2>/dev/null || true
-                            rm -f "\$f" 2>/dev/null || true
-                        done || true
-                        
-                        find . -name 'results.json' -path '*/test-results/*' -type f 2>/dev/null | while read f; do
-                            chmod u+w "\$f" 2>/dev/null || true
-                            rm -f "\$f" 2>/dev/null || true
-                        done || true
-                        
-                        # Método 5: Si aún hay problemas, usar docker para corregir permisos y eliminar
-                        docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
-                            sh -c "
-                                chmod -R 777 /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true
-                                rm -rf /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true
-                            " || true
-                        
-                        echo "✅ Limpieza completada, procediendo con checkout..."
+                        echo "✅ Limpieza completada"
                     """
+                    
+                    echo "📥 Procediendo con checkout de Git..."
                 }
                 
-                // Usar checkout estándar (las extensiones pueden no estar disponibles)
-                // La limpieza manual anterior debería ser suficiente
+                // Hacer checkout después de la limpieza
                 checkout scm
                 script {
                     env.GIT_COMMIT_SHORT = sh(
@@ -493,23 +480,23 @@ pipeline {
     post {
         always {
             script {
-                dir(env.PROJECT_DIR ?: '.') {
-                    // Limpiar archivos generados por tests para evitar problemas de permisos en el próximo build
-                    echo "🧹 Limpiando archivos generados por tests..."
-                    sh """
-                        # Corregir permisos de archivos generados por Docker (pueden ser de root)
-                        chmod -R u+w playwright-report test-results .playwright .npm-cache 2>/dev/null || true
-                        
-                        # Eliminar archivos de resultados (se regenerarán en el próximo build)
-                        rm -rf playwright-report test-results .playwright 2>/dev/null || true
-                        
-                        # Limpiar cache de npm si es muy grande
-                        du -sh .npm-cache 2>/dev/null | awk '\$1+0 > 500 {print "Cache npm muy grande, limpiando..."}' && \
-                        rm -rf .npm-cache 2>/dev/null || true
-                        
-                        echo "✅ Archivos de tests limpiados"
-                    """
-                }
+                // Limpiar archivos generados por tests para evitar problemas de permisos en el próximo build
+                // Esto se ejecuta SIEMPRE, incluso si el checkout falló
+                echo "🧹 Limpiando archivos generados por tests (post-build cleanup)..."
+                
+                // Usar Docker para limpiar como root (más confiable)
+                sh """
+                    # Limpiar usando Docker (ejecuta como root, puede eliminar archivos de root)
+                    docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
+                        sh -c "
+                            chmod -R 777 /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true
+                            rm -rf /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true
+                            echo '✅ Archivos limpiados usando Docker'
+                        " || echo "⚠️ No se pudo limpiar con Docker (puede que no haya archivos)"
+                    
+                    # También intentar limpieza normal
+                    rm -rf playwright-report test-results .playwright 2>/dev/null || true
+                """
                 
                 // Limpiar contenedores de prueba si quedaron
                 sh """

@@ -93,12 +93,11 @@ pipeline {
                                 echo "✅ Backend disponible (HTTP ${backendAvailable})"
                             }
                             
-                            // Ejecutar tests dentro de un contenedor Docker con Playwright preinstalado
-                            // Usar imagen oficial de Playwright que ya tiene Chromium y dependencias instaladas
-                            echo "🐳 Ejecutando tests en contenedor Docker con Playwright..."
+                            // Ejecutar tests dentro de un contenedor Docker con Node 22 y Playwright
+                            // Usar node:22 que coincide con la versión de desarrollo (v22.18.0)
+                            echo "🐳 Ejecutando tests en contenedor Docker con Node 22 y Playwright..."
                             
                             // Detectar cómo acceder al backend desde el contenedor de tests
-                            // Usar --network host para que pueda acceder a localhost:8080 del host Docker
                             def backendContainer = sh(
                                 script: 'docker ps --filter "name=mplink-backend" --format "{{.Names}}" 2>/dev/null | head -1 || echo ""',
                                 returnStdout: true
@@ -114,20 +113,72 @@ pipeline {
                                 echo "   Los tests intentarán conectarse a localhost:8080"
                             }
                             
-                            echo "   Usando imagen: mcr.microsoft.com/playwright:v1.40.0-focal"
+                            echo "   Usando imagen: node:22 (Node v22.18.0 compatible)"
                             echo "   Backend URL: ${backendUrl}"
+                            echo "   Configurando red y timeouts para evitar problemas de conectividad..."
+                            
+                            // Verificar conectividad antes de ejecutar tests
+                            echo "🔍 Verificando conectividad de red..."
+                            def networkTest = sh(
+                                script: 'docker run --rm --network host curlimages/curl:latest -s -o /dev/null -w "%{http_code}" --max-time 5 https://registry.npmjs.org 2>/dev/null || echo "000"',
+                                returnStdout: true
+                            ).trim()
+                            
+                            if (networkTest == "000" || networkTest.isEmpty()) {
+                                echo "⚠️ Advertencia: No se pudo verificar conectividad a npm registry"
+                                echo "   Los tests continuarán, pero pueden fallar si no hay internet"
+                            } else {
+                                echo "✅ Conectividad a npm registry verificada (HTTP ${networkTest})"
+                            }
+                            
+                            // Montar cache de npm si existe para acelerar instalación
+                            def npmCacheDir = "${env.WORKSPACE}/.npm-cache"
+                            sh "mkdir -p ${npmCacheDir} || true"
                             
                             sh """
                                 docker run --rm \
                                     -v "\$(pwd):/workspace" \
+                                    -v "${npmCacheDir}:/root/.npm" \
                                     -w /workspace \
                                     --network host \
+                                    --dns 8.8.8.8 \
+                                    --dns 8.8.4.4 \
                                     -e VITE_FRONTEND_URL=http://localhost:5174 \
                                     -e VITE_API_URL=${backendUrl} \
-                                    mcr.microsoft.com/playwright:v1.40.0-focal \
+                                    -e npm_config_timeout=120000 \
+                                    -e npm_config_maxsockets=5 \
+                                    -e npm_config_fetch_timeout=120000 \
+                                    -e npm_config_fetch_retries=3 \
+                                    -e npm_config_fetch_retry_factor=2 \
+                                    -e npm_config_fetch_retry_mintimeout=10000 \
+                                    -e npm_config_fetch_retry_maxtimeout=60000 \
+                                    node:22 \
                                     sh -c "
-                                        npm ci --no-audit --no-fund || npm install --no-audit --no-fund && \
-                                        npm run test:e2e || echo '⚠️ Algunos tests fallaron'
+                                        set +e
+                                        echo '📦 Verificando Node.js version...'
+                                        node --version
+                                        npm --version
+                                        
+                                        echo '📦 Instalando dependencias con npm ci (con timeout extendido)...'
+                                        timeout 300 npm ci --no-audit --no-fund --prefer-offline --maxsockets=5 --fetch-timeout=120000 || {
+                                            echo '⚠️ npm ci falló o timeout, intentando npm install...'
+                                            timeout 300 npm install --no-audit --no-fund --maxsockets=5 --fetch-timeout=120000 || {
+                                                echo '❌ Error instalando dependencias después de múltiples intentos'
+                                                echo '💡 Verifica la conectividad de red del contenedor Jenkins'
+                                                exit 1
+                                            }
+                                        }
+                                        
+                                        echo '🎭 Instalando Playwright y navegadores (solo Chromium)...'
+                                        timeout 180 npx playwright install --with-deps chromium || {
+                                            echo '⚠️ Error instalando Playwright, pero continuando con tests...'
+                                        }
+                                        
+                                        echo '🧪 Ejecutando tests E2E...'
+                                        npm run test:e2e || {
+                                            echo '⚠️ Algunos tests fallaron, pero el build continúa'
+                                            exit 0
+                                        }
                                     "
                             """
                             

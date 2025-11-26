@@ -4,7 +4,7 @@ pipeline {
     options {
         timestamps()
         ansiColor('xterm')
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 60, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '10'))
         skipDefaultCheckout(true)  // Deshabilitar checkout automático para limpiar primero
     }
@@ -228,42 +228,49 @@ pipeline {
                                         
                                         # PASO 1: Instalar dependencias del sistema como root (necesario para Chromium)
                                         echo '🔧 Instalando dependencias del sistema para Playwright (como root)...'
-                                        apt-get update -qq > /dev/null 2>&1 && \
-                                        apt-get install -y -qq --no-install-recommends \
-                                            libnss3 \
-                                            libnspr4 \
-                                            libatk1.0-0 \
-                                            libatk-bridge2.0-0 \
-                                            libcups2 \
-                                            libdrm2 \
-                                            libdbus-1-3 \
-                                            libxkbcommon0 \
-                                            libxcomposite1 \
-                                            libxdamage1 \
-                                            libxfixes3 \
-                                            libxrandr2 \
-                                            libgbm1 \
-                                            libasound2 \
-                                            libpango-1.0-0 \
-                                            libcairo2 \
-                                            libatspi2.0-0 \
-                                            libxshmfence1 \
-                                            libxss1 \
-                                            libgdk-pixbuf2.0-0 \
-                                            libgtk-3-0 \
-                                            libx11-6 \
-                                            libx11-xcb1 \
-                                            libxcb1 \
-                                            libxext6 \
-                                            libxrender1 \
-                                            libxtst6 \
-                                            ca-certificates \
-                                            fonts-liberation \
-                                            libappindicator3-1 \
-                                            xdg-utils \
-                                            > /dev/null 2>&1 && \
-                                        echo '✅ Dependencias del sistema instaladas' || {
+                                        echo '   Esto puede tomar unos minutos...'
+                                        # Usar timeout para evitar que Jenkins mate el proceso
+                                        timeout 600 bash -c '
+                                            export DEBIAN_FRONTEND=noninteractive
+                                            apt-get update -qq 2>&1 | head -20
+                                            apt-get install -y -qq --no-install-recommends \
+                                                libnss3 \
+                                                libnspr4 \
+                                                libatk1.0-0 \
+                                                libatk-bridge2.0-0 \
+                                                libcups2 \
+                                                libdrm2 \
+                                                libdbus-1-3 \
+                                                libxkbcommon0 \
+                                                libxcomposite1 \
+                                                libxdamage1 \
+                                                libxfixes3 \
+                                                libxrandr2 \
+                                                libgbm1 \
+                                                libasound2 \
+                                                libpango-1.0-0 \
+                                                libcairo2 \
+                                                libatspi2.0-0 \
+                                                libxshmfence1 \
+                                                libxss1 \
+                                                libgdk-pixbuf2.0-0 \
+                                                libgtk-3-0 \
+                                                libx11-6 \
+                                                libx11-xcb1 \
+                                                libxcb1 \
+                                                libxext6 \
+                                                libxrender1 \
+                                                libxtst6 \
+                                                ca-certificates \
+                                                fonts-liberation \
+                                                libappindicator3-1 \
+                                                xdg-utils \
+                                                2>&1 | tail -10
+                                            echo "✅ Dependencias del sistema instaladas"
+                                        ' || {
                                             echo '⚠️ Algunas dependencias no se pudieron instalar, pero continuando...'
+                                            echo '   Verificando si las dependencias críticas están instaladas...'
+                                            dpkg -l | grep -E "(libnss3|libgbm1|libgtk-3-0)" || echo '   Algunas dependencias críticas pueden faltar'
                                         }
                                         
                                         # Asegurar que el workspace tenga permisos correctos
@@ -418,20 +425,32 @@ pipeline {
                                 echo "   ℹ️  Este puerto coincide con la configuración del backend (CORS)"
                                 echo ""
                                 echo "   ⚠️ IMPORTANTE - Configuración del contenedor Jenkins:"
-                                echo "      Si Jenkins está corriendo en un contenedor Docker, necesitas exponer el puerto 5174:"
                                 echo ""
-                                echo "      Opción 1 - Docker run:"
-                                echo "         docker run ... -p 5174:5174 ... jenkins-docker"
+                                echo "      📌 Si Jenkins está corriendo en un contenedor Docker:"
+                                echo "         Necesitas exponer el puerto 5174 del contenedor de Jenkins al host."
                                 echo ""
-                                echo "      Opción 2 - Docker Compose:"
-                                echo "         Agrega 'ports: - \"5174:5174\"' al servicio Jenkins"
+                                echo "         Opción 1 - Docker run (reiniciar Jenkins con el puerto expuesto):"
+                                echo "            docker stop jenkins-docker"
+                                echo "            docker run -d ... -p 5174:5174 ... jenkins-docker"
                                 echo ""
-                                echo "      Opción 3 - Si Jenkins está en el host (no en contenedor):"
-                                echo "         Simplemente visita: http://localhost:5174"
+                                echo "         Opción 2 - Docker Compose (editar docker-compose.yml):"
+                                echo "            services:"
+                                echo "              jenkins:"
+                                echo "                ports:"
+                                echo "                  - \"5174:5174\""
                                 echo ""
-                                echo "   🔍 Para verificar que el puerto está disponible:"
-                                echo "      netstat -tuln | grep 5174  (Linux)"
-                                echo "      netstat -an | grep 5174    (Windows/Mac)"
+                                echo "         Opción 3 - Si Jenkins está en el host (no en contenedor):"
+                                echo "            Simplemente visita: http://localhost:5174"
+                                echo ""
+                                echo "      🔍 Para verificar que el puerto está disponible en el host:"
+                                echo "         netstat -tuln | grep 5174  (Linux)"
+                                echo "         netstat -an | grep 5174    (Windows/Mac)"
+                                echo ""
+                                echo "      🔍 Para verificar que el contenedor del frontend está corriendo:"
+                                echo "         docker ps | grep mplink-frontend"
+                                echo ""
+                                echo "      🔍 Para verificar el mapeo de puertos del contenedor:"
+                                echo "         docker port mplink-frontend"
                             } else {
                                 echo "🔒 Frontend solo accesible dentro del contenedor Jenkins (puerto no expuesto)"
                                 echo "   💡 Para exponerlo, habilita el parámetro EXPOSE_FRONTEND en el siguiente build"
@@ -543,8 +562,30 @@ pipeline {
                                 echo "   ℹ️  Este puerto coincide con la configuración del backend (CORS)"
                                 echo ""
                                 echo "   ℹ️  El contenedor 'mplink-frontend' permanecerá activo para que puedas acceder."
-                                echo "   🔍 Para verificar que está corriendo:"
-                                echo "      docker ps | grep mplink-frontend"
+                                echo ""
+                                echo "   📋 PASOS PARA ACCEDER AL FRONTEND:"
+                                echo ""
+                                echo "      1️⃣  Verifica que el contenedor está corriendo:"
+                                echo "          docker ps | grep mplink-frontend"
+                                echo ""
+                                echo "      2️⃣  Verifica el mapeo de puertos:"
+                                echo "          docker port mplink-frontend"
+                                echo "          (Debe mostrar: 0.0.0.0:5174->80/tcp)"
+                                echo ""
+                                echo "      3️⃣  Si Jenkins está en un contenedor Docker:"
+                                echo "          ⚠️  DEBES exponer el puerto 5174 del contenedor de Jenkins al host"
+                                echo "          Ejemplo: docker run ... -p 5174:5174 ... jenkins-docker"
+                                echo ""
+                                echo "      4️⃣  Accede desde tu navegador:"
+                                echo "          http://localhost:5174"
+                                echo ""
+                                echo "   🔍 Comandos de diagnóstico:"
+                                echo "      # Verificar puerto en el host:"
+                                echo "      netstat -tuln | grep 5174  (Linux)"
+                                echo "      netstat -an | grep 5174    (Windows/Mac)"
+                                echo ""
+                                echo "      # Ver logs del frontend:"
+                                echo "      docker logs mplink-frontend"
                                 echo ""
                                 echo "   🛑 Para detenerlo manualmente cuando termines:"
                                 echo "      docker stop mplink-frontend"

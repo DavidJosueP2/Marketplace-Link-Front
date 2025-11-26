@@ -18,7 +18,7 @@ pipeline {
         booleanParam(name: 'BUILD_DOCKER', defaultValue: true)
         booleanParam(name: 'RUN_TESTS', defaultValue: false, description: 'Ejecutar tests E2E con Playwright')
         booleanParam(name: 'PUSH_DOCKER', defaultValue: false)
-        booleanParam(name: 'EXPOSE_FRONTEND', defaultValue: false, description: 'Exponer el frontend en el puerto 8081 del host (solo para desarrollo/testing local)')
+        booleanParam(name: 'EXPOSE_FRONTEND', defaultValue: false, description: 'Exponer el frontend en el puerto 5174 del host (solo para desarrollo/testing local)')
         choice(name: 'DEPLOY_ENV', choices: ['none','staging','production'])
     }
 
@@ -201,7 +201,7 @@ pipeline {
                             
                             // Instalar dependencias del sistema, npm y ejecutar tests en un solo contenedor
                             // Primero como root para instalar dependencias del sistema, luego como usuario para el resto
-                            sh """
+                        sh """
                                 docker run --rm \
                                     -v "\$(pwd):/workspace" \
                                     -v "${npmCacheDir}:/root/.npm" \
@@ -343,7 +343,7 @@ pipeline {
                                         chown -R node:node playwright-report test-results .playwright 2>/dev/null || \
                                         chmod -R u+w playwright-report test-results .playwright 2>/dev/null || true
                                     "
-                            """
+                        """
                         
                         // Publicar resultados de Playwright si existen
                         if (fileExists('test-results')) {
@@ -407,12 +407,31 @@ pipeline {
                             
                             // Ejecutar contenedor temporalmente
                             // Si EXPOSE_FRONTEND está habilitado, exponer el puerto hacia el host
-                            def portMapping = params.EXPOSE_FRONTEND ? '-p 8081:80' : ''
+                            // Usar puerto 5174 para coincidir con la configuración del backend (CORS)
+                            def portMapping = params.EXPOSE_FRONTEND ? '-p 5174:80' : ''
                             if (params.EXPOSE_FRONTEND) {
-                                echo "🌐 Frontend será expuesto en http://localhost:8081"
-                                echo "   ⚠️ IMPORTANTE: Para que funcione, el contenedor Jenkins debe tener el puerto expuesto:"
-                                echo "      docker run ... -p 8081:8081 ... jenkins-docker"
-                                echo "   O si usas docker-compose, agrega 'ports: - \"8081:8081\"' al servicio Jenkins"
+                                echo "🌐 Frontend será expuesto en el puerto 5174"
+                                echo ""
+                                echo "   📍 URL para acceder al frontend:"
+                                echo "      http://localhost:5174"
+                                echo ""
+                                echo "   ℹ️  Este puerto coincide con la configuración del backend (CORS)"
+                                echo ""
+                                echo "   ⚠️ IMPORTANTE - Configuración del contenedor Jenkins:"
+                                echo "      Si Jenkins está corriendo en un contenedor Docker, necesitas exponer el puerto 5174:"
+                                echo ""
+                                echo "      Opción 1 - Docker run:"
+                                echo "         docker run ... -p 5174:5174 ... jenkins-docker"
+                                echo ""
+                                echo "      Opción 2 - Docker Compose:"
+                                echo "         Agrega 'ports: - \"5174:5174\"' al servicio Jenkins"
+                                echo ""
+                                echo "      Opción 3 - Si Jenkins está en el host (no en contenedor):"
+                                echo "         Simplemente visita: http://localhost:5174"
+                                echo ""
+                                echo "   🔍 Para verificar que el puerto está disponible:"
+                                echo "      netstat -tuln | grep 5174  (Linux)"
+                                echo "      netstat -an | grep 5174    (Windows/Mac)"
                             } else {
                                 echo "🔒 Frontend solo accesible dentro del contenedor Jenkins (puerto no expuesto)"
                                 echo "   💡 Para exponerlo, habilita el parámetro EXPOSE_FRONTEND en el siguiente build"
@@ -481,7 +500,7 @@ pipeline {
                                     
                                     # Método 3: Intentar desde el host usando el puerto mapeado (puede funcionar si Jenkins tiene acceso directo)
                                     if [ "\$http_code" = "000" ] || [ -z "\$http_code" ]; then
-                                    http_code=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081 2>/dev/null || echo "000")
+                                    http_code=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5174 2>/dev/null || echo "000")
                                     fi
                                     
                                     if [ "\$http_code" = "200" ] || [ "\$http_code" = "301" ] || [ "\$http_code" = "302" ]; then
@@ -511,11 +530,34 @@ pipeline {
                             
                             echo "✅ Validación local completada exitosamente"
                             
-                            // Limpiar contenedor de prueba
+                            // Si EXPOSE_FRONTEND está habilitado, mantener el contenedor activo
+                            if (params.EXPOSE_FRONTEND) {
+                                echo ""
+                                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                                echo "🌐 FRONTEND EXPUESTO Y DISPONIBLE"
+                                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                                echo ""
+                                echo "   📍 URL para acceder al frontend:"
+                                echo "      👉 http://localhost:5174"
+                                echo ""
+                                echo "   ℹ️  Este puerto coincide con la configuración del backend (CORS)"
+                                echo ""
+                                echo "   ℹ️  El contenedor 'mplink-frontend' permanecerá activo para que puedas acceder."
+                                echo "   🔍 Para verificar que está corriendo:"
+                                echo "      docker ps | grep mplink-frontend"
+                                echo ""
+                                echo "   🛑 Para detenerlo manualmente cuando termines:"
+                                echo "      docker stop mplink-frontend"
+                                echo "      docker rm mplink-frontend"
+                                echo ""
+                                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                            } else {
+                                // Limpiar contenedor de prueba solo si no está expuesto
                             sh """
                                 docker stop mplink-frontend 2>/dev/null || true
                                 docker rm mplink-frontend 2>/dev/null || true
                             """
+                            }
                             
                         } catch (Exception e) {
                             echo "❌ Error durante la validación local: ${e.getMessage()}"
@@ -524,8 +566,8 @@ pipeline {
                                 docker ps -a | grep mplink-frontend || echo "No hay contenedores mplink-frontend"
                                 echo "=== Logs del Frontend ==="
                                 docker logs mplink-frontend 2>&1 || true
-                                echo "=== Verificación de puerto 8081 ==="
-                                netstat -tuln | grep 8081 || ss -tuln | grep 8081 || echo "Puerto 8081 no está en uso"
+                                echo "=== Verificación de puerto 5174 ==="
+                                netstat -tuln | grep 5174 || ss -tuln | grep 5174 || echo "Puerto 5174 no está en uso"
                                 docker stop mplink-frontend 2>/dev/null || true
                                 docker rm mplink-frontend 2>/dev/null || true
                             """
@@ -609,11 +651,18 @@ pipeline {
                     rm -rf playwright-report test-results .playwright 2>/dev/null || true
                 """
                 
-                // Limpiar contenedores de prueba si quedaron
+                // Limpiar contenedores de prueba si quedaron (solo si no está expuesto)
+                if (!params.EXPOSE_FRONTEND) {
                 sh """
                     docker stop mplink-frontend 2>/dev/null || true
                     docker rm mplink-frontend 2>/dev/null || true
                 """
+                } else {
+                    echo "ℹ️  Contenedor 'mplink-frontend' se mantiene activo (EXPOSE_FRONTEND habilitado)"
+                    echo "   📍 Accede en: http://localhost:5174"
+                    echo "   ℹ️  Este puerto coincide con la configuración del backend (CORS)"
+                    echo "   🛑 Para detenerlo: docker stop mplink-frontend && docker rm mplink-frontend"
+                }
               }
             echo "Build finalizado con estado: ${currentBuild.currentResult}"
         }

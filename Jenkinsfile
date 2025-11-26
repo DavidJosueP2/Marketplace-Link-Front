@@ -92,11 +92,33 @@ pipeline {
                                 echo "✅ Backend disponible (HTTP ${backendAvailable})"
                             }
                             
-                            // Instalar dependencias y ejecutar tests
+                            // Ejecutar tests dentro de un contenedor Docker con Node.js
+                            // Esto evita problemas de dependencias en el agente de Jenkins
+                            echo "🐳 Ejecutando tests en contenedor Docker con Node.js..."
+                            
+                            // Obtener la IP del host Docker para que los tests puedan acceder al backend
+                            def dockerHost = sh(
+                                script: 'docker run --rm --network host alpine ip route | awk \'/default/ {print $3}\' || echo "host.docker.internal"',
+                                returnStdout: true
+                            ).trim()
+                            
+                            // Si estamos en Linux, usar la IP del gateway de Docker
+                            def backendUrl = "http://${dockerHost}:8080"
+                            echo "   Backend URL para tests: ${backendUrl}"
+                            
                             sh """
-                                npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-                                npx playwright install --with-deps || true
-                                npm run test:e2e || echo "⚠️ Algunos tests fallaron"
+                                docker run --rm \
+                                    -v "\$(pwd):/workspace" \
+                                    -w /workspace \
+                                    -e VITE_FRONTEND_URL=http://localhost:5174 \
+                                    -e VITE_API_URL=${backendUrl} \
+                                    --network host \
+                                    node:20-alpine \
+                                    sh -c "
+                                        npm ci --no-audit --no-fund || npm install --no-audit --no-fund && \
+                                        npx playwright install --with-deps || true && \
+                                        npm run test:e2e || echo '⚠️ Algunos tests fallaron'
+                                    "
                             """
                             
                             // Publicar resultados de Playwright si existen
@@ -195,6 +217,7 @@ pipeline {
                             echo "   Estado inicial: ${containerStatus}"
                             
                             // Esperar a que Nginx responda
+                            // Usar docker exec para verificar desde dentro del contenedor (más confiable)
                             sh """
                                 timeout=60
                                 elapsed=0
@@ -211,8 +234,19 @@ pipeline {
                                         exit 1
                                     fi
                                     
-                                    # Intentar conectar
-                                    http_code=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081 2>/dev/null || echo "000")
+                                    # Método 1: Usar un contenedor temporal de curl que comparta la red del contenedor
+                                    # Esto es más confiable porque no depende de la red del host de Jenkins
+                                    http_code=\$(docker run --rm --network container:mplink-frontend curlimages/curl:latest -s -o /dev/null -w "%{http_code}" http://localhost:80 2>/dev/null || echo "000")
+                                    
+                                    # Método 2: Si el método anterior falla, intentar desde dentro del contenedor (si tiene curl)
+                                    if [ "\$http_code" = "000" ] || [ -z "\$http_code" ]; then
+                                        http_code=\$(docker exec mplink-frontend curl -s -o /dev/null -w "%{http_code}" http://localhost:80 2>/dev/null || echo "000")
+                                    fi
+                                    
+                                    # Método 3: Intentar desde el host usando el puerto mapeado (puede funcionar si Jenkins tiene acceso directo)
+                                    if [ "\$http_code" = "000" ] || [ -z "\$http_code" ]; then
+                                        http_code=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081 2>/dev/null || echo "000")
+                                    fi
                                     
                                     if [ "\$http_code" = "200" ] || [ "\$http_code" = "301" ] || [ "\$http_code" = "302" ]; then
                                         echo "✅ Frontend está respondiendo (HTTP \$http_code)"
@@ -231,8 +265,10 @@ pipeline {
                                     docker logs mplink-frontend 2>&1 || true
                                     echo "=== Estado del contenedor ==="
                                     docker ps -a --filter 'name=mplink-frontend' || true
+                                    echo "=== Verificación desde dentro del contenedor ==="
+                                    docker exec mplink-frontend curl -v http://localhost:80 2>&1 | head -20 || echo "curl no disponible en el contenedor"
                                     echo "=== Verificación de puerto ==="
-                                    netstat -tuln | grep 8081 || ss -tuln | grep 8081 || echo "Puerto 8081 no encontrado"
+                                    docker port mplink-frontend || echo "No se pudo obtener información del puerto"
                                     exit 1
                                 fi
                             """

@@ -23,6 +23,29 @@ pipeline {
 
     stages {
 
+        stage('Limpiar Workspace') {
+            steps {
+                script {
+                    echo "🧹 Limpiando archivos generados por tests anteriores..."
+                    // Limpiar archivos de Playwright que pueden tener permisos incorrectos
+                    // Estos archivos fueron creados por root dentro del contenedor Docker
+                    sh """
+                        # Forzar eliminación de directorios de resultados de Playwright
+                        rm -rf playwright-report test-results .playwright 2>/dev/null || true
+                        
+                        # Corregir permisos de archivos restantes si existen
+                        chmod -R u+w . 2>/dev/null || true
+                        
+                        # Limpiar node_modules si existe (puede tener permisos incorrectos)
+                        # No lo eliminamos completamente, solo corregimos permisos
+                        chmod -R u+w node_modules 2>/dev/null || true
+                        
+                        echo "✅ Workspace limpiado"
+                    """
+                }
+            }
+        }
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -135,6 +158,18 @@ pipeline {
                             def npmCacheDir = "${env.WORKSPACE}/.npm-cache"
                             sh "mkdir -p ${npmCacheDir} || true"
                             
+                            // Obtener UID/GID del usuario de Jenkins para que los archivos generados tengan permisos correctos
+                            def jenkinsUid = sh(
+                                script: 'id -u 2>/dev/null || echo "1000"',
+                                returnStdout: true
+                            ).trim()
+                            def jenkinsGid = sh(
+                                script: 'id -g 2>/dev/null || echo "1000"',
+                                returnStdout: true
+                            ).trim()
+                            
+                            echo "   Usando UID/GID: ${jenkinsUid}/${jenkinsGid} para archivos generados"
+                            
                             sh """
                                 docker run --rm \
                                     -v "\$(pwd):/workspace" \
@@ -143,6 +178,7 @@ pipeline {
                                     --network host \
                                     --dns 8.8.8.8 \
                                     --dns 8.8.4.4 \
+                                    --user ${jenkinsUid}:${jenkinsGid} \
                                     -e VITE_FRONTEND_URL=http://localhost:5174 \
                                     -e VITE_API_URL=${backendUrl} \
                                     -e npm_config_timeout=120000 \
@@ -179,6 +215,10 @@ pipeline {
                                             echo '⚠️ Algunos tests fallaron, pero el build continúa'
                                             exit 0
                                         }
+                                        
+                                        # Asegurar que los archivos generados tengan permisos correctos
+                                        echo '🔧 Corrigiendo permisos de archivos generados...'
+                                        chmod -R u+w playwright-report test-results .playwright 2>/dev/null || true
                                     "
                             """
                             
@@ -428,12 +468,30 @@ pipeline {
     post {
         always {
             script {
+                dir(env.PROJECT_DIR ?: '.') {
+                    // Limpiar archivos generados por tests para evitar problemas de permisos en el próximo build
+                    echo "🧹 Limpiando archivos generados por tests..."
+                    sh """
+                        # Corregir permisos de archivos generados por Docker (pueden ser de root)
+                        chmod -R u+w playwright-report test-results .playwright .npm-cache 2>/dev/null || true
+                        
+                        # Eliminar archivos de resultados (se regenerarán en el próximo build)
+                        rm -rf playwright-report test-results .playwright 2>/dev/null || true
+                        
+                        # Limpiar cache de npm si es muy grande
+                        du -sh .npm-cache 2>/dev/null | awk '\$1+0 > 500 {print "Cache npm muy grande, limpiando..."}' && \
+                        rm -rf .npm-cache 2>/dev/null || true
+                        
+                        echo "✅ Archivos de tests limpiados"
+                    """
+                }
+                
                 // Limpiar contenedores de prueba si quedaron
                 sh """
                     docker stop mplink-frontend 2>/dev/null || true
                     docker rm mplink-frontend 2>/dev/null || true
                 """
-              }
+            }
             echo "Build finalizado con estado: ${currentBuild.currentResult}"
         }
     }

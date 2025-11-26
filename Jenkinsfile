@@ -199,17 +199,36 @@ pipeline {
                             echo "   Usando UID/GID: ${jenkinsUid}/${jenkinsGid} para archivos generados"
                             echo "   node_modules limpiado, instalando dependencias frescas..."
                             
-                            // Paso 1: Instalar dependencias del sistema para Playwright como root
-                            echo "🔧 Instalando dependencias del sistema para Playwright (como root)..."
+                            // Instalar dependencias del sistema, npm y ejecutar tests en un solo contenedor
+                            // Primero como root para instalar dependencias del sistema, luego como usuario para el resto
                             sh """
                                 docker run --rm \
                                     -v "\$(pwd):/workspace" \
+                                    -v "${npmCacheDir}:/root/.npm" \
                                     -w /workspace \
+                                    --network host \
+                                    --dns 8.8.8.8 \
+                                    --dns 8.8.4.4 \
+                                    -e VITE_FRONTEND_URL=http://localhost:5174 \
+                                    -e VITE_API_URL=${backendUrl} \
+                                    -e npm_config_timeout=120000 \
+                                    -e npm_config_maxsockets=5 \
+                                    -e npm_config_fetch_timeout=120000 \
+                                    -e npm_config_fetch_retries=3 \
+                                    -e npm_config_fetch_retry_factor=2 \
+                                    -e npm_config_fetch_retry_mintimeout=10000 \
+                                    -e npm_config_fetch_retry_maxtimeout=60000 \
+                                    -e CI=true \
                                     node:22 \
                                     sh -c "
-                                        # Instalar dependencias del sistema necesarias para Playwright
-                                        # Estas son necesarias para que Chromium funcione correctamente
-                                        apt-get update -qq && \
+                                        set +e
+                                        echo '📦 Verificando Node.js version...'
+                                        node --version
+                                        npm --version
+                                        
+                                        # PASO 1: Instalar dependencias del sistema como root (necesario para Chromium)
+                                        echo '🔧 Instalando dependencias del sistema para Playwright (como root)...'
+                                        apt-get update -qq > /dev/null 2>&1 && \
                                         apt-get install -y -qq --no-install-recommends \
                                             libnss3 \
                                             libnspr4 \
@@ -229,77 +248,99 @@ pipeline {
                                             libcairo2 \
                                             libatspi2.0-0 \
                                             libxshmfence1 \
-                                            > /dev/null 2>&1 || echo '⚠️ Algunas dependencias no se pudieron instalar'
-                                        echo '✅ Dependencias del sistema instaladas'
-                                    "
-                            """
-                            
-                            // Paso 2: Instalar dependencias npm y Playwright con el usuario correcto
-                            sh """
-                                docker run --rm \
-                                    -v "\$(pwd):/workspace" \
-                                    -v "${npmCacheDir}:/root/.npm" \
-                                    -w /workspace \
-                                    --network host \
-                                    --dns 8.8.8.8 \
-                                    --dns 8.8.4.4 \
-                                    --user ${jenkinsUid}:${jenkinsGid} \
-                                    -e VITE_FRONTEND_URL=http://localhost:5174 \
-                                    -e VITE_API_URL=${backendUrl} \
-                                    -e npm_config_timeout=120000 \
-                                    -e npm_config_maxsockets=5 \
-                                    -e npm_config_fetch_timeout=120000 \
-                                    -e npm_config_fetch_retries=3 \
-                                    -e npm_config_fetch_retry_factor=2 \
-                                    -e npm_config_fetch_retry_mintimeout=10000 \
-                                    -e npm_config_fetch_retry_maxtimeout=60000 \
-                                    -e CI=true \
-                                    node:22 \
-                                    sh -c "
-                                        set +e
-                                        echo '📦 Verificando Node.js version...'
-                                        node --version
-                                        npm --version
+                                            libxss1 \
+                                            libgdk-pixbuf2.0-0 \
+                                            libgtk-3-0 \
+                                            libx11-6 \
+                                            libx11-xcb1 \
+                                            libxcb1 \
+                                            libxext6 \
+                                            libxrender1 \
+                                            libxtst6 \
+                                            ca-certificates \
+                                            fonts-liberation \
+                                            libappindicator3-1 \
+                                            xdg-utils \
+                                            > /dev/null 2>&1 && \
+                                        echo '✅ Dependencias del sistema instaladas' || {
+                                            echo '⚠️ Algunas dependencias no se pudieron instalar, pero continuando...'
+                                        }
                                         
                                         # Asegurar que el workspace tenga permisos correctos
                                         echo '🔧 Verificando permisos del workspace...'
                                         chmod -R u+w /workspace 2>/dev/null || true
                                         
-                                        echo '📦 Instalando dependencias con npm ci (con timeout extendido)...'
-                                        timeout 300 npm ci --no-audit --no-fund --prefer-offline --maxsockets=5 --fetch-timeout=120000 || {
-                                            echo '⚠️ npm ci falló, intentando npm install...'
-                                            timeout 300 npm install --no-audit --no-fund --maxsockets=5 --fetch-timeout=120000 || {
-                                                echo '❌ Error instalando dependencias después de múltiples intentos'
-                                                echo '💡 Verifica la conectividad de red del contenedor Jenkins'
-                                                exit 1
+                                        # PASO 2: Instalar dependencias npm como usuario node (1000:1000)
+                                        echo '📦 Instalando dependencias npm...'
+                                        # Cambiar al usuario node para que los archivos tengan permisos correctos
+                                        su node -c '
+                                            cd /workspace && \
+                                            timeout 300 npm ci --no-audit --no-fund --prefer-offline --maxsockets=5 --fetch-timeout=120000 || {
+                                                echo \"⚠️ npm ci falló, intentando npm install...\" && \
+                                                timeout 300 npm install --no-audit --no-fund --maxsockets=5 --fetch-timeout=120000 || {
+                                                    echo \"❌ Error instalando dependencias después de múltiples intentos\" && \
+                                                    echo \"💡 Verifica la conectividad de red del contenedor Jenkins\" && \
+                                                    exit 1
+                                                }
                                             }
+                                        ' || {
+                                            # Si su falla, intentar como root pero luego corregir permisos
+                                            echo '⚠️ No se pudo cambiar a usuario node, instalando como root...'
+                                            timeout 300 npm ci --no-audit --no-fund --prefer-offline --maxsockets=5 --fetch-timeout=120000 || {
+                                                timeout 300 npm install --no-audit --no-fund --maxsockets=5 --fetch-timeout=120000 || {
+                                                    echo '❌ Error instalando dependencias'
+                                                    exit 1
+                                                }
+                                            }
+                                            # Corregir permisos después de instalar como root
+                                            chown -R node:node /workspace/node_modules 2>/dev/null || true
                                         }
                                         
-                                        echo '🎭 Instalando Playwright y navegadores (solo Chromium, sin --with-deps)...'
-                                        # Instalar Playwright sin --with-deps porque ya instalamos las dependencias del sistema
-                                        timeout 180 npx playwright install chromium 2>&1 || {
-                                            echo '⚠️ Error instalando Playwright, pero continuando...'
+                                        # PASO 3: Instalar Playwright y navegadores como usuario node
+                                        echo '🎭 Instalando Playwright y navegadores (solo Chromium)...'
+                                        su node -c '
+                                            cd /workspace && \
+                                            timeout 180 npx playwright install chromium 2>&1
+                                        ' || {
+                                            echo '⚠️ Error instalando Playwright como usuario node, intentando como root...'
+                                            timeout 180 npx playwright install chromium 2>&1 || {
+                                                echo '⚠️ Error instalando Playwright, pero continuando...'
+                                            }
+                                            # Corregir permisos del cache de Playwright
+                                            chown -R node:node /home/node/.cache 2>/dev/null || true
                                         }
                                         
                                         # Verificar que Chromium se instaló
-                                        if [ -d "/home/node/.cache/ms-playwright/chromium_headless_shell-1194" ]; then
+                                        if [ -d \"/home/node/.cache/ms-playwright/chromium_headless_shell-1194\" ] || [ -d \"/root/.cache/ms-playwright/chromium_headless_shell-1194\" ]; then
                                             echo '✅ Chromium instalado correctamente'
                                         else
                                             echo '⚠️ Chromium no se instaló correctamente'
                                             echo '   Verificando directorio de cache...'
-                                            ls -la /home/node/.cache/ms-playwright/ 2>/dev/null || echo '   Cache no encontrado'
+                                            ls -la /home/node/.cache/ms-playwright/ 2>/dev/null || \
+                                            ls -la /root/.cache/ms-playwright/ 2>/dev/null || \
+                                            echo '   Cache no encontrado'
                                         fi
                                         
+                                        # PASO 4: Ejecutar tests como usuario node
                                         echo '🧪 Ejecutando tests E2E (modo CI, sin servidor HTML interactivo)...'
-                                        # CI=true deshabilita el servidor HTML interactivo
-                                        # timeout 600 = 10 minutos máximo para los tests
-                                        timeout 600 npm run test:e2e || {
-                                            echo '⚠️ Algunos tests fallaron, pero el build continúa'
-                                            exit 0
+                                        su node -c '
+                                            cd /workspace && \
+                                            CI=true timeout 600 npm run test:e2e || {
+                                                echo \"⚠️ Algunos tests fallaron, pero el build continúa\" && \
+                                                exit 0
+                                            }
+                                        ' || {
+                                            # Si su falla, ejecutar como root pero luego corregir permisos
+                                            echo '⚠️ No se pudo ejecutar como usuario node, ejecutando como root...'
+                                            CI=true timeout 600 npm run test:e2e || {
+                                                echo '⚠️ Algunos tests fallaron, pero el build continúa'
+                                                exit 0
+                                            }
                                         }
                                         
                                         # Asegurar que los archivos generados tengan permisos correctos
                                         echo '🔧 Corrigiendo permisos de archivos generados...'
+                                        chown -R node:node playwright-report test-results .playwright 2>/dev/null || \
                                         chmod -R u+w playwright-report test-results .playwright 2>/dev/null || true
                                     "
                             """

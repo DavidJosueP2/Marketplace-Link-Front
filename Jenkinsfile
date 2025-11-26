@@ -23,31 +23,56 @@ pipeline {
 
     stages {
 
-        stage('Limpiar Workspace') {
-            steps {
-                script {
-                    echo "🧹 Limpiando archivos generados por tests anteriores..."
-                    // Limpiar archivos de Playwright que pueden tener permisos incorrectos
-                    // Estos archivos fueron creados por root dentro del contenedor Docker
-                    sh """
-                        # Forzar eliminación de directorios de resultados de Playwright
-                        rm -rf playwright-report test-results .playwright 2>/dev/null || true
-                        
-                        # Corregir permisos de archivos restantes si existen
-                        chmod -R u+w . 2>/dev/null || true
-                        
-                        # Limpiar node_modules si existe (puede tener permisos incorrectos)
-                        # No lo eliminamos completamente, solo corregimos permisos
-                        chmod -R u+w node_modules 2>/dev/null || true
-                        
-                        echo "✅ Workspace limpiado"
-                    """
-                }
-            }
-        }
-
         stage('Checkout') {
             steps {
+                script {
+                    // Limpiar archivos problemáticos ANTES del checkout
+                    // Esto evita errores de permisos durante el checkout de Git
+                    echo "🧹 Limpiando archivos generados por tests anteriores (antes del checkout)..."
+                    
+                    // Intentar múltiples métodos para eliminar archivos con permisos incorrectos
+                    sh """
+                        # Método 1: Intentar con permisos normales
+                        rm -rf playwright-report test-results .playwright 2>/dev/null || true
+                        
+                        # Método 2: Si los archivos fueron creados por root, usar docker para eliminarlos
+                        # Esto funciona porque docker puede ejecutar como root
+                        docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
+                            sh -c "rm -rf /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true" || true
+                        
+                        # Método 3: Corregir permisos y luego eliminar
+                        chmod -R u+w playwright-report test-results .playwright 2>/dev/null || true
+                        rm -rf playwright-report test-results .playwright 2>/dev/null || true
+                        
+                        # Método 4: Eliminar archivos específicos problemáticos usando find
+                        find . -name 'index.html' -path '*/playwright-report/*' -type f 2>/dev/null | while read f; do
+                            chmod u+w "\$f" 2>/dev/null || true
+                            rm -f "\$f" 2>/dev/null || true
+                        done || true
+                        
+                        find . -name '.last-run.json' -path '*/test-results/*' -type f 2>/dev/null | while read f; do
+                            chmod u+w "\$f" 2>/dev/null || true
+                            rm -f "\$f" 2>/dev/null || true
+                        done || true
+                        
+                        find . -name 'results.json' -path '*/test-results/*' -type f 2>/dev/null | while read f; do
+                            chmod u+w "\$f" 2>/dev/null || true
+                            rm -f "\$f" 2>/dev/null || true
+                        done || true
+                        
+                        # Método 5: Si aún hay problemas, usar docker para corregir permisos y eliminar
+                        docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
+                            sh -c "
+                                chmod -R 777 /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true
+                                rm -rf /workspace/playwright-report /workspace/test-results /workspace/.playwright 2>/dev/null || true
+                            " || true
+                        
+                        echo "✅ Limpieza completada, procediendo con checkout..."
+                    """
+                }
+                
+                // Usar checkout estándar (las extensiones pueden no estar disponibles)
+                // La limpieza manual anterior debería ser suficiente
                 checkout scm
                 script {
                     env.GIT_COMMIT_SHORT = sh(

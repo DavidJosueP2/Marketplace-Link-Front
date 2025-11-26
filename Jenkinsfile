@@ -244,9 +244,10 @@ pipeline {
                     docker stop mplink-frontend 2>/dev/null || true
                     docker rm mplink-frontend 2>/dev/null || true
                 """
-            }
+              }
             echo "Build finalizado con estado: ${currentBuild.currentResult}"
         }
     }
 }
+
 

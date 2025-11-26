@@ -199,6 +199,42 @@ pipeline {
                             echo "   Usando UID/GID: ${jenkinsUid}/${jenkinsGid} para archivos generados"
                             echo "   node_modules limpiado, instalando dependencias frescas..."
                             
+                            // Paso 1: Instalar dependencias del sistema para Playwright como root
+                            echo "🔧 Instalando dependencias del sistema para Playwright (como root)..."
+                            sh """
+                                docker run --rm \
+                                    -v "\$(pwd):/workspace" \
+                                    -w /workspace \
+                                    node:22 \
+                                    sh -c "
+                                        # Instalar dependencias del sistema necesarias para Playwright
+                                        # Estas son necesarias para que Chromium funcione correctamente
+                                        apt-get update -qq && \
+                                        apt-get install -y -qq --no-install-recommends \
+                                            libnss3 \
+                                            libnspr4 \
+                                            libatk1.0-0 \
+                                            libatk-bridge2.0-0 \
+                                            libcups2 \
+                                            libdrm2 \
+                                            libdbus-1-3 \
+                                            libxkbcommon0 \
+                                            libxcomposite1 \
+                                            libxdamage1 \
+                                            libxfixes3 \
+                                            libxrandr2 \
+                                            libgbm1 \
+                                            libasound2 \
+                                            libpango-1.0-0 \
+                                            libcairo2 \
+                                            libatspi2.0-0 \
+                                            libxshmfence1 \
+                                            > /dev/null 2>&1 || echo '⚠️ Algunas dependencias no se pudieron instalar'
+                                        echo '✅ Dependencias del sistema instaladas'
+                                    "
+                            """
+                            
+                            // Paso 2: Instalar dependencias npm y Playwright con el usuario correcto
                             sh """
                                 docker run --rm \
                                     -v "\$(pwd):/workspace" \
@@ -238,10 +274,20 @@ pipeline {
                                             }
                                         }
                                         
-                                        echo '🎭 Instalando Playwright y navegadores (solo Chromium)...'
-                                        timeout 180 npx playwright install --with-deps chromium || {
-                                            echo '⚠️ Error instalando Playwright, pero continuando con tests...'
+                                        echo '🎭 Instalando Playwright y navegadores (solo Chromium, sin --with-deps)...'
+                                        # Instalar Playwright sin --with-deps porque ya instalamos las dependencias del sistema
+                                        timeout 180 npx playwright install chromium 2>&1 || {
+                                            echo '⚠️ Error instalando Playwright, pero continuando...'
                                         }
+                                        
+                                        # Verificar que Chromium se instaló
+                                        if [ -d "/home/node/.cache/ms-playwright/chromium_headless_shell-1194" ]; then
+                                            echo '✅ Chromium instalado correctamente'
+                                        else
+                                            echo '⚠️ Chromium no se instaló correctamente'
+                                            echo '   Verificando directorio de cache...'
+                                            ls -la /home/node/.cache/ms-playwright/ 2>/dev/null || echo '   Cache no encontrado'
+                                        fi
                                         
                                         echo '🧪 Ejecutando tests E2E...'
                                         npm run test:e2e || {
@@ -253,7 +299,7 @@ pipeline {
                                         echo '🔧 Corrigiendo permisos de archivos generados...'
                                         chmod -R u+w playwright-report test-results .playwright 2>/dev/null || true
                                     "
-                        """
+                            """
                         
                         // Publicar resultados de Playwright si existen
                         if (fileExists('test-results')) {

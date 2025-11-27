@@ -414,8 +414,14 @@ stage('Validación Local (Docker)') {
                             
                             // Ejecutar contenedor temporalmente
                             // Si EXPOSE_FRONTEND está habilitado, exponer el puerto hacia el host
-                            // Usar puerto 5174 para coincidir con la configuración del backend (CORS)
-                            def portMapping = params.EXPOSE_FRONTEND ? '-p 5174:80' : ''
+                            // NOTA: El docker-compose mapea 5174:5174 del contenedor Jenkins al host
+                            // El contenedor del frontend debe mapear 80:80 (puerto 80 interno a 80 del contenedor Jenkins)
+                            // Luego el docker-compose mapea 5174:80 del contenedor Jenkins al host
+                            // Pero como el docker-compose mapea 5174:5174, necesitamos mapear el frontend a 5174:80
+                            // dentro del contenedor Jenkins, lo cual entra en conflicto.
+                            // Solución: NO mapear puertos, usar --network host para que el frontend escuche en 80
+                            // y el docker-compose mapee 5174:80 del contenedor Jenkins al host
+                            def portMapping = params.EXPOSE_FRONTEND ? '--network host' : ''
                             if (params.EXPOSE_FRONTEND) {
                                 echo "🌐 Frontend será expuesto en el puerto 5174"
                                 echo ""
@@ -465,6 +471,14 @@ stage('Validación Local (Docker)') {
                                 """,
                                 returnStdout: true
                             ).trim()
+                            
+                            // Si usamos --network host, el contenedor escucha directamente en el puerto 80
+                            // del contenedor Jenkins, que está mapeado al 5174 del host via docker-compose
+                            if (params.EXPOSE_FRONTEND && portMapping.contains('--network host')) {
+                                echo "ℹ️  Usando --network host: el frontend escucha en puerto 80 del contenedor Jenkins"
+                                echo "   El docker-compose mapea 5174:80 (puerto 80 del contenedor Jenkins → 5174 del host)"
+                                echo "   Accesible en: http://localhost:5174"
+                            }
                             
                             if (containerId == "ERROR" || containerId.isEmpty()) {
                                 error("❌ No se pudo crear el contenedor")

@@ -393,8 +393,8 @@ pipeline {
                 }
             }
         }
-
-        stage('Validación Local (Docker)') {
+        
+stage('Validación Local (Docker)') {
             when { 
                 expression { 
                     params.BUILD_DOCKER 

@@ -393,6 +393,68 @@ pipeline {
                 }
             }
         }
+        
+        stage('Iniciar Contenedores (DinD)') {
+            when { 
+                expression { 
+                    params.BUILD_DOCKER 
+                } 
+            }
+            steps {
+                script {
+                    echo "🚀 Iniciando contenedores dentro del Docker-in-Docker..."
+                    
+                    // Verificar que el script existe
+                    def scriptExists = sh(
+                        script: 'test -f /usr/local/bin/start-containers.sh && echo "exists" || echo "notfound"',
+                        returnStdout: true
+                    ).trim()
+                    
+                    if (scriptExists != "exists") {
+                        echo "⚠️ Script start-containers.sh no encontrado en /usr/local/bin/"
+                        echo "   Verificando en /var/jenkins_home/..."
+                        scriptExists = sh(
+                            script: 'test -f /var/jenkins_home/start-containers.sh && echo "exists" || echo "notfound"',
+                            returnStdout: true
+                        ).trim()
+                        
+                        if (scriptExists != "exists") {
+                            echo "❌ Script start-containers.sh no encontrado"
+                            echo "   Asegúrate de que el script esté en el contenedor Jenkins"
+                            echo "   Puedes copiarlo manualmente o reconstruir la imagen de Jenkins"
+                            return
+                        }
+                    }
+                    
+                    // Determinar qué imagen de backend usar
+                    // Buscar la última imagen de backend construida
+                    def backendImage = sh(
+                        script: 'docker images --format "{{.Repository}}:{{.Tag}}" --filter "reference=mplink-backend:*" | head -1 || echo "mplink-backend:latest"',
+                        returnStdout: true
+                    ).trim()
+                    
+                    if (backendImage.isEmpty()) {
+                        backendImage = "mplink-backend:latest"
+                    }
+                    
+                    echo "   Backend Image:  ${backendImage}"
+                    echo "   Frontend Image: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
+                    
+                    // Ejecutar el script con las imágenes correctas
+                    def scriptPath = scriptExists == "exists" ? "/usr/local/bin/start-containers.sh" : "/var/jenkins_home/start-containers.sh"
+                    sh """
+                        bash ${scriptPath} \
+                            ${backendImage} \
+                            ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
+                    """
+                    
+                    echo "✅ Contenedores iniciados correctamente"
+                    echo "🌐 Accesibles desde localhost:"
+                    echo "   - Frontend: http://localhost:5174"
+                    echo "   - Backend:  http://localhost:8080"
+                }
+            }
+        }
 
         stage('Validación Local (Docker)') {
             when { 

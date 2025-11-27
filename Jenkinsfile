@@ -230,9 +230,9 @@ pipeline {
                                         echo '🔧 Instalando dependencias del sistema para Playwright (como root)...'
                                         echo '   Esto puede tomar unos minutos...'
                                         # Usar timeout para evitar que Jenkins mate el proceso
-                                        timeout 600 bash -c '
-                                            export DEBIAN_FRONTEND=noninteractive
-                                            apt-get update -qq 2>&1 | head -20
+                                        export DEBIAN_FRONTEND=noninteractive
+                                        timeout 600 sh -c "
+                                            apt-get update -qq 2>&1 | head -20 && \
                                             apt-get install -y -qq --no-install-recommends \
                                                 libnss3 \
                                                 libnspr4 \
@@ -265,12 +265,12 @@ pipeline {
                                                 fonts-liberation \
                                                 libappindicator3-1 \
                                                 xdg-utils \
-                                                2>&1 | tail -10
-                                            echo "✅ Dependencias del sistema instaladas"
-                                        ' || {
+                                                2>&1 | tail -10 && \
+                                            echo '✅ Dependencias del sistema instaladas'
+                                        " || {
                                             echo '⚠️ Algunas dependencias no se pudieron instalar, pero continuando...'
                                             echo '   Verificando si las dependencias críticas están instaladas...'
-                                            dpkg -l | grep -E "(libnss3|libgbm1|libgtk-3-0)" || echo '   Algunas dependencias críticas pueden faltar'
+                                            dpkg -l | grep -E '(libnss3|libgbm1|libgtk-3-0)' || echo '   Algunas dependencias críticas pueden faltar'
                                         }
                                         
                                         # Asegurar que el workspace tenga permisos correctos
@@ -460,8 +460,8 @@ pipeline {
                                 script: """
                                 docker run -d \
                                     --name mplink-frontend \
-                                        ${portMapping} \
-                                        ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} 2>&1 || echo "ERROR"
+                                    ${portMapping} \
+                                    ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} 2>&1 || echo "ERROR"
                                 """,
                                 returnStdout: true
                             ).trim()
@@ -471,6 +471,25 @@ pipeline {
                             }
                             
                             echo "✅ Contenedor creado: ${containerId}"
+                            
+                            // Si EXPOSE_FRONTEND está habilitado, agregar diagnóstico de conectividad
+                            if (params.EXPOSE_FRONTEND) {
+                                echo ""
+                                echo "🔍 Diagnóstico de conectividad del frontend:"
+                                sh """
+                                    echo "=== Información del contenedor ==="
+                                    docker inspect mplink-frontend --format '{{.NetworkSettings.Ports}}' || echo "No se pudo obtener información de red"
+                                    echo ""
+                                    echo "=== Mapeo de puertos ==="
+                                    docker port mplink-frontend || echo "No se pudo obtener mapeo de puertos"
+                                    echo ""
+                                    echo "=== Verificando que el contenedor está escuchando ==="
+                                    docker exec mplink-frontend netstat -tuln | grep :80 || docker exec mplink-frontend ss -tuln | grep :80 || echo "No se pudo verificar el puerto 80"
+                                    echo ""
+                                    echo "=== Verificando desde dentro del contenedor de Jenkins ==="
+                                    curl -s -o /dev/null -w "HTTP Status: %{http_code}\\n" http://localhost:5174 || echo "No se pudo conectar desde el contenedor de Jenkins"
+                                """
+                            }
                             
                             // Verificar que el contenedor está corriendo
                             def containerStatus = sh(
@@ -586,6 +605,15 @@ pipeline {
                                 echo ""
                                 echo "      # Ver logs del frontend:"
                                 echo "      docker logs mplink-frontend"
+                                echo ""
+                                echo "      # Verificar desde dentro del contenedor de Jenkins:"
+                                echo "      docker exec my-jenkins curl -s http://localhost:5174 | head -20"
+                                echo ""
+                                echo "   ⚠️  Si no puedes acceder desde el navegador:"
+                                echo "      1. Verifica que el puerto 5174 esté expuesto en docker-compose.yml"
+                                echo "      2. Reinicia los contenedores: docker-compose restart"
+                                echo "      3. Verifica que no haya otro proceso usando el puerto 5174"
+                                echo "      4. Intenta acceder desde dentro del contenedor de Jenkins primero"
                                 echo ""
                                 echo "   🛑 Para detenerlo manualmente cuando termines:"
                                 echo "      docker stop mplink-frontend"

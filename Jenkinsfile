@@ -66,117 +66,121 @@ pipeline {
             }
         }
 
-        stage('Tests Unitarios (Vitest)') {
-            when { expression { params.RUN_UNIT_TESTS } }
-            steps {
-                dir(env.PROJECT_DIR) {
-                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                        script {
-                            echo '🧪 Ejecutando tests unitarios con Vitest...'
+        stage('Tests (Paralelo)') {
+            when { expression { params.RUN_UNIT_TESTS || params.RUN_E2E_TESTS } }
+            parallel {
+                stage('Unitarios (Vitest)') {
+                    when { expression { params.RUN_UNIT_TESTS } }
+                    steps {
+                        dir(env.PROJECT_DIR) {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                script {
+                                    echo '🧪 Ejecutando tests unitarios con Vitest...'
 
-                            def npmCacheDir = "${env.WORKSPACE}/.npm-cache"
-                            sh "mkdir -p ${npmCacheDir}"
+                                    def npmCacheDir = "${env.WORKSPACE}/.npm-cache"
+                                    sh "mkdir -p ${npmCacheDir}"
 
-                            sh """
-                                docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
-                                    sh -c 'chmod -R 777 /workspace/node_modules 2>/dev/null && rm -rf /workspace/node_modules' || true
-                            """
+                                    sh """
+                                        docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
+                                            sh -c 'chmod -R 777 /workspace/node_modules 2>/dev/null && rm -rf /workspace/node_modules' || true
+                                    """
 
-                            sh """
-                                docker run --rm \
-                                    -v "\$(pwd):/workspace" \
-                                    -v "${npmCacheDir}:/root/.npm" \
-                                    -w /workspace \
-                                    -e CI=true \
-                                    node:22 \
-                                    sh -c '
-                                        su node -c "
-                                            cd /workspace && \
-                                            npm ci --no-audit --no-fund --prefer-offline || npm install --no-audit --no-fund && \
-                                            npm run test:coverage || exit 0
-                                        "
-                                    '
-                            """
+                                    sh """
+                                        docker run --rm \
+                                            -v "\$(pwd):/workspace" \
+                                            -v "${npmCacheDir}:/root/.npm" \
+                                            -w /workspace \
+                                            -e CI=true \
+                                            node:22 \
+                                            sh -c '
+                                                su node -c "
+                                                    cd /workspace && \
+                                                    npm ci --no-audit --no-fund --prefer-offline || npm install --no-audit --no-fund && \
+                                                    npm run test:coverage || exit 0
+                                                "
+                                            '
+                                    """
 
-                            if (fileExists('coverage')) {
-                                echo '📊 Reporte de cobertura generado'
-                                publishHTML([
-                                    allowMissing: true,
-                                    alwaysLinkToLastBuild: true,
-                                    keepAll: true,
-                                    reportDir: 'coverage',
-                                    reportFiles: 'index.html',
-                                    reportName: 'Vitest Coverage Report'
-                                ])
+                                    if (fileExists('coverage')) {
+                                        echo '📊 Reporte de cobertura generado'
+                                        publishHTML([
+                                            allowMissing: true,
+                                            alwaysLinkToLastBuild: true,
+                                            keepAll: true,
+                                            reportDir: 'coverage',
+                                            reportFiles: 'index.html',
+                                            reportName: 'Vitest Coverage Report'
+                                        ])
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-        }
+                stage('E2E (Playwright)') {
+                    when { expression { params.RUN_E2E_TESTS } }
+                    steps {
+                        dir(env.PROJECT_DIR) {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                script {
+                                    echo '🧪 Ejecutando tests E2E con Playwright (Node 22)...'
 
-        stage('Tests E2E (Playwright)') {
-            when { expression { params.RUN_E2E_TESTS } }
-            steps {
-                dir(env.PROJECT_DIR) {
-                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                        script {
-                            echo '🧪 Ejecutando tests E2E con Playwright (Node 22)...'
+                                    def backendAvailable = sh(
+                                        script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health 2>/dev/null || echo "000"',
+                                        returnStdout: true
+                                    ).trim()
 
-                            def backendAvailable = sh(
-                                script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health 2>/dev/null || echo "000"',
-                                returnStdout: true
-                            ).trim()
+                                    def backendUrl = 'http://localhost:8080'
+                                    if (backendAvailable == '000' || backendAvailable.toInteger() >= 400) {
+                                        echo "⚠️ Backend no disponible en ${backendUrl}"
+                                    } else {
+                                        echo "✅ Backend disponible (HTTP ${backendAvailable})"
+                                    }
 
-                            def backendUrl = 'http://localhost:8080'
-                            if (backendAvailable == '000' || backendAvailable.toInteger() >= 400) {
-                                echo "⚠️ Backend no disponible en ${backendUrl}"
-                            } else {
-                                echo "✅ Backend disponible (HTTP ${backendAvailable})"
-                            }
+                                    def npmCacheDir = "${env.WORKSPACE}/.npm-cache"
+                                    sh "mkdir -p ${npmCacheDir}"
 
-                            def npmCacheDir = "${env.WORKSPACE}/.npm-cache"
-                            sh "mkdir -p ${npmCacheDir}"
+                                    sh """
+                                        docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
+                                            sh -c 'chmod -R 777 /workspace/node_modules 2>/dev/null && rm -rf /workspace/node_modules' || true
+                                    """
 
-                            sh """
-                                docker run --rm -v "\$(pwd):/workspace" -w /workspace alpine:latest \
-                                    sh -c 'chmod -R 777 /workspace/node_modules 2>/dev/null && rm -rf /workspace/node_modules' || true
-                            """
+                                    sh """
+                                        docker run --rm \
+                                            -v "\$(pwd):/workspace" \
+                                            -v "${npmCacheDir}:/root/.npm" \
+                                            -w /workspace \
+                                            --network host \
+                                            -e VITE_FRONTEND_URL=http://localhost:5174 \
+                                            -e VITE_API_URL=${backendUrl} \
+                                            -e CI=true \
+                                            node:22 \
+                                            sh -c '
+                                                set -e
+                                                export DEBIAN_FRONTEND=noninteractive
 
-                            sh """
-                                docker run --rm \
-                                    -v "\$(pwd):/workspace" \
-                                    -v "${npmCacheDir}:/root/.npm" \
-                                    -w /workspace \
-                                    --network host \
-                                    -e VITE_FRONTEND_URL=http://localhost:5174 \
-                                    -e VITE_API_URL=${backendUrl} \
-                                    -e CI=true \
-                                    node:22 \
-                                    sh -c '
-                                        set -e
-                                        export DEBIAN_FRONTEND=noninteractive
+                                                apt-get update -qq && \
+                                                apt-get install -y -qq libnss3 libgbm1 libgtk-3-0 libx11-xcb1 libxcb1 \
+                                                    libasound2 libpango-1.0-0 libcairo2 libatspi2.0-0 ca-certificates || true
 
-                                        apt-get update -qq && \
-                                        apt-get install -y -qq libnss3 libgbm1 libgtk-3-0 libx11-xcb1 libxcb1 \
-                                            libasound2 libpango-1.0-0 libcairo2 libatspi2.0-0 ca-certificates || true
+                                                su node -c "
+                                                    cd /workspace && \
+                                                    npm ci --no-audit --no-fund --prefer-offline || npm install --no-audit --no-fund && \
+                                                    npx playwright install chromium && \
+                                                    npm run test:e2e || exit 0
+                                                "
 
-                                        su node -c "
-                                            cd /workspace && \
-                                            npm ci --no-audit --no-fund --prefer-offline || npm install --no-audit --no-fund && \
-                                            npx playwright install chromium && \
-                                            npm run test:e2e || exit 0
-                                        "
+                                                chown -R node:node playwright-report test-results .playwright 2>/dev/null || true
+                                            '
+                                    """
 
-                                        chown -R node:node playwright-report test-results .playwright 2>/dev/null || true
-                                    '
-                            """
-
-                            if (fileExists('test-results')) {
-                                archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
-                            }
-                            if (fileExists('playwright-report')) {
-                                archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
+                                    if (fileExists('test-results')) {
+                                        archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+                                    }
+                                    if (fileExists('playwright-report')) {
+                                        archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
+                                    }
+                                }
                             }
                         }
                     }

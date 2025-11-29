@@ -82,6 +82,7 @@ VITE_API_URL=http://localhost:8080
 
 > **Nota:** Si el backend se despliega en otro puerto o servidor, actualizar esta variable con la URL correspondiente.
 
+<!-- cambiar por si los puertos. -->
 ## 🚀 Ejecución del Proyecto
 
 ### Desarrollo Local
@@ -120,7 +121,7 @@ docker compose up -d
 
 
 
-
+<!-- cambiar -->
 ## ✨ Alcance del Proyecto
 
 - **Autenticación:** Login y gestión de sesión con JWT, recuperación de contraseña y gestión de perfil
@@ -132,5 +133,5 @@ docker compose up -d
 
 
 ## 🔗 Repositorios Relacionados
-
+<!-- cambiar -->
 - **Backend:** [Hospital Management System - Backend](https://github.com/JosueGarciaAbata/hospital-management-system)

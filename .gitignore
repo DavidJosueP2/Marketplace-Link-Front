@@ -1,4 +1,18 @@
-# Logs
+# === Playwright ===
+# No subir reportes generados
+playwright-report/
+playwright-report/**
+
+# No subir resultados de test
+test-results/
+test-results/**
+
+# Capturas automáticas de Playwright (si las usas)
+screenshots/
+videos/
+traces/
+
+# === Logs ===
 logs
 *.log
 npm-debug.log*
@@ -7,18 +21,87 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# === Runtime data ===
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Editor directories and files
+# === Dependency directories ===
+node_modules/
+jspm_packages/
+
+# === Build outputs ===
+dist/
+dist-ssr/
+build/
+coverage/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+.vite/
+.vite-inspect/
+
+# === Environment variables ===
+# Ignorar todos los .env reales, pero conservar los ejemplos
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# === TypeScript ===
+*.tsbuildinfo
+
+# === Testing ===
+coverage/
+.nyc_output/
+jest-cache/
+jest-html-reporters-*
+
+# === Package managers ===
+*.tgz
+.pnp.*
+.pnpm-debug.log*
+
+# === Temporary files ===
+*.tmp
+*.temp
+*.bak
+
+# === Miscellaneous ===
+*.local
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# === Editor / IDEs ===
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/settings.json
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# === System files ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# === OS-specific ===
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# === Lock files (opcional) ===
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+docs/

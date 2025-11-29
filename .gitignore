@@ -1,3 +1,17 @@
+# === Playwright ===
+# No subir reportes generados
+playwright-report/
+playwright-report/**
+
+# No subir resultados de test
+test-results/
+test-results/**
+
+# Capturas automáticas de Playwright (si las usas)
+screenshots/
+videos/
+traces/
+
 # === Logs ===
 logs
 *.log
@@ -85,7 +99,7 @@ ehthumbs.db
 Icon?
 Desktop.ini
 
-# === Lock files (opcional, descomenta si no quieres versionarlos) ===
+# === Lock files (opcional) ===
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml

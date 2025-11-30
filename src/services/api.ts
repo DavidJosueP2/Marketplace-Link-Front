@@ -49,16 +49,26 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(new ApiError({ message: error?.message ?? "Request error", data: error })),
+  (error) =>
+    Promise.reject(
+      new ApiError({ message: error?.message ?? "Request error", data: error }),
+    ),
 );
 
 // detectar login (soporta URL relativa/absoluta)
 const isLoginRequest = (url: string): boolean => {
   if (!url) return false;
   try {
-    const u = url.startsWith("http") ? new URL(url) : new URL(url, globalThis.location?.origin ?? "http://localhost");
+    const u = url.startsWith("http")
+      ? new URL(url)
+      : new URL(url, globalThis.location?.origin ?? "http://localhost");
     const p = u.pathname;
-    return p === "/auth/login" || p.endsWith("/auth/login") || p === "/login" || p.endsWith("/login");
+    return (
+      p === "/auth/login" ||
+      p.endsWith("/auth/login") ||
+      p === "/login" ||
+      p.endsWith("/login")
+    );
   } catch {
     return url.includes("/auth/login") || url.includes("/login");
   }
@@ -69,7 +79,9 @@ api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     if (!axios.isAxiosError(error)) {
-      return Promise.reject(new ApiError({ message: "Error desconocido", data: error }));
+      return Promise.reject(
+        new ApiError({ message: "Error desconocido", data: error }),
+      );
     }
 
     const status = error.response?.status;
@@ -79,14 +91,25 @@ api.interceptors.response.use(
       if (!isLoginRequest(reqUrl)) {
         clearTokens();
         (globalThis as any).location.href = "/login";
-        return Promise.reject(new ApiError({ message: "Unauthorized", status: 401 }));
+        return Promise.reject(
+          new ApiError({ message: "Unauthorized", status: 401 }),
+        );
       }
       // si es login → no redirigir, dejar que la pantalla muestre el error
-      return Promise.reject(new ApiError({ message: "Unauthorized", status: 401, data: error.response?.data }));
+      return Promise.reject(
+        new ApiError({
+          message: "Unauthorized",
+          status: 401,
+          data: error.response?.data,
+        }),
+      );
     }
 
     if (!error.response) {
-      const payload: ApiErrorPayload = { message: "Error de conexión. Verifica tu internet.", type: "network" };
+      const payload: ApiErrorPayload = {
+        message: "Error de conexión. Verifica tu internet.",
+        type: "network",
+      };
       return Promise.reject(new ApiError(payload));
     }
 
@@ -138,9 +161,22 @@ api.interceptors.response.use(
       return Promise.reject(new ApiError(payload));
     }
 
-    let errorMessage: string | undefined = data?.message || data?.detail || data?.error || undefined;
+    let errorMessage: string | undefined =
+      data?.message || data?.detail || data?.error || undefined;
+
     if (error.response.status === 409 && !errorMessage) {
       errorMessage = "Error de conflicto.";
+    }
+
+    // Manejar 413 Payload Too Large
+    if (error.response.status === 413) {
+      errorMessage = "El archivo es demasiado grande. El límite es 10MB.";
+    }
+
+    if (error.response.status === 500) {
+      errorMessage =
+        errorMessage ||
+        "Error interno del servidor. Por favor intenta más tarde.";
     }
 
     const payload: ApiErrorPayload = {

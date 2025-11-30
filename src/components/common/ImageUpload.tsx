@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   onImagesChange: (files: File[]) => void;
@@ -41,12 +42,38 @@ const ImageUpload = ({
     }
   }, [existingImageUrls]);
 
+  const { toast } = useToast();
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
+    // Validar tamaño de archivos (máximo 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
+    
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: "Archivo demasiado grande",
+        description: "Algunas imágenes exceden el límite de 10MB y no fueron agregadas.",
+        variant: "destructive",
+      });
+      
+      // Filtrar archivos válidos
+      const validFiles = files.filter(file => file.size <= MAX_FILE_SIZE);
+      if (validFiles.length === 0) return;
+      
+      // Continuar solo con archivos válidos
+      files.length = 0;
+      files.push(...validFiles);
+    }
+
     const totalImages = existingImages.length + images.length + files.length;
     if (totalImages > maxImages) {
-      alert(`Solo puedes tener un máximo de ${maxImages} imágenes en total`);
+      toast({
+        title: "Límite de imágenes excedido",
+        description: `Solo puedes tener un máximo de ${maxImages} imágenes en total.`,
+        variant: "destructive",
+      });
       return;
     }
 

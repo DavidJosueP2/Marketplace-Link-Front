@@ -73,7 +73,12 @@ const PublicationCardWithFavorites = ({
   const textSecondary = getTextSecondaryClasses(theme);
 
   // Construct image URL from backend
+<<<<<<< HEAD
+  const baseUrl =
+    (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
+=======
   const baseUrl = getApiUrl();
+>>>>>>> 0c0542d5e52f85262af5a2177b39bc4a582ec640
   const imageFileName = publication.image.url;
   
   // Si ya es una URL completa (Azure Blob Storage), decodificarla y usarla directamente

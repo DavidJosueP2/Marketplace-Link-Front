@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/shadcn/button";
 import { Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { IncidenceDetailResponse } from "../types/d.types";
+import type { IncidenceDetailsResponse } from "../types/d.types";
 
-export const rowActions = (row: { original: IncidenceDetailResponse }) => {
+export const rowActions = (row: { original: IncidenceDetailsResponse }) => {
   const publicUi = row.original.incidence_id;
   const navigate = useNavigate();
 

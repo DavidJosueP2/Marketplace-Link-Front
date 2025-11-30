@@ -95,14 +95,8 @@ update: async (id: number, request: PublicationUpdateRequest): Promise<Publicati
     formData.append('workingHours', request.workingHours);
   }
   
-  // ✅ NUEVA IMPLEMENTACIÓN: Enviar URLs de imágenes existentes para mantenerlas
-  if (request.existingImageUrls && request.existingImageUrls.length > 0) {
-    request.existingImageUrls.forEach((url) => {
-      formData.append('existingImageUrls', url);
-    });
-  }
-  
-  // Agregar solo las imágenes NUEVAS (archivos File reales)
+  // Agregar todas las imágenes: archivos dummy (para mantener existentes) + nuevas imágenes
+  // El backend identifica las imágenes existentes comparando el nombre del archivo
   if (request.images && request.images.length > 0) {
     request.images.forEach((image) => {
       formData.append('images', image);

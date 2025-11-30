@@ -1,77 +1,12 @@
-# Git
-.git
-.gitignore
-.gitattributes
-
-# Dependencies
 node_modules
-npm-debug.log
-yarn-error.log
-.pnp
-
-# Build outputs
 dist
 build
-.next
-out
-
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
-
-# Environment
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Testing
 coverage
-.nyc_output
-*.lcov
-
-# CI/CD
-.github
-.gitlab-ci.yml
-.circleci
-.jenkins
-
-# Documentation
-*.md
-docs
-README.md
-
-# Misc
-.editorconfig
-.prettierrc
-.eslintrc*
-.sonarlint.json
-sonar-project.properties
-cypress.config.js
-vitest.config.ts
-
-# IDE directories
-.vscode/
-.idea/
-.qodo/
-
-# OS
+.next
+.git
+Dockerfile
+docker-compose.yml
+playwright-report
+test-results
 *.log
-logs/
 
-# Docker files (don't need to be in build context)
-Dockerfile*
-docker-compose*.yml
-.dockerignore
-docker-helper.sh
-docker-helper.bat
-
-# Uncommon directories
-.husky
-.versionrc
-.commitlintrc.json

@@ -64,7 +64,8 @@ const PublicationCard = ({
   const textSecondary = getTextSecondaryClasses(theme);
 
   // Construct image URL from backend
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const baseUrl =
+    (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
   const imageFileName = publication.image?.url || "";
   
   // Si ya es una URL completa (Azure Blob Storage), decodificarla y usarla directamente

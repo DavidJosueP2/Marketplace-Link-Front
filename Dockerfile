@@ -7,11 +7,6 @@ COPY package.json package-lock.json ./
 
 RUN npm ci --include=dev
 
-ARG VITE_API_URL
-ARG VITE_FRONTEND_URL
-ENV VITE_API_URL=${VITE_API_URL}
-ENV VITE_FRONTEND_URL=${VITE_FRONTEND_URL}
-
 COPY . .
 
 RUN npm run build
@@ -25,6 +20,11 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 COPY ./nginx.config /etc/nginx/conf.d/default.conf
 
+# Copiar el entrypoint para configuración en runtime
+COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Usar el entrypoint para reemplazar variables antes de iniciar nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]

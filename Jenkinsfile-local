@@ -1,0 +1,296 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        ansiColor('xterm')
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+        skipDefaultCheckout(true)
+    }
+
+    environment {
+        // Variables de entorno para el despliegue local
+        VITE_API_URL = 'http://localhost:8080'
+        VITE_FRONTEND_URL = 'http://localhost:5173'
+        FRONT_PORT = '5173'
+
+        // Configuración Docker
+        DOCKER_IMAGE = 'marketplace-frontend-local'
+        DOCKER_TAG = "${env.BUILD_NUMBER}"
+        CONTAINER_NAME = 'marketplace_frontend'
+    }
+
+    parameters {
+        booleanParam(
+            name: 'RUN_TESTS',
+            defaultValue: false,
+            description: 'Ejecutar tests antes del build'
+        )
+        booleanParam(
+            name: 'CLEAN_BUILD',
+            defaultValue: false,
+            description: 'Limpiar node_modules y hacer build desde cero'
+        )
+        string(
+            name: 'CUSTOM_API_URL',
+            defaultValue: 'http://localhost:8080',
+            description: 'URL del backend API (runtime)'
+        )
+        string(
+            name: 'CUSTOM_FRONTEND_URL',
+            defaultValue: 'http://localhost:5174',
+            description: 'URL del frontend (runtime)'
+        )
+        string(
+            name: 'CUSTOM_PORT',
+            defaultValue: '5174',
+            description: 'Puerto en el host para exponer el frontend'
+        )
+    }
+
+    stages {
+        stage('🧹 Limpieza y Checkout') {
+            steps {
+                script {
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+                    echo '🧹 Limpiando workspace y archivos anteriores...'
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+
+                    // Limpiar directorios de test y build
+                    bat '''
+                        @echo off
+                        if exist playwright-report rmdir /s /q playwright-report
+                        if exist test-results rmdir /s /q test-results
+                        if exist .playwright rmdir /s /q .playwright
+                        if exist dist rmdir /s /q dist
+                    '''
+                }
+
+                checkout scm
+
+                script {
+                    env.GIT_COMMIT_SHORT = bat(
+                        script: '@git rev-parse --short HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    echo "✅ Commit: ${env.GIT_COMMIT_SHORT}"
+
+                    // Sobrescribir con parámetros personalizados si existen
+                    if (params.CUSTOM_API_URL != 'http://localhost:8080') {
+                        env.VITE_API_URL = params.CUSTOM_API_URL
+                    }
+                    if (params.CUSTOM_FRONTEND_URL != 'http://localhost:5174') {
+                        env.VITE_FRONTEND_URL = params.CUSTOM_FRONTEND_URL
+                    }
+                    if (params.CUSTOM_PORT != '5174') {
+                        env.FRONT_PORT = params.CUSTOM_PORT
+                    }
+
+                    echo """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Configuración del Build:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  🔹 API URL:      ${env.VITE_API_URL}
+  🔹 Frontend URL: ${env.VITE_FRONTEND_URL}
+  🔹 Puerto Host:  ${env.FRONT_PORT}
+  🔹 Imagen:       ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
+  🔹 Container:    ${env.CONTAINER_NAME}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    """
+                }
+            }
+        }
+
+        stage('🧪 Tests (Opcional)') {
+            when {
+                expression { params.RUN_TESTS }
+            }
+            steps {
+                script {
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+                    echo '🧪 Ejecutando Tests...'
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+
+                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                        bat '''
+                            @echo off
+                            if exist node_modules (
+                                echo ✅ node_modules existe, ejecutando tests...
+                                call npm run test || echo ⚠️ Tests fallaron pero continuamos
+                            ) else (
+                                echo 📦 Instalando dependencias...
+                                call npm install
+                                call npm run test || echo ⚠️ Tests fallaron pero continuamos
+                            )
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('🐳 Detener Contenedor Anterior') {
+            steps {
+                script {
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+                    echo '🐳 Deteniendo y removiendo contenedor anterior...'
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+
+                    bat """
+                        @echo off
+                        docker stop ${env.CONTAINER_NAME} 2>nul || echo ℹ️  No hay contenedor corriendo
+                        docker rm ${env.CONTAINER_NAME} 2>nul || echo ℹ️  No hay contenedor que remover
+                    """
+                }
+            }
+        }
+
+        stage('🏗️ Build Docker Image') {
+            steps {
+                script {
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+                    echo '🏗️  Construyendo imagen Docker...'
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+
+                    def buildDate = bat(
+                        script: '@echo off & echo %date% %time%',
+                        returnStdout: true
+                    ).trim()
+
+                    // Build sin variables de entorno (se configuran en runtime)
+                    bat """
+                        docker build ^
+                            --build-arg BUILD_DATE="${buildDate}" ^
+                            --build-arg GIT_COMMIT="${env.GIT_COMMIT_SHORT}" ^
+                            --build-arg VERSION="${env.BUILD_NUMBER}" ^
+                            -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} ^
+                            -t ${env.DOCKER_IMAGE}:latest ^
+                            .
+                    """
+
+                    echo "✅ Imagen construida: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
+                }
+            }
+        }
+
+        stage('🚀 Desplegar Contenedor') {
+            steps {
+                script {
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+                    echo '🚀 Desplegando contenedor...'
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+
+                    // Ejecutar el contenedor con las variables de entorno en runtime
+                    bat """
+                        docker run -d ^
+                            --name ${env.CONTAINER_NAME} ^
+                            -p ${env.FRONT_PORT}:80 ^
+                            -e VITE_API_URL=${env.VITE_API_URL} ^
+                            -e VITE_FRONTEND_URL=${env.VITE_FRONTEND_URL} ^
+                            --restart unless-stopped ^
+                            ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
+                    """
+
+                    echo "✅ Contenedor iniciado: ${env.CONTAINER_NAME}"
+                }
+            }
+        }
+
+        stage('✅ Verificar Despliegue') {
+            steps {
+                script {
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+                    echo '✅ Verificando que el contenedor esté corriendo...'
+                    echo '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+
+                    sleep 3
+
+                    def status = bat(
+                        script: "@docker ps --filter name=${env.CONTAINER_NAME} --format \"{{.Status}}\"",
+                        returnStdout: true
+                    ).trim()
+
+                    if (status.contains('Up')) {
+                        echo "✅ Contenedor corriendo correctamente"
+
+                        // Mostrar logs iniciales
+                        echo "\n📋 Logs del contenedor:"
+                        bat "docker logs ${env.CONTAINER_NAME}"
+
+                        // Verificar el config.js para confirmar que las variables se inyectaron
+                        echo "\n🔍 Verificando config.js con variables en runtime:"
+                        bat """
+                            docker exec ${env.CONTAINER_NAME} cat /usr/share/nginx/html/config.js || echo ⚠️  No se pudo leer config.js
+                        """
+
+                    } else {
+                        error("❌ El contenedor no está corriendo")
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                echo """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ DESPLIEGUE COMPLETADO EXITOSAMENTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 Frontend disponible en: http://localhost:${env.FRONT_PORT}
+🔗 API Backend:            ${env.VITE_API_URL}
+
+📦 Imagen Docker:    ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
+🐳 Contenedor:       ${env.CONTAINER_NAME}
+🏷️  Commit:           ${env.GIT_COMMIT_SHORT}
+
+📋 Comandos útiles:
+   • Ver logs:       docker logs ${env.CONTAINER_NAME}
+   • Ver logs live:  docker logs -f ${env.CONTAINER_NAME}
+   • Detener:        docker stop ${env.CONTAINER_NAME}
+   • Reiniciar:      docker restart ${env.CONTAINER_NAME}
+   • Remover:        docker rm -f ${env.CONTAINER_NAME}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                """
+            }
+        }
+        failure {
+            script {
+                echo """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ DESPLIEGUE FALLIDO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Por favor revisa los logs arriba para más detalles.
+
+📋 Comandos de debug:
+   • Ver logs:       docker logs ${env.CONTAINER_NAME}
+   • Ver estado:     docker ps -a
+   • Ver imágenes:   docker images | findstr marketplace
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                """
+
+                // Intentar mostrar logs si el contenedor existe
+                bat """
+                    docker logs ${env.CONTAINER_NAME} 2>nul || echo ℹ️  No hay logs disponibles
+                """
+            }
+        }
+        cleanup {
+            script {
+                echo '🧹 Limpieza post-build...'
+                // Opcional: limpiar imágenes sin tag
+                bat '''
+                    @echo off
+                    docker image prune -f 2>nul || echo ℹ️  No hay imágenes que limpiar
+                '''
+            }
+        }
+    }
+}
+

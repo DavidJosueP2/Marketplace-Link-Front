@@ -78,12 +78,12 @@ pipeline {
                     }
 
                     echo """
-Configuracion del Build:
-  API URL:      ${env.VITE_API_URL}
-  Frontend URL: ${env.VITE_FRONTEND_URL}
-  Puerto Host:  ${env.FRONT_PORT}
-  Imagen:       ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
-  Container:    ${env.CONTAINER_NAME}
+                        Configuracion del Build:
+                          API URL:      ${env.VITE_API_URL}
+                          Frontend URL: ${env.VITE_FRONTEND_URL}
+                          Puerto Host:  ${env.FRONT_PORT}
+                          Imagen:       ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
+                          Container:    ${env.CONTAINER_NAME}
                     """
                 }
             }
@@ -162,6 +162,7 @@ Configuracion del Build:
                             -p ${env.FRONT_PORT}:80 \
                             -e VITE_API_URL=${env.VITE_API_URL} \
                             -e VITE_FRONTEND_URL=${env.VITE_FRONTEND_URL} \
+                            --label "com.docker.compose.project=marketplace_link" \
                             --restart unless-stopped \
                             ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
                     """

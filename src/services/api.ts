@@ -26,6 +26,10 @@ export class ApiError extends Error {
 }
 
 /** Axios base */
+// Log para debug - verificar que config.js esté cargado
+console.log('[API Init] window.ENV:', window.ENV);
+console.log('[API Init] baseURL será:', getApiUrl());
+
 export const api: AxiosInstance = axios.create({
   baseURL: getApiUrl(), // ✅ Now uses runtime config instead of build-time env var
   timeout: 10000,

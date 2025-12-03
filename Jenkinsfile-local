@@ -9,16 +9,6 @@ pipeline {
         skipDefaultCheckout(true)
     }
 
-    environment {
-        VITE_API_URL = 'http://marketplace-link-back:8080'
-        VITE_FRONTEND_URL = 'http://localhost:5174'
-        FRONT_PORT = '5174'
-        DOCKER_IMAGE = 'marketplace-frontend-local'
-        DOCKER_TAG = "${env.BUILD_NUMBER}"
-        CONTAINER_NAME = 'marketplace_frontend'
-        DOCKER_NETWORK = 'marketplace_link_mplink_net'
-    }
-
     parameters {
         booleanParam(
             name: 'RUN_TESTS',
@@ -28,41 +18,45 @@ pipeline {
         booleanParam(
             name: 'CLEAN_BUILD',
             defaultValue: false,
-            description: 'Limpiar node_modules y hacer build desde cero'
+            description: 'Eliminar node_modules y hacer instalación limpia antes de los tests'
         )
         string(
             name: 'CUSTOM_API_URL',
             defaultValue: '',
-            description: 'URL del backend API (runtime). Default: http://marketplace-link-back:8080 (comunicacion interna Docker)'
+            description: 'URL del backend API. Si está vacío se usa el valor por defecto.'
         )
         string(
             name: 'CUSTOM_FRONTEND_URL',
             defaultValue: '',
-            description: 'URL del frontend (runtime). Default: http://localhost:5174'
+            description: 'URL pública del frontend (solo informativa / logs).'
         )
         string(
             name: 'CUSTOM_PORT',
             defaultValue: '',
-            description: 'Puerto en el host para exponer el frontend. Default: 5174'
+            description: 'Puerto en el host para exponer el frontend. Default 5174.'
         )
         string(
             name: 'CUSTOM_NETWORK',
             defaultValue: '',
-            description: 'Red Docker para conectar el contenedor. Default: marketplace_link_mplink_net'
+            description: 'Red Docker para conectar el contenedor. Default marketplace_link_mplink_net.'
         )
     }
 
+    environment {
+        // Defaults efectivos del despliegue
+        VITE_API_URL      = "${params.CUSTOM_API_URL ?: 'http://marketplace-link-back:8080'}"
+        VITE_FRONTEND_URL = "${params.CUSTOM_FRONTEND_URL ?: 'http://localhost:5174'}"
+        FRONT_PORT        = "${params.CUSTOM_PORT ?: '5174'}"
+        DOCKER_NETWORK    = "${params.CUSTOM_NETWORK ?: 'marketplace_link_mplink_net'}"
+
+        DOCKER_IMAGE      = 'marketplace-frontend-local'
+        DOCKER_TAG        = "${env.BUILD_NUMBER}"
+        CONTAINER_NAME    = 'marketplace_frontend'
+    }
+
     stages {
-        stage('Limpieza y Checkout') {
+        stage('Checkout') {
             steps {
-                script {
-                    echo 'Limpiando workspace y archivos anteriores...'
-
-                    sh '''
-                        rm -rf playwright-report test-results .playwright dist || true
-                    '''
-                }
-
                 checkout scm
 
                 script {
@@ -72,83 +66,49 @@ pipeline {
                     ).trim()
 
                     echo "Commit: ${env.GIT_COMMIT_SHORT}"
-
-                    if (params.CUSTOM_API_URL && params.CUSTOM_API_URL.trim() != '') {
-                        env.VITE_API_URL = params.CUSTOM_API_URL.trim()
-                        echo "Usando API URL custom: ${env.VITE_API_URL}"
-                    }
-                    if (params.CUSTOM_FRONTEND_URL && params.CUSTOM_FRONTEND_URL.trim() != '') {
-                        env.VITE_FRONTEND_URL = params.CUSTOM_FRONTEND_URL.trim()
-                        echo "Usando Frontend URL custom: ${env.VITE_FRONTEND_URL}"
-                    }
-                    if (params.CUSTOM_PORT && params.CUSTOM_PORT.trim() != '') {
-                        env.FRONT_PORT = params.CUSTOM_PORT.trim()
-                        echo "Usando puerto custom: ${env.FRONT_PORT}"
-                    }
-                    if (params.CUSTOM_NETWORK && params.CUSTOM_NETWORK.trim() != '') {
-                        env.DOCKER_NETWORK = params.CUSTOM_NETWORK.trim()
-                        echo "Usando red Docker custom: ${env.DOCKER_NETWORK}"
-                    }
-
-                    echo """
-                        ================================================================================
-                        Configuracion del Build:
-                        ================================================================================
-                          API URL:       ${env.VITE_API_URL}
-                          Frontend URL:  ${env.VITE_FRONTEND_URL}
-                          Puerto Host:   ${env.FRONT_PORT}
-                          Docker Network: ${env.DOCKER_NETWORK}
-                          Imagen:        ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
-                          Container:     ${env.CONTAINER_NAME}
-                          Commit:        ${env.GIT_COMMIT_SHORT}
-                        ================================================================================
-                    """
+                    echo "VITE_API_URL: ${env.VITE_API_URL}"
+                    echo "VITE_FRONTEND_URL: ${env.VITE_FRONTEND_URL}"
+                    echo "FRONT_PORT: ${env.FRONT_PORT}"
+                    echo "DOCKER_NETWORK: ${env.DOCKER_NETWORK}"
                 }
             }
         }
 
-        stage('Tests (Opcional)') {
+        stage('Tests (opcional)') {
             when {
                 expression { params.RUN_TESTS }
             }
             steps {
                 script {
-                    echo 'Ejecutando Tests...'
+                    sh '''
+                        if [ "${CLEAN_BUILD}" = "true" ]; then
+                          rm -rf node_modules package-lock.json
+                        fi
 
-                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                        sh '''
-                            if [ -d node_modules ]; then
-                                echo "node_modules existe, ejecutando tests..."
-                                npm run test || echo "Tests fallaron pero continuamos"
-                            else
-                                echo "Instalando dependencias..."
-                                npm install
-                                npm run test || echo "Tests fallaron pero continuamos"
-                            fi
-                        '''
-                    }
+                        if [ ! -d node_modules ]; then
+                          npm ci || npm install
+                        fi
+
+                        npm test || echo "Tests fallaron, se continúa igualmente"
+                    '''
                 }
             }
         }
 
-        stage('Detener Contenedor Anterior') {
+        stage('Detener contenedor anterior') {
             steps {
                 script {
-                    echo 'Deteniendo y removiendo contenedor anterior...'
-
                     sh """
-                        docker stop ${env.CONTAINER_NAME} 2>/dev/null || echo "No hay contenedor corriendo"
-                        docker rm ${env.CONTAINER_NAME} 2>/dev/null || echo "No hay contenedor que remover"
+                        docker stop ${env.CONTAINER_NAME} 2>/dev/null || echo "Sin contenedor en ejecución"
+                        docker rm   ${env.CONTAINER_NAME} 2>/dev/null || echo "Sin contenedor que remover"
                     """
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build imagen Docker') {
             steps {
                 script {
-                    echo 'Construyendo imagen Docker...'
-
                     def buildDate = sh(
                         script: 'date "+%Y-%m-%d %H:%M:%S"',
                         returnStdout: true
@@ -156,46 +116,40 @@ pipeline {
 
                     sh """
                         docker build \
-                            --build-arg BUILD_DATE="${buildDate}" \
-                            --build-arg GIT_COMMIT="${env.GIT_COMMIT_SHORT}" \
-                            --build-arg VERSION="${env.BUILD_NUMBER}" \
-                            -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} \
-                            -t ${env.DOCKER_IMAGE}:latest \
-                            .
+                          --build-arg BUILD_DATE="${buildDate}" \
+                          --build-arg GIT_COMMIT="${env.GIT_COMMIT_SHORT}" \
+                          --build-arg VERSION="${env.BUILD_NUMBER}" \
+                          --build-arg VITE_API_URL="${env.VITE_API_URL}" \
+                          --build-arg VITE_FRONTEND_URL="${env.VITE_FRONTEND_URL}" \
+                          -t ${env.DOCKER_IMAGE}:${env.DOCKER_TAG} \
+                          -t ${env.DOCKER_IMAGE}:latest \
+                          .
                     """
-
-                    echo "Imagen construida: ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
                 }
             }
         }
 
-        stage('Desplegar Contenedor') {
+        stage('Desplegar contenedor') {
             steps {
                 script {
-                    echo 'Desplegando contenedor...'
-
                     sh """
                         docker run -d \
-                            --name ${env.CONTAINER_NAME} \
-                            --network ${env.DOCKER_NETWORK} \
-                            -p ${env.FRONT_PORT}:80 \
-                            -e VITE_API_URL=${env.VITE_API_URL} \
-                            -e VITE_FRONTEND_URL=${env.VITE_FRONTEND_URL} \
-                            --label "com.docker.compose.project=marketplace_link" \
-                            --restart unless-stopped \
-                            ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
+                          --name ${env.CONTAINER_NAME} \
+                          --network ${env.DOCKER_NETWORK} \
+                          -p ${env.FRONT_PORT}:80 \
+                          -e VITE_API_URL=${env.VITE_API_URL} \
+                          -e VITE_FRONTEND_URL=${env.VITE_FRONTEND_URL} \
+                          --label "com.docker.compose.project=marketplace_link" \
+                          --restart unless-stopped \
+                          ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
                     """
-
-                    echo "Contenedor iniciado: ${env.CONTAINER_NAME}"
                 }
             }
         }
 
-        stage('Verificar Despliegue') {
+        stage('Verificación') {
             steps {
                 script {
-                    echo 'Verificando que el contenedor este corriendo...'
-
                     sleep 3
 
                     def status = sh(
@@ -203,20 +157,17 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    if (status.contains('Up')) {
-                        echo "Contenedor corriendo correctamente"
-
-                        echo "\nLogs del contenedor:"
-                        sh "docker logs ${env.CONTAINER_NAME}"
-
-                        echo "\nVerificando config.js con variables en runtime:"
-                        sh """
-                            docker exec ${env.CONTAINER_NAME} cat /usr/share/nginx/html/config.js || echo "No se pudo leer config.js"
-                        """
-
-                    } else {
-                        error("El contenedor no esta corriendo")
+                    if (!status.contains('Up')) {
+                        error "El contenedor no está corriendo. Status: ${status}"
                     }
+
+                    echo "Contenedor en ejecución: ${status}"
+
+                    sh "docker logs --tail=50 ${env.CONTAINER_NAME} || true"
+
+                    sh """
+                        docker exec ${env.CONTAINER_NAME} cat /usr/share/nginx/html/config.js || echo "No se pudo leer config.js"
+                    """
                 }
             }
         }
@@ -225,57 +176,22 @@ pipeline {
     post {
         success {
             script {
-                echo """
-                ================================================================================
-                DESPLIEGUE COMPLETADO EXITOSAMENTE
-                ================================================================================
-
-                Frontend disponible en: http://localhost:${env.FRONT_PORT}
-                API Backend:            ${env.VITE_API_URL}
-
-                Imagen Docker:    ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}
-                Contenedor:       ${env.CONTAINER_NAME}
-                Commit:           ${env.GIT_COMMIT_SHORT}
-
-                Comandos utiles:
-                   Ver logs:       docker logs ${env.CONTAINER_NAME}
-                   Ver logs live:  docker logs -f ${env.CONTAINER_NAME}
-                   Detener:        docker stop ${env.CONTAINER_NAME}
-                   Reiniciar:      docker restart ${env.CONTAINER_NAME}
-                   Remover:        docker rm -f ${env.CONTAINER_NAME}
-
-                ================================================================================
-                """
+                echo "Despliegue completado correctamente."
+                echo "Frontend:  http://localhost:${env.FRONT_PORT}"
+                echo "API URL:   ${env.VITE_API_URL}"
+                echo "Imagen:    ${env.DOCKER_IMAGE}:${env.DOCKER_TAG}"
+                echo "Contenedor:${env.CONTAINER_NAME}"
             }
         }
         failure {
             script {
-                echo """
-                    ================================================================================
-                    DESPLIEGUE FALLIDO
-                    ================================================================================
-
-                    Por favor revisa los logs arriba para mas detalles.
-
-                    Comandos de debug:
-                       Ver logs:       docker logs ${env.CONTAINER_NAME}
-                       Ver estado:     docker ps -a
-                       Ver imagenes:   docker images | grep marketplace
-
-                    ================================================================================
-                """
-
-                sh """
-                    docker logs ${env.CONTAINER_NAME} 2>/dev/null || echo "No hay logs disponibles"
-                """
+                echo "Despliegue fallido. Revisar logs."
+                sh "docker logs ${env.CONTAINER_NAME} 2>/dev/null || echo 'Sin logs del contenedor'"
             }
         }
         cleanup {
             script {
-                echo 'Limpieza post-build...'
-                sh '''
-                    docker image prune -f 2>/dev/null || echo "No hay imagenes que limpiar"
-                '''
+                sh "docker image prune -f 2>/dev/null || true"
             }
         }
     }

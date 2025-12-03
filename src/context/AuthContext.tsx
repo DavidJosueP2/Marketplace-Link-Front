@@ -4,7 +4,7 @@ import {
   getAccessToken,
   setAccessToken,
   clearTokens,
-} from "@/auth/tokenStorage";
+} from "@/components/auth/tokenStorage.ts";
 import authService from "@/services/auth.service";
 
 interface User {

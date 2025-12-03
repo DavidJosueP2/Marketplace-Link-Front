@@ -4,7 +4,7 @@ import { ArrowLeft, Heart, Package, User, Tag, Clock } from "lucide-react";
 import { usePublicationDetail } from "@/hooks/use-publication-detail";
 import { usePublicationFavorite } from "@/hooks/use-favorites";
 import { usePublications } from "@/hooks/use-publication";
-import { getUserLocation } from "@/auth/userStorage";
+import { getUserLocation } from "@/components/auth/userStorage.ts";
 import PublicationCard from "@/components/common/publications/PublicationCard";
 import {
   getCardWithShadowClasses,

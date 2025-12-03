@@ -1,4 +1,4 @@
-import type { UserLocationData } from "@/services/auth/interfaces/UserResponse";
+import type { UserLocationData } from "@/services/auth/interfaces/UserResponse.ts";
 
 const USER_DATA_KEY = "user_data";
 const DEFAULT_LOCATION = {

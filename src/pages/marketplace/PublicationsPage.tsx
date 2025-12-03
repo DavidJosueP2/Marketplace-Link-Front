@@ -3,7 +3,7 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import { SlidersHorizontal, Package } from "lucide-react";
 import { usePublications } from "@/hooks/use-publication";
 import { useIsFavorite, useFavorites } from "@/hooks/use-favorites";
-import { getUserLocation } from "@/auth/userStorage";
+import { getUserLocation } from "@/components/auth/userStorage.ts";
 import PublicationCard from "@/components/common/publications/PublicationCard";
 import PublicationFilterPanel from "@/components/common/publications/PublicationFilterPanel";
 import Pagination from "@/components/common/Pagination";

@@ -1,6 +1,6 @@
 import api from "./api";
-import { clearTokens, setAccessToken } from "@/auth/tokenStorage";
-import { setUserData, clearUserData } from "@/auth/userStorage";
+import { clearTokens, setAccessToken } from "@/components/auth/tokenStorage.ts";
+import { setUserData, clearUserData } from "@/components/auth/userStorage.ts";
 import type { UserResponse } from "@/services/auth/interfaces/UserResponse";
 
 export interface LoginResponse {

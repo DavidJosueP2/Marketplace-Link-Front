@@ -5,7 +5,7 @@ import type {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
-import { getAccessToken, clearTokens } from "@/auth/tokenStorage.js";
+import { getAccessToken, clearTokens } from "@/components/auth/tokenStorage.ts";
 import { getApiUrl } from "@/config/env";
 
 /** Error de servicios */

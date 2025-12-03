@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getAccessToken } from "@/auth/tokenStorage";
+import { getAccessToken } from "@/components/auth/tokenStorage.ts";
 import { Card, CardContent } from "@/components/ui/shadcn/card";
 import { Button } from "@/components/ui/shadcn/button";
 import { STEPS } from "./register/constants";

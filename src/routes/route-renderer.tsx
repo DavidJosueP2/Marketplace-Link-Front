@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
 import { Route, Navigate } from "react-router-dom";
-import { GuardRoute } from "@/auth/GuardRoute";
+import { GuardRoute } from "@/components/auth/GuardRoute.tsx";
 import CenteredSpinner from "@/components/ui/CenteredSpinner.tsx";
 
 interface RouteGuard {

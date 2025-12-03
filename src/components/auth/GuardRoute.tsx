@@ -1,6 +1,6 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth.ts";
 
 const norm = (r: string | { name?: string } | null | undefined): string =>
   String(r && typeof r === "object" ? r.name || "" : r || "")

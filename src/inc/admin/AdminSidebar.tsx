@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import AuthContext from "@/context/AuthContext";
-import CanRender from "@/auth/can-render";
+import CanRender from "@/components/auth/can-render.tsx";
 import {
   Sidebar,
   SidebarMenu,

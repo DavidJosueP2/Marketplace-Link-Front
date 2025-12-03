@@ -10,7 +10,7 @@ pipeline {
     }
 
     environment {
-        VITE_API_URL = 'http://localhost:8084'
+        VITE_API_URL = 'http://marketplace-link-back:8080'
         VITE_FRONTEND_URL = 'http://localhost:5174'
         FRONT_PORT = '5174'
         DOCKER_IMAGE = 'marketplace-frontend-local'

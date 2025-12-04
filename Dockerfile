@@ -1,16 +1,21 @@
 # Etapa 1: Compilación con Node
-FROM node:20.17-alpine AS build
+FROM node:20.19-alpine AS build
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm ci --include=dev
+# Instalar dependencias con reintentos y mayor timeout
+RUN npm ci --include=dev --maxsockets=5 --fetch-timeout=60000 || \
+    npm ci --include=dev --maxsockets=5 --fetch-timeout=60000 || \
+    npm ci --include=dev --maxsockets=5 --fetch-timeout=60000
 
 ARG VITE_API_URL
 ARG VITE_FRONTEND_URL
+ARG VITE_AZURE_STORAGE_URL
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_FRONTEND_URL=${VITE_FRONTEND_URL}
+ENV VITE_AZURE_STORAGE_URL=${VITE_AZURE_STORAGE_URL}
 
 COPY . .
 

@@ -20,4 +20,3 @@ services:
 networks:
   marketplace_net:
     external: true
-

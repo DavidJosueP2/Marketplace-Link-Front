@@ -65,7 +65,7 @@ const PublicationCard = ({
 
   // Construct image URL from backend
   const baseUrl =
-    (import.meta.env.VITE_API_URL as string) || "https://mplink-backend.purplebay-4e22b9c6.westus3.azurecontainerapps.io";
+    (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
   const imageFileName = publication.image?.url || "";
   
   // Si ya es una URL completa (Azure Blob Storage), decodificarla y usarla directamente

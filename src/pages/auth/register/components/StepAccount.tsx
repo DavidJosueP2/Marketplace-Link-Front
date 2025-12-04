@@ -64,6 +64,7 @@ export default function StepAccount({
             onChange={handleChange}
             onBlur={handleBlur}
             placeholder="p.ej. dvalencia_92"
+            maxLength={50}
           />
           {touched.username && errors.username && (
             <p className="text-xs text-red-600 mt-1 text-left">{errors.username}</p>
@@ -79,6 +80,7 @@ export default function StepAccount({
             onBlur={handleBlur}
             placeholder="tucorreo@dominio.com"
             autoComplete="email"
+            maxLength={255}
           />
           {touched.email && errors.email && (
             <p className="text-xs text-red-600 mt-1 text-left">{errors.email}</p>
@@ -109,6 +111,7 @@ export default function StepAccount({
             onBlur={handleBlur}
             placeholder="Mínimo 8 caracteres"
             autoComplete="new-password"
+            maxLength={128}
           />
           {touched.password && errors.password && (
             <p className="text-xs text-red-600 mt-1 text-left">{errors.password}</p>
@@ -137,6 +140,7 @@ export default function StepAccount({
             onBlur={handleBlur}
             placeholder="Repite tu contraseña"
             autoComplete="new-password"
+            maxLength={128}
           />
           {touched.confirmPassword && errors.confirmPassword && (
             <p className="text-xs text-red-600 mt-1 text-left">{errors.confirmPassword}</p>

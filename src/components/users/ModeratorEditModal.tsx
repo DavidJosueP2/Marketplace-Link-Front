@@ -65,6 +65,14 @@ export default function ModeratorEditModal({ isOpen, onClose, moderator }: Moder
       newErrors.username = "Mínimo 3 caracteres";
     }
 
+    if (formData.firstName && formData.firstName.length > 50) {
+      newErrors.firstName = "El nombre no puede exceder 50 caracteres";
+    }
+
+    if (formData.lastName && formData.lastName.length > 50) {
+      newErrors.lastName = "El apellido no puede exceder 50 caracteres";
+    }
+
     if (formData.cedula && formData.cedula.length !== 10) {
       newErrors.cedula = "La cédula debe tener 10 dígitos";
     }
@@ -227,6 +235,7 @@ export default function ModeratorEditModal({ isOpen, onClose, moderator }: Moder
                 onBlur={() => handleBlur("firstName")}
                 placeholder="Juan"
                 className="mt-1.5"
+                maxLength={50}
               />
               {touched.firstName && errors.firstName && (
                 <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>
@@ -242,6 +251,7 @@ export default function ModeratorEditModal({ isOpen, onClose, moderator }: Moder
                 onBlur={() => handleBlur("lastName")}
                 placeholder="Pérez"
                 className="mt-1.5"
+                maxLength={50}
               />
               {touched.lastName && errors.lastName && (
                 <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>

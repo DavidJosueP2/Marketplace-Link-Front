@@ -47,26 +47,36 @@ const ImageUpload = ({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
-    // Validar tamaño de archivos (máximo 10MB)
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
+    // Validar que solo sean imágenes permitidas (PNG, JPG, JPEG), rechazar PDFs y otros archivos
+    const allowedImageTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    const allowedExtensions = ['.png', '.jpg', '.jpeg', '.webp'];
     
-    if (oversizedFiles.length > 0) {
-      toast({
-        title: "Archivo demasiado grande",
-        description: "Algunas imágenes exceden el límite de 10MB y no fueron agregadas.",
-        variant: "destructive",
-      });
+    const invalidFiles = files.filter(file => {
+      const fileType = file.type.toLowerCase();
+      const fileName = file.name.toLowerCase();
       
-      // Filtrar archivos válidos
-      const validFiles = files.filter(file => file.size <= MAX_FILE_SIZE);
-      if (validFiles.length === 0) return;
+      // Rechazar PDFs explícitamente
+      if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+        return true;
+      }
       
-      // Continuar solo con archivos válidos
-      files.length = 0;
-      files.push(...validFiles);
-    }
+      // Verificar que sea un tipo de imagen permitido
+      const isValidImageType = allowedImageTypes.includes(fileType);
+      const isValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      // Rechazar si no es una imagen permitida
+      return !isValidImageType && !isValidExtension;
+    });
 
+    if (invalidFiles.length > 0) {
+      alert("Solo se permiten archivos de imagen (PNG, JPG, JPEG, WEBP). Los archivos PDF y otros formatos no están permitidos.");
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+    
     const totalImages = existingImages.length + images.length + files.length;
     if (totalImages > maxImages) {
       toast({

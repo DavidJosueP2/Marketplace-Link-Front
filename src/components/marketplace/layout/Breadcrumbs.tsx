@@ -16,10 +16,6 @@ const Breadcrumbs = ({ currentPage, handleNavigation }) => {
         { name: "Gestión", id: "dashboard" },
         { name: "Usuarios", id: "usuarios" },
       ],
-      configuracion: [
-        { name: "Sistema", id: "dashboard" },
-        { name: "Configuración", id: "configuracion" },
-      ],
       reportes: [
         { name: "Moderación", id: "dashboard" },
         { name: "Reportes", id: "reportes" },

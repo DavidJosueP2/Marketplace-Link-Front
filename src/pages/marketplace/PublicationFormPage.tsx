@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -65,6 +65,7 @@ const PublicationFormPage = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [useRegisteredLocation, setUseRegisteredLocation] = useState(!isEditMode);
   const [isService, setIsService] = useState(false);
+  const hasLoadedPublication = useRef(false);
   
   // Get user data from local storage
   const userData = getUserData();
@@ -107,50 +108,80 @@ const PublicationFormPage = () => {
     loadCategories();
   }, []);
 
+  // Resetear el flag cuando cambie el id
+  useEffect(() => {
+    hasLoadedPublication.current = false;
+  }, [id]);
+
   // Cargar datos de publicación si estamos en modo edición
   useEffect(() => {
-    if (isEditMode && id) {
-      const loadPublication = async () => {
-        try {
-          setIsLoading(true);
-          const publication = await publicationService.getById(Number(id));
-
-          // Llenar formulario con datos existentes
-          reset({
-            name: publication.name,
-            description: publication.description,
-            price: publication.price,
-            latitude: publication.latitude,
-            longitude: publication.longitude,
-            workingHours: publication.workingHours || "",
-            categoryId: publication.category.id,
-            availability: publication.availability,
-            useRegisteredLocation: false,
-          });
-
-          // Determinar si es servicio basado en si tiene horario
-          if (publication.workingHours) {
-            setIsService(true);
-          }
-
-          // Guardar imágenes existentes para mostrar preview
-          setExistingImages(publication.images.map(img => img.url));
-          setKeptExistingImages(publication.images.map(img => img.url));
-        } catch (error) {
-          console.error("Error loading publication:", error);
-          toast({
-            title: "Error",
-            description: "No se pudo cargar la publicación",
-            variant: "destructive",
-          });
-          navigate("/marketplace-refactored/mis-productos");
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      loadPublication();
+    // Evitar ejecuciones múltiples
+    if (!isEditMode || !id || hasLoadedPublication.current) {
+      return;
     }
-  }, [isEditMode, id]);
+
+    // Esperar a que el usuario esté disponible
+    if (!user?.id) {
+      return;
+    }
+
+    const loadPublication = async () => {
+      try {
+        hasLoadedPublication.current = true;
+        setIsLoading(true);
+        const publication = await publicationService.getById(Number(id));
+
+        // Validar que el usuario actual sea el dueño de la publicación
+        const currentUserId = user?.id;
+        const publicationVendorId = publication.vendor?.id;
+
+        // Convertir ambos a números para comparar correctamente
+        const currentUserIdNum = typeof currentUserId === 'string' ? parseInt(currentUserId, 10) : currentUserId;
+        const vendorIdNum = typeof publicationVendorId === 'string' ? parseInt(publicationVendorId, 10) : publicationVendorId;
+
+        if (currentUserIdNum !== vendorIdNum) {
+          // El usuario no es el dueño de la publicación, redirigir a acceso denegado
+          setIsLoading(false);
+          navigate("/forbidden", { replace: true });
+          return;
+        }
+
+        // Llenar formulario con datos existentes
+        reset({
+          name: publication.name,
+          description: publication.description,
+          price: publication.price,
+          latitude: publication.latitude,
+          longitude: publication.longitude,
+          workingHours: publication.workingHours || "",
+          categoryId: publication.category.id,
+          availability: publication.availability,
+          useRegisteredLocation: false,
+        });
+
+        // Determinar si es servicio basado en si tiene horario
+        if (publication.workingHours) {
+          setIsService(true);
+        }
+
+        // Guardar imágenes existentes para mostrar preview
+        setExistingImages(publication.images.map(img => img.url));
+        setKeptExistingImages(publication.images.map(img => img.url));
+      } catch (error) {
+        console.error("Error loading publication:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo cargar la publicación",
+          variant: "destructive",
+        });
+        navigate("/marketplace-refactored/mis-productos");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadPublication();
+  }, [isEditMode, id, user?.id]);
 
   // Manejar cambio de ubicación del mapa
   const handleLocationChange = (lat: number, lng: number) => {
@@ -365,10 +396,11 @@ const PublicationFormPage = () => {
               {...register("name", {
                 required: "El título es obligatorio",
                 minLength: { value: 5, message: "Mínimo 5 caracteres" },
-                maxLength: { value: 100, message: "Máximo 100 caracteres" },
+                maxLength: { value: 50, message: "Máximo 50 caracteres" },
               })}
               type="text"
               id="name"
+              maxLength={50}
               className={`w-full px-4 py-2 border ${borderClass} rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-transparent ${
                 theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
               } ${errors.name || fieldErrors.name ? "border-red-500" : ""}`}
@@ -390,10 +422,11 @@ const PublicationFormPage = () => {
               {...register("description", {
                 required: "La descripción es obligatoria",
                 minLength: { value: 10, message: "Mínimo 10 caracteres" },
-                maxLength: { value: 1000, message: "Máximo 1000 caracteres" },
+                maxLength: { value: 500, message: "Máximo 500 caracteres" },
               })}
               id="description"
               rows={5}
+              maxLength={500}
               className={`w-full px-4 py-2 border ${borderClass} rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-transparent resize-none ${
                 theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
               } ${errors.description || fieldErrors.description ? "border-red-500" : ""}`}
@@ -418,11 +451,13 @@ const PublicationFormPage = () => {
                 {...register("price", {
                   required: "El precio es obligatorio",
                   min: { value: 0.01, message: "El precio debe ser mayor a 0" },
+                  max: { value: 100000, message: "El precio máximo es $100,000" },
                   valueAsNumber: true,
                 })}
                 type="number"
                 step="0.01"
                 id="price"
+                max={100000}
                 className={`w-full px-4 py-2 border ${borderClass} rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-transparent ${
                   theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
                 } ${errors.price || fieldErrors.price ? "border-red-500" : ""}`}
@@ -513,14 +548,22 @@ const PublicationFormPage = () => {
                   Horario de atención
                 </label>
                 <input
-                  {...register("workingHours")}
+                  {...register("workingHours", {
+                    maxLength: { value: 50, message: "Máximo 50 caracteres" },
+                  })}
                   type="text"
                   id="workingHours"
+                  maxLength={50}
                   className={`w-full px-4 py-2 border ${borderClass} rounded-lg focus:ring-2 focus:ring-[#FF9900] focus:border-transparent ${
                     theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"
-                  }`}
+                  } ${errors.workingHours || fieldErrors.workingHours ? "border-red-500" : ""}`}
                   placeholder="Ej: Lun-Vie 9:00-18:00"
                 />
+                {(errors.workingHours || fieldErrors.workingHours) && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    {errors.workingHours?.message || fieldErrors.workingHours}
+                  </p>
+                )}
                 <p className={`${textSecondary} text-xs mt-1`}>
                   Especifica los días y horarios en que ofreces tu servicio
                 </p>

@@ -8,5 +8,6 @@ export interface PublicationUpdateRequest {
   workingHours?: string;
   categoryId: number;
   vendorId: number;
-  images: File[]; // Todas las imágenes: archivos dummy (para mantener existentes) + nuevas imágenes
+  images: File[]; // Nuevas imágenes a subir
+  existingImageUrls?: string[]; // URLs de imágenes existentes que se mantienen
 }

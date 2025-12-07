@@ -8,6 +8,7 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
         VITE_FRONTEND_URL: ${VITE_FRONTEND_URL:-http://localhost:5174}
+        VITE_AZURE_STORAGE_URL: ${VITE_AZURE_STORAGE_URL:-http://localhost:10000/devstoreaccount1}
     container_name: marketplace_frontend
     restart: unless-stopped
     ports:
@@ -15,8 +16,8 @@ services:
     env_file:
       - .env
     networks:
-      - marketplace_net
+      - back_mplink_net
 
 networks:
-  marketplace_net:
+  back_mplink_net:
     external: true

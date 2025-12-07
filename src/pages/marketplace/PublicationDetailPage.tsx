@@ -150,11 +150,12 @@ const PublicationDetailPage = () => {
 
   // Construct image URLs
   const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const azureStorageUrl = import.meta.env.VITE_AZURE_STORAGE_URL || "http://localhost:10000/devstoreaccount1";
+  
   const getImageUrl = (imageUrl: string) => {
-    // Si ya es una URL completa (http/https), retornarla directamente
+    // Si ya es una URL completa (http/https), reemplazar azurite:10000 por localhost:10000
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      // Decodificar la URL en caso de que tenga %2F u otros caracteres encoded
-      return decodeURIComponent(imageUrl);
+      return decodeURIComponent(imageUrl.replace('http://azurite:10000/devstoreaccount1', azureStorageUrl));
     }
     // Si es una ruta relativa, construir la URL con el backend
     const cleanFileName = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;

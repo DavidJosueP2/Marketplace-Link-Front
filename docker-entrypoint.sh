@@ -14,7 +14,7 @@ CFG_FILE="$WWW_DIR/config.js"
 if [ ! -f "$CFG_FILE" ]; then
   echo "⚠️  $CFG_FILE not found — creating default runtime config"
   cat > "$CFG_FILE" <<'EOF'
-window.__RUNTIME_CONFIG__ = {
+window.ENV = {
   VITE_API_URL: "VITE_API_URL_PLACEHOLDER"
 };
 EOF

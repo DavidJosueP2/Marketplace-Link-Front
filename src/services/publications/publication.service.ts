@@ -97,6 +97,14 @@ update: async (id: number, request: PublicationUpdateRequest): Promise<Publicati
   
   // Agregar todas las imágenes: archivos dummy (para mantener existentes) + nuevas imágenes
   // El backend identifica las imágenes existentes comparando el nombre del archivo
+  // Agregar imágenes existentes (URLs)
+  if (request.existingImageUrls && request.existingImageUrls.length > 0) {
+    request.existingImageUrls.forEach((url) => {
+      formData.append('existingImageUrls', url);
+    });
+  }
+
+  // Agregar nuevas imágenes
   if (request.images && request.images.length > 0) {
     request.images.forEach((image) => {
       formData.append('images', image);

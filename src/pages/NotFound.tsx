@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/shadcn/button";
 import { Separator } from "@/components/ui/shadcn/separator";
-import { Home, ArrowLeft, BookText, Ghost } from "lucide-react";
+import { Home, ArrowLeft, Search, Ghost } from "lucide-react";
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -47,16 +47,16 @@ export default function NotFound() {
           </Button>
 
           <Button asChild className="gap-2">
-            <Link to="/admin">
+            <Link to="/marketplace-refactored">
               <Home className="size-4" />
-              <span>Ir al Dashboard</span>
+              <span>Inicio</span>
             </Link>
           </Button>
 
           <Button asChild variant="ghost" className="gap-2">
-            <Link to="/admin/docs">
-              <BookText className="size-4" />
-              <span>Guías & Manuales</span>
+            <Link to="/marketplace-refactored/publications">
+              <Search className="size-4" />
+              <span>Buscar Publicaciones</span>
             </Link>
           </Button>
         </div>
@@ -65,13 +65,12 @@ export default function NotFound() {
 
         <div className="flex flex-wrap justify-center gap-2 text-sm">
           {[
-            { to: "/admin/employees", label: "Empleados" },
-            { to: "/admin/doctors", label: "Doctores" },
-            { to: "/admin/patients", label: "Pacientes" },
-            { to: "/admin/specialties", label: "Especialidades" },
-            { to: "/admin/centers", label: "Centros médicos" },
-            { to: "/admin/consultations", label: "Consultas médicas" },
-            { to: "/admin/playground", label: "Playground" },
+            { to: "/marketplace-refactored/publications", label: "Publicaciones" },
+            { to: "/marketplace-refactored/favoritos", label: "Favoritos" },
+            { to: "/marketplace-refactored/mensajes", label: "Mensajes" },
+            { to: "/marketplace-refactored/mis-productos", label: "Mis Productos" },
+            { to: "/marketplace-refactored/profile", label: "Mi Perfil" },
+            { to: "/login", label: "Iniciar Sesión" },
           ].map((i) => (
             <Link
               key={i.to}

@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
 
-const FRONTEND_URL = 'https://mplink-frontend.purplebay-4e22b9c6.westus3.azurecontainerapps.io';
+// URL contra la que se ejecutan los tests E2E.
+// Configurable con la variable de entorno E2E_BASE_URL; por defecto, el dev server local.
+const FRONTEND_URL = process.env.E2E_BASE_URL || 'http://localhost:5174';
 
 export default defineConfig({
   testDir: './tests/e2e',

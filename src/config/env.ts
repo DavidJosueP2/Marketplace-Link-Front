@@ -1,5 +1,6 @@
 // Runtime environment configuration
-// This allows overriding build-time env vars at runtime (important for Azure Container Apps)
+// Permite sobreescribir variables de entorno en tiempo de ejecución
+// (via /config.js generado por docker-entrypoint.sh), sin recompilar la imagen.
 
 declare global {
   interface Window {
@@ -13,7 +14,7 @@ declare global {
  * Get API URL from runtime config (window.ENV) or fallback to build-time env var
  */
 export const getApiUrl = (): string => {
-  // Try runtime config first (from /config.js replaced by Azure)
+  // Try runtime config first (from /config.js generado por docker-entrypoint.sh)
   const runtimeUrl = window.ENV?.VITE_API_URL;
   
   // If runtime config exists and is not the placeholder, use it

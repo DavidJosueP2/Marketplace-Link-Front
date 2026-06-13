@@ -128,17 +128,15 @@ const FavoritosPage = () => {
   const hasActiveFilters = Boolean(searchName.trim() || dateFrom || dateTo);
 
   // Función para construir URL de imagen desde el backend
-  const azureStorageUrl = import.meta.env.VITE_AZURE_STORAGE_URL || "http://localhost:10000/devstoreaccount1";
-  
   const getImageUrl = (imageUrl: string): string => {
     if (!imageUrl) return '';
-    
-    // Si ya es una URL completa, reemplazar azurite:10000 por localhost:10000
+
+    // Si ya es una URL completa, usarla tal cual
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return decodeURIComponent(imageUrl.replace('http://azurite:10000/devstoreaccount1', azureStorageUrl));
+      return decodeURIComponent(imageUrl);
     }
-    
-    // Construir URL desde el backend
+
+    // Construir URL desde el backend a partir de una referencia relativa
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
     const cleanFileName = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
     return `${baseUrl}/${cleanFileName}`;

@@ -129,7 +129,7 @@ const ImageUpload = ({
   const baseUrl =
     (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
   const getImageUrl = (imageUrl: string) => {
-    // Si ya es una URL completa (Azure Blob Storage), retornarla decodificada
+    // Si ya es una URL completa, retornarla decodificada
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return decodeURIComponent(imageUrl);
     }

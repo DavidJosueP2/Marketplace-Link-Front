@@ -65,13 +65,12 @@ const PublicationCard = ({
 
   // Construct image URL from backend
   const baseUrl = (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
-  const azureStorageUrl = (import.meta.env.VITE_AZURE_STORAGE_URL as string) || "http://localhost:10000/devstoreaccount1";
   const imageFileName = publication.image?.url || "";
-  
-  // Si ya es una URL completa (Azure Blob Storage), reemplazar azurite:10000 por localhost:10000
+
+  // Si ya es una URL completa, usarla; si es una referencia relativa, resolverla contra el backend
   let imageUrl = imageFileName;
   if (imageFileName.startsWith('http://') || imageFileName.startsWith('https://')) {
-    imageUrl = decodeURIComponent(imageFileName.replace('http://azurite:10000/devstoreaccount1', azureStorageUrl));
+    imageUrl = decodeURIComponent(imageFileName);
   } else {
     imageUrl = `${baseUrl}/${imageFileName.startsWith("/") ? imageFileName.substring(1) : imageFileName}`;
   }

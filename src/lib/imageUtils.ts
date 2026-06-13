@@ -8,7 +8,7 @@ import { getApiUrl } from "@/config/env";
 export const getImageUrl = (imageUrl: string): string => {
   if (!imageUrl) return '';
   
-  // Si ya es una URL completa (Azure Blob Storage), decodificarla y retornarla
+  // Si ya es una URL completa, decodificarla y retornarla
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
     return decodeURIComponent(imageUrl);
   }

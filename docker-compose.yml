@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   marketplace_frontend:
     build:
@@ -8,7 +6,6 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
         VITE_FRONTEND_URL: ${VITE_FRONTEND_URL:-http://localhost:5174}
-        VITE_AZURE_STORAGE_URL: ${VITE_AZURE_STORAGE_URL:-http://localhost:10000/devstoreaccount1}
     container_name: marketplace_frontend
     restart: unless-stopped
     ports:
@@ -18,6 +15,8 @@ services:
     networks:
       - back_mplink_net
 
+# Esta red la crea el docker-compose del backend (Marketplace_Link).
+# Levanta primero el backend para que la red exista.
 networks:
   back_mplink_net:
     external: true

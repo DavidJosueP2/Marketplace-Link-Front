@@ -9,5 +9,5 @@ export interface PublicationUpdateRequest {
   categoryId: number;
   vendorId: number;
   images: File[]; // Nuevas imágenes a subir
-  existingImageUrls?: string[]; // URLs de imágenes antiguas que se mantienen
+  existingImageUrls?: string[]; // URLs de imágenes existentes que se mantienen
 }

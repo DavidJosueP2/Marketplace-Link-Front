@@ -127,7 +127,24 @@ const LocationPicker = ({
       },
       (error) => {
         console.error("Error obteniendo ubicación:", error);
-        alert("No se pudo obtener tu ubicación. Verifica los permisos del navegador.");
+        let errorMessage = "No se pudo obtener tu ubicación.";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Permiso de ubicación denegado. Por favor, permite el acceso a tu ubicación.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Ubicación no disponible. Verifica que tu GPS esté activo.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Tiempo de espera agotado. Intenta nuevamente en un lugar con mejor señal.";
+            break;
+        }
+        alert(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
       }
     );
   };

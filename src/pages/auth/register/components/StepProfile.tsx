@@ -33,6 +33,7 @@ export default function StepProfile({
             onBlur={handleBlur}
             placeholder="Tu nombre real"
             autoComplete="given-name"
+            maxLength={50}
           />
           {touched.firstName && errors.firstName && <p className="text-xs text-red-600 mt-1 text-left">{errors.firstName}</p>}
         </div>
@@ -45,6 +46,7 @@ export default function StepProfile({
             onBlur={handleBlur}
             placeholder="Tu apellido"
             autoComplete="family-name"
+            maxLength={50}
           />
           {touched.lastName && errors.lastName && <p className="text-xs text-red-600 mt-1 text-left">{errors.lastName}</p>}
         </div>

@@ -51,6 +51,7 @@ export const createValidators = (
   password: (v: string) => {
     if (!v) return "Requerido.";
     if (v.length < 8) return "Mínimo 8 caracteres.";
+    if (v.length > 128) return "Máximo 128 caracteres.";
     if (!/[A-Z]/.test(v)) return "Debe incluir al menos una mayúscula.";
     if (!/[a-z]/.test(v)) return "Debe incluir al menos una minúscula.";
     if (!/\d/.test(v)) return "Debe incluir al menos un número.";
@@ -74,13 +75,15 @@ export const createValidators = (
 
   firstName: (v: string) => {
     if (!v) return "Requerido.";
-    if (v.length > 100) return "Máximo 100.";
+    if (v.trim().length < 2) return "Mínimo 2 caracteres.";
+    if (v.length > 50) return "Máximo 50 caracteres.";
     return "";
   },
 
   lastName: (v: string) => {
     if (!v) return "Requerido.";
-    if (v.length > 100) return "Máximo 100.";
+    if (v.trim().length < 2) return "Mínimo 2 caracteres.";
+    if (v.length > 50) return "Máximo 50 caracteres.";
     return "";
   },
 

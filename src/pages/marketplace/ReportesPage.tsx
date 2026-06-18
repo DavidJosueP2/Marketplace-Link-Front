@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { FC } from "react";
 import {
   AlertTriangle,
   Search,
@@ -9,17 +10,45 @@ import {
   Flag,
 } from "lucide-react";
 
-const ReportesPage = ({
+type ReportType = "producto" | "usuario" | "vendedor";
+type ReportStatus = "pendiente" | "aprobado" | "rechazado";
+
+interface ReporteItem {
+  id: number | string;
+  tipo: ReportType;
+  reportado: string;
+  razon: string;
+  estado: ReportStatus;
+  reportadoPor: string;
+  fecha: string;
+}
+
+interface ReportesPageProps {
+  reportes?: ReporteItem[];
+  filtroTipo?: ReportType | "todos";
+  filtroEstado?: ReportStatus | "todos";
+  searchReporte?: string;
+  onSearchChange?: (value: string) => void;
+  onFiltroTipoChange?: (value: ReportType | "todos") => void;
+  onFiltroEstadoChange?: (value: ReportStatus | "todos") => void;
+  onViewReporte?: (reporte: ReporteItem) => void;
+  onAprobar?: (reporte: ReporteItem) => void;
+  onRechazar?: (reporte: ReporteItem) => void;
+  isLoading?: boolean;
+  canModerate?: boolean;
+}
+
+const ReportesPage: FC<ReportesPageProps> = ({
   reportes = [],
-  filtroTipo,
-  filtroEstado,
-  searchReporte,
-  onSearchChange,
-  onFiltroTipoChange,
-  onFiltroEstadoChange,
-  onViewReporte,
-  onAprobar,
-  onRechazar,
+  filtroTipo = "todos",
+  filtroEstado = "todos",
+  searchReporte = "",
+  onSearchChange = () => {},
+  onFiltroTipoChange = () => {},
+  onFiltroEstadoChange = () => {},
+  onViewReporte = () => {},
+  onAprobar = () => {},
+  onRechazar = () => {},
   isLoading = false,
   canModerate = false,
 }) => {

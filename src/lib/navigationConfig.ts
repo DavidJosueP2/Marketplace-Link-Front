@@ -142,17 +142,6 @@ export const navigationByRole = {
           { name: "Moderadores", id: "moderadores", icon: Shield, badge: null },
         ],
       },
-      {
-        title: "Sistema",
-        items: [
-          {
-            name: "Configuración",
-            id: "configuracion",
-            icon: Settings,
-            badge: null,
-          },
-        ],
-      },
     ],
   },
 };

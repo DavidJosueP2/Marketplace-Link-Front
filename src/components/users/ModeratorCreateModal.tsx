@@ -72,10 +72,14 @@ export default function ModeratorCreateModal({ isOpen, onClose }: ModeratorCreat
 
     if (!formData.firstName.trim()) {
       newErrors.firstName = "El nombre es requerido";
+    } else if (formData.firstName.length > 50) {
+      newErrors.firstName = "El nombre no puede exceder 50 caracteres";
     }
 
     if (!formData.lastName.trim()) {
       newErrors.lastName = "El apellido es requerido";
+    } else if (formData.lastName.length > 50) {
+      newErrors.lastName = "El apellido no puede exceder 50 caracteres";
     }
 
     if (!formData.cedula.trim()) {
@@ -244,6 +248,7 @@ export default function ModeratorCreateModal({ isOpen, onClose }: ModeratorCreat
                 onBlur={() => handleBlur("firstName")}
                 placeholder="Juan"
                 className="mt-1.5"
+                maxLength={50}
               />
               {touched.firstName && errors.firstName && (
                 <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>
@@ -261,6 +266,7 @@ export default function ModeratorCreateModal({ isOpen, onClose }: ModeratorCreat
                 onBlur={() => handleBlur("lastName")}
                 placeholder="Pérez"
                 className="mt-1.5"
+                maxLength={50}
               />
               {touched.lastName && errors.lastName && (
                 <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>

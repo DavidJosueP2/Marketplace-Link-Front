@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   onImagesChange: (files: File[]) => void;
@@ -41,12 +42,48 @@ const ImageUpload = ({
     }
   }, [existingImageUrls]);
 
+  const { toast } = useToast();
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
+    // Validar que solo sean imágenes permitidas (PNG, JPG, JPEG), rechazar PDFs y otros archivos
+    const allowedImageTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    const allowedExtensions = ['.png', '.jpg', '.jpeg', '.webp'];
+    
+    const invalidFiles = files.filter(file => {
+      const fileType = file.type.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      
+      // Rechazar PDFs explícitamente
+      if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+        return true;
+      }
+      
+      // Verificar que sea un tipo de imagen permitido
+      const isValidImageType = allowedImageTypes.includes(fileType);
+      const isValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      // Rechazar si no es una imagen permitida
+      return !isValidImageType && !isValidExtension;
+    });
+
+    if (invalidFiles.length > 0) {
+      alert("Solo se permiten archivos de imagen (PNG, JPG, JPEG, WEBP). Los archivos PDF y otros formatos no están permitidos.");
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+    
     const totalImages = existingImages.length + images.length + files.length;
     if (totalImages > maxImages) {
-      alert(`Solo puedes tener un máximo de ${maxImages} imágenes en total`);
+      toast({
+        title: "Límite de imágenes excedido",
+        description: `Solo puedes tener un máximo de ${maxImages} imágenes en total.`,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -89,7 +126,8 @@ const ImageUpload = ({
   };
 
   // Construct full image URL
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const baseUrl =
+    (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
   const getImageUrl = (imageUrl: string) => {
     // Si ya es una URL completa (Azure Blob Storage), retornarla decodificada
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {

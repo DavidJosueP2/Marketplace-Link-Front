@@ -9,10 +9,7 @@ import {
   PublicationDetailPage,
   FavoritosPage,
   UsuariosPage,
-  ConfiguracionPage,
-  ReportesPage,
   MensajesPage,
-  ApelacionesPage,
   ModeradoresPage,
 } from "@/pages/marketplace";
 import VendorProductsPage from "@/pages/marketplace/VendorProductsPage";
@@ -112,11 +109,6 @@ export const protectedRoutes = [
         path: "incidencias/:publicUi/apelacion",
         element: <AppealPage />,
         allowedRoles: SELLER,
-      },
-      {
-        path: "configuracion",
-        element: <ConfiguracionPage />,
-        allowedRoles: ADMINS,
       },
     ],
   },

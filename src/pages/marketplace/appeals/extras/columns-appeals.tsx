@@ -1,4 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import type { JSX } from "react";
 import { Clock, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/shadcn/badge";
 import type { AppealSimpleDetailsResponse } from "../../incidences/types/d.types";

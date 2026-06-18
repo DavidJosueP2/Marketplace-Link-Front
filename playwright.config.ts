@@ -1,10 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-try {
-  const dotenv = require('dotenv');
-  dotenv.config();
-} catch {
-}
+
+const FRONTEND_URL = 'https://mplink-frontend.purplebay-4e22b9c6.westus3.azurecontainerapps.io';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -22,7 +19,7 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: process.env.VITE_FRONTEND_URL || 'http://localhost:5174',
+    baseURL: FRONTEND_URL,
 
     screenshot: 'only-on-failure',
 
@@ -41,13 +38,4 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-
-  webServer: {
-    command: 'npm run dev',
-    url: process.env.VITE_FRONTEND_URL || 'http://localhost:5174',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-    stdout: 'ignore',
-    stderr: 'pipe',
-  },
 });
